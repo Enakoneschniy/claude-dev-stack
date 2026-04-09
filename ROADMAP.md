@@ -25,11 +25,15 @@
 - [x] `claude-dev-stack help` — structured command reference
 - [x] Use-case based plugin recommendations (fullstack, frontend, backend, etc.)
 
-## v0.4 — Import & Migration
-- [ ] Import existing CLAUDE.md into vault context
-- [ ] Import from other AI dev tools (Cursor rules, Windsurf, etc.)
-- [ ] Export vault to share with team members
-- [ ] Sync vault via git (team collaboration)
+## v0.4 — Import & Migration ✅
+- [x] `claude-dev-stack import` — scan project for AI configs, import into vault
+  - Supports: CLAUDE.md, .cursorrules, .windsurfrules, copilot-instructions.md, .clinerules, .aider.conf.yml
+  - Auto-detects, multiselect, generates context.md, saves raw imports
+- [x] `claude-dev-stack export` — export vault as .tar.gz
+- [x] `claude-dev-stack sync init` — initialize vault as git repo with .gitignore
+- [x] `claude-dev-stack sync push` — commit and push vault
+- [x] `claude-dev-stack sync pull` — pull latest from remote
+- [x] `claude-dev-stack sync status` — show uncommitted changes
 
 ## v0.5 — Plugin Ecosystem
 - [ ] Third-party marketplace support (voltagent, supabase, payload, etc.)

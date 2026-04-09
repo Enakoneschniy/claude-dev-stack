@@ -34,6 +34,13 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack skills install${c.reset}         ${c.dim}Install from catalog or Git URL${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack skills remove${c.reset}          ${c.dim}Remove installed skills${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Import & Export${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack import${c.reset}                 ${c.dim}Import AI configs (.cursorrules, CLAUDE.md, etc.)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack export${c.reset}                 ${c.dim}Export vault as .tar.gz${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack sync init${c.reset}              ${c.dim}Initialize vault as git repo${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack sync push${c.reset}              ${c.dim}Commit and push vault${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack sync pull${c.reset}              ${c.dim}Pull latest vault from remote${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -41,8 +48,6 @@ function printHelp() {
   console.log(`  ${c.cyan}${c.bold}Other${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack help${c.reset}                   ${c.dim}Show this help${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack version${c.reset}                ${c.dim}Show version${c.reset}`);
-  console.log('');
-  console.log(`  ${c.dim}Shortcuts: add-project = projects add, skill = skills${c.reset}`);
   console.log('');
 }
 
@@ -72,6 +77,23 @@ async function run() {
     case 'skill': {
       const { main } = await import('../lib/skills.mjs');
       await main(args.slice(1));
+      break;
+    }
+
+    // ── Import & Export ──
+    case 'import': {
+      const { main } = await import('../lib/import.mjs');
+      await main(args.slice(1));
+      break;
+    }
+    case 'export': {
+      const { main } = await import('../lib/export.mjs');
+      await main(['export']);
+      break;
+    }
+    case 'sync': {
+      const { main } = await import('../lib/export.mjs');
+      await main(['sync', ...args.slice(1)]);
       break;
     }
 
