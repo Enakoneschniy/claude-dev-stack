@@ -239,20 +239,14 @@ function checkPrerequisites(totalSteps) {
   return { pythonCmd, pipCmd };
 }
 
-// ── Step 2: Profile ─────────────────────────────────────────────
+// ── Step 2: Language ─────────────────────────────────────────────
 async function collectProfile(totalSteps) {
-  step(2, totalSteps, '👤 Your profile');
+  step(2, totalSteps, '🌐 Language');
 
-  console.log(`    ${c.dim}These answers personalize CLAUDE.md and vault structure.${c.reset}`);
+  console.log(`    ${c.dim}Claude Code will communicate in this language.${c.reset}`);
   console.log('');
 
   const profile = await prompt([
-    {
-      type: 'text',
-      name: 'name',
-      message: 'Your name',
-      initial: 'Developer',
-    },
     {
       type: 'text',
       name: 'lang',
@@ -265,16 +259,14 @@ async function collectProfile(totalSteps) {
       message: 'Code comments & git commits language',
       initial: 'en',
     },
-    {
-      type: 'text',
-      name: 'company',
-      message: 'Company / team name (enter to skip)',
-      initial: '',
-    },
   ]);
 
+  // Set defaults for removed fields
+  profile.name = '';
+  profile.company = '';
+
   console.log('');
-  ok(`Profile: ${c.bold}${profile.name}${c.reset}, lang: ${profile.lang}`);
+  ok(`Language: ${c.bold}${profile.lang}${c.reset}, code: ${c.bold}${profile.codeLang}${c.reset}`);
 
   return profile;
 }
@@ -791,12 +783,9 @@ async function generateClaudeMD(vaultPath, profile, projectsData, skillsDir, ste
     default:   langLine = `Communication in ${profile.lang}. Code in English.`; break;
   }
 
-  const companyLine = profile.company ? `\nCompany: ${profile.company}` : '';
-
   const template = `# CLAUDE.md — Project Intelligence Layer
 
-## Identity
-Developer: ${profile.name}${companyLine}
+## Language
 ${langLine}
 
 ## Auto-Routing (IMPORTANT)
