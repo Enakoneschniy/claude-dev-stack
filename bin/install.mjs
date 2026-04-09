@@ -1062,7 +1062,13 @@ async function main() {
   printSummary(installed, failed, vaultPath, projectsData, components);
 }
 
-main().catch((err) => {
-  console.error(`\n  ${c.red}Error: ${err.message}${c.reset}\n`);
-  process.exit(1);
-});
+export default main;
+
+// Auto-run only when executed directly (not imported by cli.mjs)
+const isDirectRun = process.argv[1] && process.argv[1].includes('install.mjs');
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error(`\n  ${c.red}Error: ${err.message}${c.reset}\n`);
+    process.exit(1);
+  });
+}

@@ -19,7 +19,7 @@
     "url": "https://github.com/coremind-sro/claude-dev-stack"
   },
   "bin": {
-    "claude-dev-stack": "./bin/install.mjs"
+    "claude-dev-stack": "./bin/cli.mjs"
   },
   "type": "module",
   "engines": {
@@ -30,6 +30,7 @@
   },
   "files": [
     "bin/",
+    "lib/",
     "skills/",
     "templates/",
     "README.md",
