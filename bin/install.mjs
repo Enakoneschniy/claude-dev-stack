@@ -909,35 +909,60 @@ function installSessionHook() {
     } catch {}
   }
 
-  // Copy hook script
-  const hookSrc = join(PKG_ROOT, 'hooks', 'session-end-check.sh');
-  const hookDest = join(homedir(), '.claude', 'hooks', 'session-end-check.sh');
+  const hooksDir = join(homedir(), '.claude', 'hooks');
+  mkdirp(hooksDir);
 
-  if (existsSync(hookSrc)) {
-    mkdirp(join(homedir(), '.claude', 'hooks'));
-    cpSync(hookSrc, hookDest);
-    // Make executable
-    try { chmodSync(hookDest, 0o755); } catch {}
+  if (!settings.hooks) settings.hooks = {};
+  let changed = false;
+
+  // Hook 1: SessionStart — load project context from vault
+  const startSrc = join(PKG_ROOT, 'hooks', 'session-start-context.sh');
+  const startDest = join(hooksDir, 'session-start-context.sh');
+
+  if (existsSync(startSrc)) {
+    cpSync(startSrc, startDest);
+    try { chmodSync(startDest, 0o755); } catch {}
   }
 
-  // Add Stop hook if not already present
-  if (!settings.hooks) settings.hooks = {};
-  if (!settings.hooks.Stop) settings.hooks.Stop = [];
+  if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+  const hasStart = settings.hooks.SessionStart.some(entry =>
+    entry.hooks?.some(h => h.command?.includes('session-start-context'))
+  );
 
-  const hookCmd = `bash ${hookDest}`;
-  const alreadyHas = settings.hooks.Stop.some(entry =>
+  if (!hasStart) {
+    settings.hooks.SessionStart.push({
+      hooks: [{ type: 'command', command: `bash ${startDest}` }],
+    });
+    ok('Session start hook installed (auto-loads project context)');
+    changed = true;
+  }
+
+  // Hook 2: Stop — remind to log session
+  const endSrc = join(PKG_ROOT, 'hooks', 'session-end-check.sh');
+  const endDest = join(hooksDir, 'session-end-check.sh');
+
+  if (existsSync(endSrc)) {
+    cpSync(endSrc, endDest);
+    try { chmodSync(endDest, 0o755); } catch {}
+  }
+
+  if (!settings.hooks.Stop) settings.hooks.Stop = [];
+  const hasEnd = settings.hooks.Stop.some(entry =>
     entry.hooks?.some(h => h.command?.includes('session-end-check'))
   );
 
-  if (!alreadyHas) {
+  if (!hasEnd) {
     settings.hooks.Stop.push({
-      hooks: [{ type: 'command', command: hookCmd, timeout: 5 }],
+      hooks: [{ type: 'command', command: `bash ${endDest}`, timeout: 5 }],
     });
+    ok('Session end hook installed (auto-logs sessions)');
+    changed = true;
+  }
 
+  if (changed) {
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
-    ok('Session end hook installed');
   } else {
-    info('Session end hook already configured');
+    info('Session hooks already configured');
   }
 }
 
