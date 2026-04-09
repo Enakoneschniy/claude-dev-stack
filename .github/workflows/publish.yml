@@ -16,12 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: Update npm (OIDC requires npm >= 11.5.1)
-        run: npm install -g npm@latest
-        env:
-          npm_config_ignore_scripts: true
+          node-version: 24
 
       - run: npm ci
 
