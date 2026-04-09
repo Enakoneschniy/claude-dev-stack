@@ -1,9 +1,29 @@
 #!/bin/bash
 # SessionStart hook: loads project context from vault at session start.
 # Output is fed to Claude as context before the first message.
+#
+# Project resolution order:
+# 1. Check project-map.json for current directory → project name mapping
+# 2. Fall back to directory basename matching vault/projects/
 
 VAULT="${VAULT_PATH:-$HOME/vault}"
-PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
+MAP_FILE="$VAULT/project-map.json"
+CURRENT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+# Try to resolve project name from mapping file
+PROJECT_NAME=""
+if [ -f "$MAP_FILE" ]; then
+  # Extract project name for current directory from JSON
+  # Uses simple grep/sed to avoid python/jq dependency
+  ESCAPED_DIR=$(echo "$CURRENT_DIR" | sed 's/[\/&]/\\&/g')
+  PROJECT_NAME=$(grep -o "\"${ESCAPED_DIR}\": *\"[^\"]*\"" "$MAP_FILE" 2>/dev/null | sed 's/.*: *"\([^"]*\)"/\1/')
+fi
+
+# Fallback: use directory basename
+if [ -z "$PROJECT_NAME" ]; then
+  PROJECT_NAME=$(basename "$CURRENT_DIR")
+fi
+
 PROJECT_DIR="$VAULT/projects/$PROJECT_NAME"
 
 # Only trigger if vault project exists
