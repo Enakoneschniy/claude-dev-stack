@@ -35,9 +35,13 @@
 - [x] `claude-dev-stack sync pull` — pull latest from remote
 - [x] `claude-dev-stack sync status` — show uncommitted changes
 
-## v0.5 — Plugin Ecosystem
-- [ ] Third-party marketplace support (voltagent, supabase, payload, etc.)
-- [ ] Plugin presets (e.g. "fullstack", "data-science", "devops")
+## v0.5 — Plugin Ecosystem ✅
+- [x] `claude-dev-stack plugins` — list installed plugins
+- [x] `claude-dev-stack plugins install` — install via preset or browse all
+- [x] `claude-dev-stack plugins presets` — curated sets (fullstack, frontend, backend, mobile, data, devops)
+- [x] `claude-dev-stack plugins marketplaces` — add 19 third-party marketplaces
+  - superpowers, voltagent, cc-marketplace, claude-night-market, supabase, payload,
+    microsoft-docs, elixir, LSPs, terraform, n8n, SAP, obsidian, and more
 - [ ] Per-project plugin configuration
 - [ ] MCP server management (install, configure, list)
 
