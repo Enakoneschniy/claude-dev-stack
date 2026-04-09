@@ -54,11 +54,13 @@
 - [ ] ADR templates by project type
 - [ ] Custom skill scaffolding
 
-## v0.7 — Analytics & Insights
-- [ ] Session statistics (time, tokens, commits per project)
-- [ ] Context quality score for vault files
-- [ ] Stale context detection (outdated context.md)
-- [ ] Recommendations based on usage patterns
+## v0.7 — Analytics & Insights ✅
+- [x] `claude-dev-stack stats` — analytics dashboard
+  - Per-project: session count, last session age, ADR count
+  - Context quality score (0-100%) with visual bar
+  - Stale project detection (30+ days without sessions)
+  - Empty context.md detection with recommendations
+  - Summary: totals, averages, skill count
 
 ## Ideas / Backlog
 - Interactive TUI dashboard for vault browsing

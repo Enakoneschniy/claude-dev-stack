@@ -56,6 +56,9 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack sync push${c.reset}              ${c.dim}Commit and push vault${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack sync pull${c.reset}              ${c.dim}Pull latest vault from remote${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Analytics${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack stats${c.reset}                 ${c.dim}Dashboard: sessions, context quality, recommendations${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -133,6 +136,15 @@ async function run() {
     case 'sync': {
       const { main } = await import('../lib/export.mjs');
       await main(['sync', ...args.slice(1)]);
+      break;
+    }
+
+    // ── Analytics ──
+    case 'analytics':
+    case 'stats':
+    case 'status': {
+      const { main } = await import('../lib/analytics.mjs');
+      await main(args.slice(1));
       break;
     }
 
