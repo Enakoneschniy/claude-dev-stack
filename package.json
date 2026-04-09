@@ -1,7 +1,7 @@
 {
   "name": "claude-dev-stack",
-  "version": "0.1.0",
-  "description": "Dev stack for Claude Code: GSD + Obsidian + NotebookLM + Deep Research + session management + auto-routing skills",
+  "version": "0.7.0",
+  "description": "One command to set up a complete AI-powered development workflow with Claude Code. Persistent memory, session management, 35+ CLI tools.",
   "keywords": [
     "claude-code",
     "claude-skills",
@@ -16,7 +16,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/coremind-sro/claude-dev-stack"
+    "url": "https://github.com/Enakoneschniy/claude-dev-stack"
   },
   "bin": {
     "claude-dev-stack": "./bin/cli.mjs"

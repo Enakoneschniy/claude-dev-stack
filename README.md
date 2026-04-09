@@ -255,7 +255,7 @@ claude-dev-stack sync init    # Initialize vault as git repo
 When new versions are released with bug fixes and improvements:
 
 ```bash
-npx github:Enakoneschniy/claude-dev-stack update
+npx claude-dev-stack update
 ```
 
 This updates:
