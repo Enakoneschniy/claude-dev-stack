@@ -109,33 +109,15 @@ function askPath(message, defaultVal) {
   });
 }
 
-// ── Smart project directory search ─────────────────────────────
-function searchProjectDir(baseDir, projectName) {
-  if (!existsSync(baseDir)) return { type: 'none' };
-
+// ── List subdirectories ────────────────────────────────────────
+function listDirs(dir) {
   try {
-    const entries = readdirSync(baseDir, { withFileTypes: true })
-      .filter(e => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('_'));
-
-    const nameLower = projectName.toLowerCase();
-
-    // Exact match
-    const exact = entries.find(d => d.name.toLowerCase() === nameLower);
-    if (exact) return { type: 'exact', path: join(baseDir, exact.name) };
-
-    // Fuzzy: name contains project or project contains name
-    const similar = entries.filter(d => {
-      const dl = d.name.toLowerCase();
-      return dl.includes(nameLower) || nameLower.includes(dl);
-    });
-
-    if (similar.length > 0) {
-      return { type: 'similar', paths: similar.map(d => join(baseDir, d.name)) };
-    }
-
-    return { type: 'none' };
+    return readdirSync(dir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('_'))
+      .map(e => ({ name: e.name, path: join(dir, e.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
   } catch {
-    return { type: 'none' };
+    return [];
   }
 }
 
@@ -257,21 +239,94 @@ async function collectProfile(totalSteps) {
 async function collectProjects(totalSteps) {
   step(3, totalSteps, '📂 Projects');
 
-  console.log(`    ${c.dim}Specify where your projects live, then add each one.${c.reset}`);
   console.log(`    ${c.dim}Claude Code will maintain separate context for each project.${c.reset}`);
   console.log('');
-  console.log(`    ${c.bold}Projects base directory${c.reset}`);
-  console.log(`    ${c.dim}Press Tab to autocomplete path.${c.reset}`);
 
-  const baseDir = await askPath('', join(homedir(), 'Projects'));
-  const resolvedBase = baseDir.replace(/^~/, homedir());
-
-  console.log('');
-  console.log(`    ${c.dim}Add projects one by one. Press Enter with empty name to finish.${c.reset}`);
-  console.log('');
+  const { hasBaseDir } = await prompt({
+    type: 'confirm',
+    name: 'hasBaseDir',
+    message: 'Are your projects in one directory? (e.g. ~/Projects)',
+    initial: true,
+  });
 
   const projects = [];
+  let resolvedBase = null;
 
+  if (hasBaseDir) {
+    // ── Mode A: scan base directory, pick folders ──
+    console.log('');
+    console.log(`    ${c.dim}Press Tab to autocomplete path.${c.reset}`);
+    const baseDir = await askPath('Projects directory', join(homedir(), 'Projects'));
+    resolvedBase = baseDir.replace(/^~/, homedir());
+
+    const dirs = listDirs(resolvedBase);
+
+    if (dirs.length === 0) {
+      warn(`No subdirectories found in ${resolvedBase.replace(homedir(), '~')}`);
+    } else {
+      console.log('');
+      const { selected } = await prompt({
+        type: 'multiselect',
+        name: 'selected',
+        message: 'Select project directories',
+        choices: dirs.map(d => ({ title: d.name, value: d.path, selected: false })),
+        instructions: false,
+        hint: '↑↓ navigate, space toggle, enter confirm',
+      });
+
+      const sel = selected || [];
+
+      // Ask project name for each selected directory
+      for (const dirPath of sel) {
+        const dirName = basename(dirPath);
+        const defaultName = dirName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+
+        const { name } = await prompt({
+          type: 'text',
+          name: 'name',
+          message: `Project name for ${c.cyan}${dirName}${c.reset}`,
+          initial: defaultName,
+        });
+
+        const clean = (name || defaultName).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+        projects.push({ name: clean, path: dirPath });
+        ok(`${clean} → ${c.dim}${dirPath.replace(homedir(), '~')}${c.reset}`);
+      }
+    }
+
+    // Offer to add more manually
+    const { addMore } = await prompt({
+      type: 'confirm',
+      name: 'addMore',
+      message: 'Add more projects from other locations?',
+      initial: false,
+    });
+
+    if (addMore) {
+      await addProjectsManually(projects);
+    }
+  } else {
+    // ── Mode B: add projects one by one with full paths ──
+    console.log('');
+    console.log(`    ${c.dim}Add projects one by one. Press Tab to autocomplete paths.${c.reset}`);
+    console.log(`    ${c.dim}Enter empty name to finish.${c.reset}`);
+    console.log('');
+
+    await addProjectsManually(projects);
+  }
+
+  if (projects.length === 0) {
+    warn('No projects added. Adding "my-project" as default.');
+    projects.push({ name: 'my-project', path: null });
+  }
+
+  console.log('');
+  ok(`${c.bold}${projects.length} project(s)${c.reset} configured`);
+
+  return { baseDir: resolvedBase, projects };
+}
+
+async function addProjectsManually(projects) {
   while (true) {
     const { name } = await prompt({
       type: 'text',
@@ -284,72 +339,24 @@ async function collectProjects(totalSteps) {
     const clean = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
     if (!clean) continue;
 
-    const result = searchProjectDir(resolvedBase, clean);
+    console.log(`    ${c.dim}Tab to autocomplete path:${c.reset}`);
+    const p = await askPath(`Path to ${clean}`, '');
 
-    if (result.type === 'exact') {
-      ok(`${clean} → ${c.dim}${result.path.replace(homedir(), '~')}${c.reset}`);
-      projects.push({ name: clean, path: result.path });
-    } else if (result.type === 'similar') {
-      const { selected } = await prompt({
-        type: 'select',
-        name: 'selected',
-        message: 'No exact match. Choose directory:',
-        choices: [
-          ...result.paths.map(p => ({
-            title: `${basename(p)} ${c.dim}(${p.replace(homedir(), '~')})${c.reset}`,
-            value: p,
-          })),
-          { title: 'Enter path manually', value: '__manual__' },
-          { title: 'Skip (set later)', value: '__skip__' },
-        ],
-      });
-
-      if (selected === '__manual__') {
-        console.log(`    ${c.dim}Tab to autocomplete:${c.reset}`);
-        const p = await askPath('', resolvedBase + '/');
-        const resolved = p.replace(/^~/, homedir()).replace(/\/+$/, '');
+    if (p) {
+      const resolved = p.replace(/^~/, homedir()).replace(/\/+$/, '');
+      if (existsSync(resolved)) {
         projects.push({ name: clean, path: resolved });
         ok(`${clean} → ${c.dim}${resolved.replace(homedir(), '~')}${c.reset}`);
-      } else if (selected === '__skip__') {
+      } else {
+        warn(`${resolved.replace(homedir(), '~')} does not exist`);
         projects.push({ name: clean, path: null });
         ok(`${clean} ${c.dim}(path not set)${c.reset}`);
-      } else {
-        projects.push({ name: clean, path: selected });
-        ok(`${clean} → ${c.dim}${selected.replace(homedir(), '~')}${c.reset}`);
       }
     } else {
-      const { selected } = await prompt({
-        type: 'select',
-        name: 'selected',
-        message: `"${clean}" not found in ${resolvedBase.replace(homedir(), '~')}`,
-        choices: [
-          { title: 'Enter path manually', value: '__manual__' },
-          { title: 'Skip (set later)', value: '__skip__' },
-        ],
-      });
-
-      if (selected === '__manual__') {
-        console.log(`    ${c.dim}Tab to autocomplete:${c.reset}`);
-        const p = await askPath('', resolvedBase + '/');
-        const resolved = p.replace(/^~/, homedir()).replace(/\/+$/, '');
-        projects.push({ name: clean, path: resolved });
-        ok(`${clean} → ${c.dim}${resolved.replace(homedir(), '~')}${c.reset}`);
-      } else {
-        projects.push({ name: clean, path: null });
-        ok(`${clean} ${c.dim}(path not set)${c.reset}`);
-      }
+      projects.push({ name: clean, path: null });
+      ok(`${clean} ${c.dim}(path not set)${c.reset}`);
     }
   }
-
-  if (projects.length === 0) {
-    warn('No projects added. Adding "my-project" as default.');
-    projects.push({ name: 'my-project', path: null });
-  }
-
-  console.log('');
-  ok(`${c.bold}${projects.length} project(s)${c.reset} configured`);
-
-  return { baseDir: resolvedBase, projects };
 }
 
 // ── Step 4: Component Selection ─────────────────────────────────
