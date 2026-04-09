@@ -450,50 +450,33 @@ async function selectComponents(totalSteps, hasPip) {
 }
 
 // ── Step 5: Claude Plugins ──────────────────────────────────────
-const RECOMMENDED_PLUGINS = [
-  // Official plugins
-  { id: 'superpowers', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'brainstorming, planning, TDD, debugging workflows' },
-  { id: 'commit-commands', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'commit, push, PR in one command' },
-  { id: 'claude-md-management', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'audit and improve CLAUDE.md files' },
-  { id: 'claude-code-setup', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'automation recommendations for hooks, skills, plugins' },
-  { id: 'feature-dev', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'guided feature development with architecture focus' },
-  { id: 'code-review', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'code review a pull request' },
-  { id: 'pr-review-toolkit', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'comprehensive PR review with specialized agents' },
-  { id: 'frontend-design', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'production-grade frontend interfaces' },
-  { id: 'code-simplifier', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'simplify and refine code for clarity' },
-  { id: 'security-guidance', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'security best practices and vulnerability checks' },
-  { id: 'plugin-dev', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'create and validate Claude Code plugins' },
-  { id: 'skill-creator', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'create and improve skills' },
-  { id: 'hookify', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'create hooks to prevent unwanted behaviors' },
-  { id: 'agent-sdk-dev', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'build Claude Agent SDK applications' },
-  { id: 'typescript-lsp', marketplace: 'claude-plugins-official', cat: 'LSP', desc: 'TypeScript language server integration' },
-  { id: 'session-report', marketplace: 'claude-plugins-official', cat: 'Workflow', desc: 'session activity reports' },
-  { id: 'learning-output-style', marketplace: 'claude-plugins-official', cat: 'Style', desc: 'interactive learning with educational explanations' },
-  { id: 'explanatory-output-style', marketplace: 'claude-plugins-official', cat: 'Style', desc: 'educational insights about the codebase' },
-  // External plugins (from marketplace)
-  { id: 'context7', marketplace: 'claude-plugins-official', cat: 'External', desc: 'fetch up-to-date library/framework docs' },
-  { id: 'github', marketplace: 'claude-plugins-official', cat: 'External', desc: 'GitHub integration' },
-  { id: 'gitlab', marketplace: 'claude-plugins-official', cat: 'External', desc: 'GitLab integration' },
-  { id: 'Notion', marketplace: 'claude-plugins-official', cat: 'External', desc: 'Notion workspace integration' },
-  { id: 'playwright', marketplace: 'claude-plugins-official', cat: 'External', desc: 'browser automation and testing' },
-  { id: 'sentry', marketplace: 'claude-plugins-official', cat: 'External', desc: 'error monitoring and debugging' },
-  { id: 'figma', marketplace: 'claude-plugins-official', cat: 'External', desc: 'Figma design integration' },
-  { id: 'greptile', marketplace: 'claude-plugins-official', cat: 'External', desc: 'codebase search and understanding' },
-  { id: 'semgrep', marketplace: 'claude-plugins-official', cat: 'External', desc: 'static analysis and code scanning' },
-  { id: 'qodo-skills', marketplace: 'claude-plugins-official', cat: 'External', desc: 'coding rules and PR feedback' },
-];
 
-function getInstalledPlugins() {
-  if (!hasCommand('claude')) return new Set();
+function loadPluginData() {
+  if (!hasCommand('claude')) return null;
 
-  const json = runCmd('claude plugin list --json 2>/dev/null');
-  if (!json) return new Set();
+  // Save to temp file to avoid pipe truncation at 64KB
+  const tmpFile = `/tmp/claude-plugins-${process.pid}.json`;
+  const result = spawnSync('claude', ['plugin', 'list', '--available', '--json'], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+    timeout: 30000,
+  });
+
+  if (result.status !== 0) return null;
 
   try {
-    const plugins = JSON.parse(json);
-    return new Set(plugins.map(p => p.id));
+    const raw = result.stdout.toString('utf8');
+    return JSON.parse(raw);
   } catch {
-    return new Set();
+    // If stdout was truncated, try via temp file
+    spawnSync('sh', ['-c', `claude plugin list --available --json > ${tmpFile}`], {
+      stdio: 'pipe', timeout: 30000,
+    });
+    try {
+      const content = readFileSync(tmpFile, 'utf8');
+      return JSON.parse(content);
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -506,48 +489,71 @@ async function selectAndInstallPlugins(stepNum, totalSteps) {
     return { installed: [], failed: [] };
   }
 
-  const alreadyInstalled = getInstalledPlugins();
-  const alreadyCount = RECOMMENDED_PLUGINS.filter(p =>
-    alreadyInstalled.has(`${p.id}@${p.marketplace}`)
-  ).length;
+  info('Loading plugin marketplace...');
+  const data = loadPluginData();
 
-  if (alreadyCount > 0) {
-    info(`${alreadyCount} plugin(s) already installed — they won't be modified`);
+  if (!data) {
+    warn('Could not load plugin data from claude CLI');
+    return { installed: [], failed: [] };
+  }
+
+  const installedSet = new Set((data.installed || []).map(p => p.id));
+  const available = data.available || [];
+
+  if (available.length === 0) {
+    warn('No plugins available in marketplace');
+    return { installed: [], failed: [] };
+  }
+
+  const installedCount = data.installed?.length || 0;
+  if (installedCount > 0) {
+    info(`${installedCount} plugin(s) already installed — they won't be modified`);
   }
   console.log('');
 
-  // Build choices grouped by category
-  let lastCat = '';
+  // Sort by popularity (installCount), most popular first
+  const sorted = [...available].sort((a, b) => (b.installCount || 0) - (a.installCount || 0));
+
+  // Build choices: installed (disabled) + available (selectable)
   const choices = [];
-  for (const p of RECOMMENDED_PLUGINS) {
-    const fullId = `${p.id}@${p.marketplace}`;
-    const isInstalled = alreadyInstalled.has(fullId);
 
-    if (p.cat !== lastCat) {
-      lastCat = p.cat;
-      // Category separator (disabled choice acts as header)
-      choices.push({ title: `${c.bold}── ${p.cat} ──${c.reset}`, value: '__sep__', disabled: true });
+  // Show already installed as disabled group
+  const installedFromAvail = sorted.filter(p => installedSet.has(p.pluginId));
+  const notInstalled = sorted.filter(p => !installedSet.has(p.pluginId));
+
+  if (installedFromAvail.length > 0) {
+    choices.push({ title: `${c.bold}── Already installed ──${c.reset}`, value: '__sep__', disabled: true });
+    for (const p of installedFromAvail) {
+      choices.push({
+        title: `${c.green}✔${c.reset} ${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
+        value: p.pluginId,
+        disabled: true,
+      });
     }
+  }
 
-    const suffix = isInstalled ? ` ${c.green}(installed)${c.reset}` : '';
-    choices.push({
-      title: `${p.id}${suffix} ${c.dim}— ${p.desc}${c.reset}`,
-      value: fullId,
-      selected: !isInstalled, // pre-select only new ones
-      disabled: isInstalled,  // can't toggle already installed
-    });
+  if (notInstalled.length > 0) {
+    choices.push({ title: `${c.bold}── Available (sorted by popularity) ──${c.reset}`, value: '__sep2__', disabled: true });
+    for (const p of notInstalled) {
+      const pop = p.installCount ? `${c.dim}[${p.installCount}]${c.reset} ` : '';
+      choices.push({
+        title: `${pop}${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
+        value: p.pluginId,
+        selected: false,
+      });
+    }
   }
 
   const { selected } = await prompt({
     type: 'multiselect',
     name: 'selected',
-    message: 'Select plugins to install',
+    message: 'Select plugins to install (space to toggle)',
     choices,
     instructions: false,
     hint: '↑↓ navigate, space toggle, enter confirm',
   });
 
-  const toInstall = (selected || []).filter(id => id !== '__sep__');
+  const toInstall = (selected || []).filter(id => !id.startsWith('__'));
 
   if (toInstall.length === 0) {
     info('No new plugins to install');
@@ -560,18 +566,18 @@ async function selectAndInstallPlugins(stepNum, totalSteps) {
   const installed = [];
   const failed = [];
 
-  for (const fullId of toInstall) {
-    const result = spawnSync('claude', ['plugin', 'install', fullId], {
+  for (const pluginId of toInstall) {
+    const result = spawnSync('claude', ['plugin', 'install', pluginId], {
       stdio: 'pipe', timeout: 60000,
     });
 
     if (result.status === 0) {
-      ok(fullId);
-      installed.push(fullId);
+      ok(pluginId);
+      installed.push(pluginId);
     } else {
       const stderr = result.stderr ? result.stderr.toString().trim() : '';
-      fail(`${fullId}${stderr ? ` — ${stderr}` : ''}`);
-      failed.push(fullId);
+      fail(`${pluginId}${stderr ? ` — ${stderr}` : ''}`);
+      failed.push(pluginId);
     }
   }
 
