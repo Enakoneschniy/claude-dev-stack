@@ -497,52 +497,38 @@ async function selectAndInstallPlugins(stepNum, totalSteps) {
     return { installed: [], failed: [] };
   }
 
-  const installedSet = new Set((data.installed || []).map(p => p.id));
+  const installedList = data.installed || [];
   const available = data.available || [];
 
-  if (available.length === 0) {
-    warn('No plugins available in marketplace');
+  if (available.length === 0 && installedList.length === 0) {
+    warn('No plugins found in marketplace');
     return { installed: [], failed: [] };
   }
 
-  const installedCount = data.installed?.length || 0;
-  if (installedCount > 0) {
-    info(`${installedCount} plugin(s) already installed — they won't be modified`);
+  // Show already installed count (available list already excludes them)
+  if (installedList.length > 0) {
+    info(`${installedList.length} plugin(s) already installed:`);
+    for (const p of installedList) {
+      const name = p.id.split('@')[0];
+      console.log(`      ${c.green}✔${c.reset} ${name}`);
+    }
+  }
+
+  if (available.length === 0) {
+    info('All available plugins already installed');
+    return { installed: [], failed: [] };
   }
   console.log('');
 
   // Sort by popularity (installCount), most popular first
   const sorted = [...available].sort((a, b) => (b.installCount || 0) - (a.installCount || 0));
 
-  // Build choices: installed (disabled) + available (selectable)
-  const choices = [];
-
-  // Show already installed as disabled group
-  const installedFromAvail = sorted.filter(p => installedSet.has(p.pluginId));
-  const notInstalled = sorted.filter(p => !installedSet.has(p.pluginId));
-
-  if (installedFromAvail.length > 0) {
-    choices.push({ title: `${c.bold}── Already installed ──${c.reset}`, value: '__sep__', disabled: true });
-    for (const p of installedFromAvail) {
-      choices.push({
-        title: `${c.green}✔${c.reset} ${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
-        value: p.pluginId,
-        disabled: true,
-      });
-    }
-  }
-
-  if (notInstalled.length > 0) {
-    choices.push({ title: `${c.bold}── Available (sorted by popularity) ──${c.reset}`, value: '__sep2__', disabled: true });
-    for (const p of notInstalled) {
-      const pop = p.installCount ? `${c.dim}[${p.installCount}]${c.reset} ` : '';
-      choices.push({
-        title: `${pop}${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
-        value: p.pluginId,
-        selected: false,
-      });
-    }
-  }
+  // Build choices from available (not yet installed) plugins
+  const choices = sorted.map(p => ({
+    title: `${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
+    value: p.pluginId,
+    selected: false,
+  }));
 
   const { selected } = await prompt({
     type: 'multiselect',
