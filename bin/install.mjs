@@ -11,7 +11,7 @@
 
 import prompts from 'prompts';
 import { execSync, spawnSync } from 'child_process';
-import { existsSync, mkdirSync, writeFileSync, readFileSync, cpSync, readdirSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, cpSync, readdirSync, chmodSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
 import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
@@ -898,6 +898,49 @@ Before starting, ALWAYS read:
   }
 }
 
+// ── Install session hooks ───────────────────────────────────────
+function installSessionHook() {
+  const settingsPath = join(homedir(), '.claude', 'settings.json');
+  let settings = {};
+
+  if (existsSync(settingsPath)) {
+    try {
+      settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    } catch {}
+  }
+
+  // Copy hook script
+  const hookSrc = join(PKG_ROOT, 'hooks', 'session-end-check.sh');
+  const hookDest = join(homedir(), '.claude', 'hooks', 'session-end-check.sh');
+
+  if (existsSync(hookSrc)) {
+    mkdirp(join(homedir(), '.claude', 'hooks'));
+    cpSync(hookSrc, hookDest);
+    // Make executable
+    try { chmodSync(hookDest, 0o755); } catch {}
+  }
+
+  // Add Stop hook if not already present
+  if (!settings.hooks) settings.hooks = {};
+  if (!settings.hooks.Stop) settings.hooks.Stop = [];
+
+  const hookCmd = `bash ${hookDest}`;
+  const alreadyHas = settings.hooks.Stop.some(entry =>
+    entry.hooks?.some(h => h.command?.includes('session-end-check'))
+  );
+
+  if (!alreadyHas) {
+    settings.hooks.Stop.push({
+      hooks: [{ type: 'command', command: hookCmd, timeout: 5 }],
+    });
+
+    writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+    ok('Session end hook installed');
+  } else {
+    info('Session end hook already configured');
+  }
+}
+
 // ── Summary & Getting Started Guide ─────────────────────────────
 function printSummary(installed, failed, vaultPath, projectsData, components) {
   console.log('');
@@ -1096,6 +1139,9 @@ async function main() {
   }
 
   await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps);
+
+  // Install session end hook
+  installSessionHook();
 
   printSummary(installed, failed, vaultPath, projectsData, components);
 }
