@@ -965,6 +965,29 @@ function installSessionHook() {
     changed = true;
   }
 
+  // Hook 3: PostToolUse (Write|Edit) — auto-push vault on changes
+  const pushSrc = join(PKG_ROOT, 'hooks', 'vault-auto-push.sh');
+  const pushDest = join(hooksDir, 'vault-auto-push.sh');
+
+  if (existsSync(pushSrc)) {
+    cpSync(pushSrc, pushDest);
+    try { chmodSync(pushDest, 0o755); } catch {}
+  }
+
+  if (!settings.hooks.PostToolUse) settings.hooks.PostToolUse = [];
+  const hasPush = settings.hooks.PostToolUse.some(entry =>
+    entry.hooks?.some(h => h.command?.includes('vault-auto-push'))
+  );
+
+  if (!hasPush) {
+    settings.hooks.PostToolUse.push({
+      matcher: 'Write|Edit',
+      hooks: [{ type: 'command', command: `bash ${pushDest}`, timeout: 10 }],
+    });
+    ok('Vault auto-push hook installed (syncs on every write)');
+    changed = true;
+  }
+
   if (changed) {
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
   } else {

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Stop hook: reminds Claude to log the session if vault exists.
+# Stop hook: reminds Claude to log session + auto-pushes vault to remote.
 # This fires when Claude is about to stop responding.
 # Output is fed back to Claude as system feedback.
 
@@ -27,9 +27,19 @@ fi
 
 # Check if session was already logged today
 if ls "$SESSION_DIR/$TODAY"*.md 1>/dev/null 2>&1; then
+  # Session logged — auto-push vault if remote configured
+  if [ -d "$VAULT/.git" ]; then
+    HAS_REMOTE=$(git -C "$VAULT" remote 2>/dev/null)
+    if [ -n "$HAS_REMOTE" ]; then
+      git -C "$VAULT" add -A 2>/dev/null
+      git -C "$VAULT" commit -m "Session: $PROJECT_NAME $TODAY" --quiet 2>/dev/null
+      git -C "$VAULT" push --quiet 2>/dev/null
+    fi
+  fi
   exit 0
 fi
 
+# No session log — remind Claude
 echo "⚠️ SESSION NOT LOGGED: No session log found for $PROJECT_NAME today ($TODAY)."
 echo "Before ending, create a session log at: $SESSION_DIR/${TODAY}-<slug>.md"
 echo "Include: what was done, decisions made, TODO for next session, changed files."
