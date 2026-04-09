@@ -42,12 +42,15 @@
 - [x] `claude-dev-stack plugins marketplaces` — add 19 third-party marketplaces
   - superpowers, voltagent, cc-marketplace, claude-night-market, supabase, payload,
     microsoft-docs, elixir, LSPs, terraform, n8n, SAP, obsidian, and more
+- [x] `claude-dev-stack mcp` — list, install, remove MCP servers from curated catalog
+  - 18 servers: filesystem, memory, fetch, playwright, postgres, sqlite, github,
+    gitlab, slack, google-drive, brave-search, sentry, linear, and more
 - [ ] Per-project plugin configuration
-- [ ] MCP server management (install, configure, list)
 
-## v0.6 — Templates & Starters
-- [ ] Project templates (Next.js, FastAPI, etc.) with pre-configured context.md
-- [ ] CLAUDE.md templates for common stacks
+## v0.6 — Templates & Starters ✅
+- [x] `claude-dev-stack new` — generate context.md from stack template
+  - Stacks: Next.js, React+Vite, FastAPI, Express, Rails, Django, Flutter, Go, Blank
+  - Save to vault, current directory, or print to console
 - [ ] ADR templates by project type
 - [ ] Custom skill scaffolding
 

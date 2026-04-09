@@ -40,6 +40,15 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack plugins presets${c.reset}        ${c.dim}Install from a preset (fullstack, etc.)${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack plugins marketplaces${c.reset}   ${c.dim}Add third-party marketplaces${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}MCP Servers${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack mcp${c.reset}                   ${c.dim}List configured MCP servers${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack mcp install${c.reset}           ${c.dim}Install from catalog${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack mcp remove${c.reset}            ${c.dim}Remove MCP servers${c.reset}`);
+  console.log('');
+  console.log(`  ${c.cyan}${c.bold}Templates${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack new${c.reset}                   ${c.dim}Generate context.md from stack template${c.reset}`);
+  console.log(`    ${c.dim}Stacks: Next.js, React+Vite, FastAPI, Express, Rails, Django, Flutter, Go${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Import & Export${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack import${c.reset}                 ${c.dim}Import AI configs (.cursorrules, CLAUDE.md, etc.)${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack export${c.reset}                 ${c.dim}Export vault as .tar.gz${c.reset}`);
@@ -90,6 +99,22 @@ async function run() {
     case 'plugins':
     case 'plugin': {
       const { main } = await import('../lib/plugins.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── MCP ──
+    case 'mcp': {
+      const { main } = await import('../lib/mcp.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Templates ──
+    case 'template':
+    case 'templates':
+    case 'new': {
+      const { main } = await import('../lib/templates.mjs');
       await main(args.slice(1));
       break;
     }
