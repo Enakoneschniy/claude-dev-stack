@@ -13,7 +13,6 @@ import prompts from 'prompts';
 import { execSync, spawnSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, cpSync, readdirSync, chmodSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
-import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
 
@@ -72,41 +71,37 @@ function step(num, total, title) {
   console.log('');
 }
 
-// ── Path input with tab completion ─────────────────────────────
-function askPath(message, defaultVal) {
-  return new Promise((res) => {
-    const rl = createInterface({
-      input: process.stdin,
-      output: process.stdout,
-      completer: (line) => {
-        const expanded = (line || '').replace(/^~/, homedir());
-        const dir = expanded.endsWith('/') ? expanded : dirname(expanded);
-        const prefix = expanded.endsWith('/') ? '' : basename(expanded);
+// ── Path input with directory suggestions ─────────────────────
+function getDirSuggestions(input, defaultVal) {
+  const expanded = (input || defaultVal || '').replace(/^~/, homedir());
+  const dir = expanded.endsWith('/') ? expanded : dirname(expanded);
+  const prefix = expanded.endsWith('/') ? '' : basename(expanded);
 
-        try {
-          const entries = readdirSync(dir, { withFileTypes: true })
-            .filter(e => e.isDirectory() && !e.name.startsWith('.'));
+  try {
+    const entries = readdirSync(dir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !e.name.startsWith('.'));
 
-          const matches = entries
-            .filter(e => !prefix || e.name.startsWith(prefix))
-            .map(e => {
-              const full = join(dir, e.name) + '/';
-              return line.startsWith('~') ? full.replace(homedir(), '~') : full;
-            });
+    return entries
+      .filter(e => !prefix || e.name.toLowerCase().startsWith(prefix.toLowerCase()))
+      .map(e => ({
+        title: join(dir, e.name).replace(homedir(), '~') + '/',
+        value: join(dir, e.name),
+      }));
+  } catch {
+    return [];
+  }
+}
 
-          return [matches.length ? matches : [line], line];
-        } catch {
-          return [[line], line];
-        }
-      },
-    });
-
-    const hint = defaultVal ? `${c.dim}[${defaultVal}]${c.reset} ` : '';
-    rl.question(`    ${c.cyan}→${c.reset} ${hint}`, (answer) => {
-      rl.close();
-      res(answer || defaultVal || '');
-    });
+async function askPath(message, defaultVal) {
+  const { value } = await prompt({
+    type: 'autocomplete',
+    name: 'value',
+    message: message || 'Path',
+    initial: defaultVal || '',
+    suggest: (input) => Promise.resolve(getDirSuggestions(input, defaultVal)),
+    fallback: defaultVal || '',
   });
+  return value || defaultVal || '';
 }
 
 // ── List subdirectories ────────────────────────────────────────
