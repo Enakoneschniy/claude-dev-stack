@@ -4,11 +4,13 @@
  * Claude Dev Stack CLI
  *
  * Usage:
- *   npx claude-dev-stack              Full setup wizard
- *   npx claude-dev-stack skills       List installed skills
- *   npx claude-dev-stack skills install   Install skills from catalog
- *   npx claude-dev-stack skills remove    Remove installed skills
- *   npx claude-dev-stack help         Show this help
+ *   npx claude-dev-stack                   Full setup wizard
+ *   npx claude-dev-stack add-project       Add a project to vault
+ *   npx claude-dev-stack skills            List installed skills
+ *   npx claude-dev-stack skills install    Install skills from catalog
+ *   npx claude-dev-stack skills remove     Remove installed skills
+ *   npx claude-dev-stack doctor            Health check
+ *   npx claude-dev-stack help              Show help
  */
 
 const args = process.argv.slice(2);
@@ -27,12 +29,19 @@ function printHelp() {
   console.log('');
   console.log(`  ${c.magenta}${c.bold}Claude Dev Stack${c.reset} — AI-powered development workflow`);
   console.log('');
-  console.log(`  ${c.bold}Commands:${c.reset}`);
-  console.log('');
+  console.log(`  ${c.bold}Setup:${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack${c.reset}                    ${c.dim}Full setup wizard${c.reset}`);
+  console.log('');
+  console.log(`  ${c.bold}Projects:${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack add-project${c.reset}        ${c.dim}Add a project to vault${c.reset}`);
+  console.log('');
+  console.log(`  ${c.bold}Skills:${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack skills${c.reset}              ${c.dim}List installed skills${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack skills install${c.reset}      ${c.dim}Install skills from catalog${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack skills install${c.reset}      ${c.dim}Install from catalog or Git URL${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack skills remove${c.reset}       ${c.dim}Remove installed skills${c.reset}`);
+  console.log('');
+  console.log(`  ${c.bold}Maintenance:${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack doctor${c.reset}              ${c.dim}Health check${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack help${c.reset}                ${c.dim}Show this help${c.reset}`);
   console.log('');
 }
@@ -43,6 +52,20 @@ async function run() {
     case 'skill': {
       const { main } = await import('../lib/skills.mjs');
       await main(args.slice(1));
+      break;
+    }
+
+    case 'add-project':
+    case 'add': {
+      const { main } = await import('../lib/add-project.mjs');
+      await main();
+      break;
+    }
+
+    case 'doctor':
+    case 'check': {
+      const { main } = await import('../lib/doctor.mjs');
+      await main();
       break;
     }
 

@@ -512,15 +512,53 @@ async function selectAndInstallPlugins(stepNum, totalSteps) {
   }
   console.log('');
 
-  // Sort by popularity (installCount), most popular first
-  const sorted = [...available].sort((a, b) => (b.installCount || 0) - (a.installCount || 0));
+  // Ask about use-case to recommend relevant plugins
+  const USE_CASE_PLUGINS = {
+    fullstack: ['supabase', 'prisma', 'firebase', 'vercel', 'netlify', 'stripe', 'playwright', 'stagehand'],
+    frontend: ['playwright', 'stagehand', 'vercel', 'netlify', 'expo', 'figma'],
+    backend: ['supabase', 'prisma', 'firebase', 'mongodb', 'cockroachdb', 'railway', 'stripe'],
+    mobile: ['expo', 'firebase', 'figma', 'rc'],
+    data: ['supabase', 'prisma', 'mongodb', 'planetscale', 'neon', 'cockroachdb', 'posthog'],
+    devops: ['terraform', 'railway', 'deploy-on-aws', 'aws-serverless', 'vercel', 'netlify'],
+    any: [],
+  };
 
-  // Build choices from available (not yet installed) plugins
-  const choices = sorted.map(p => ({
-    title: `${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
-    value: p.pluginId,
-    selected: false,
-  }));
+  const { useCase } = await prompt({
+    type: 'select',
+    name: 'useCase',
+    message: 'What do you mainly work on?',
+    choices: [
+      { title: 'Full-stack web development', value: 'fullstack' },
+      { title: 'Frontend / UI', value: 'frontend' },
+      { title: 'Backend / API', value: 'backend' },
+      { title: 'Mobile apps', value: 'mobile' },
+      { title: 'Data / ML', value: 'data' },
+      { title: 'DevOps / Infrastructure', value: 'devops' },
+      { title: 'Mixed / Other', value: 'any' },
+    ],
+  });
+
+  const recommended = new Set(USE_CASE_PLUGINS[useCase || 'any'] || []);
+  console.log('');
+
+  // Sort: recommended first, then by popularity
+  const sorted = [...available].sort((a, b) => {
+    const aRec = recommended.has(a.name) ? 1 : 0;
+    const bRec = recommended.has(b.name) ? 1 : 0;
+    if (aRec !== bRec) return bRec - aRec;
+    return (b.installCount || 0) - (a.installCount || 0);
+  });
+
+  // Build choices — pre-select recommended for the use-case
+  const choices = sorted.map(p => {
+    const isRec = recommended.has(p.name);
+    const tag = isRec ? `${c.cyan}★${c.reset} ` : '  ';
+    return {
+      title: `${tag}${p.name} ${c.dim}— ${(p.description || '').slice(0, 60)}${c.reset}`,
+      value: p.pluginId,
+      selected: isRec,
+    };
+  });
 
   const { selected } = await prompt({
     type: 'multiselect',
