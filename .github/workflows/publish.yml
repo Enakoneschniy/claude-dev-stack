@@ -18,11 +18,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Update npm (OIDC requires npm >= 11.5.1)
+        run: npm install -g npm@latest
+        env:
+          npm_config_ignore_scripts: true
+
       - run: npm ci
 
       - run: npm test
 
       - name: Publish with OIDC trusted publishing
         run: npm publish --access public --provenance
-        env:
-          NPM_CONFIG_PROVENANCE: true
