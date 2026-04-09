@@ -17,7 +17,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          registry-url: https://registry.npmjs.org/
+
+      - name: Configure npm for OIDC
+        run: |
+          echo "//registry.npmjs.org/:_authToken=" > ~/.npmrc
+          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
 
       - run: npm ci
 
