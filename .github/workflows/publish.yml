@@ -18,13 +18,11 @@ jobs:
         with:
           node-version: 22
 
-      - name: Configure npm for OIDC
-        run: |
-          echo "//registry.npmjs.org/:_authToken=" > ~/.npmrc
-          echo "registry=https://registry.npmjs.org/" >> ~/.npmrc
-
       - run: npm ci
 
       - run: npm test
 
-      - run: npm publish --access public --provenance
+      - name: Publish with OIDC trusted publishing
+        run: npm publish --access public --provenance
+        env:
+          NPM_CONFIG_PROVENANCE: true
