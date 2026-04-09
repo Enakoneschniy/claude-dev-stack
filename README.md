@@ -10,7 +10,7 @@ npx claude-dev-stack
 
 Works on Mac, Linux, and Windows (WSL).
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/YOUR_USERNAME)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/enakoneschniy)
 
 ---
 
@@ -255,7 +255,7 @@ claude-dev-stack sync init    # Initialize vault as git repo
 When new versions are released with bug fixes and improvements:
 
 ```bash
-npx github:YOUR_USERNAME/claude-dev-stack update
+npx github:Enakoneschniy/claude-dev-stack update
 ```
 
 This updates:
@@ -296,7 +296,7 @@ Built on top of:
 
 If this saves you time, consider buying me a coffee:
 
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/YOUR_USERNAME)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/enakoneschniy)
 
 ---
 
