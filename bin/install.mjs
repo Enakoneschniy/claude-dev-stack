@@ -898,6 +898,15 @@ Before starting, ALWAYS read:
       warn(`${project.name} — no valid path, copy CLAUDE.md manually from: ${templatePath}`);
     }
   }
+
+  // Write project-map.json for directory → project name mapping
+  const { updateProjectMap } = await import('../lib/add-project.mjs');
+  for (const project of projectsWithPaths) {
+    updateProjectMap(vaultPath, project.path, project.name);
+  }
+  if (projectsWithPaths.length > 0) {
+    ok('project-map.json updated');
+  }
 }
 
 // ── Install session hooks ───────────────────────────────────────
