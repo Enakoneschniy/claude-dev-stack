@@ -34,6 +34,12 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack skills install${c.reset}         ${c.dim}Install from catalog or Git URL${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack skills remove${c.reset}          ${c.dim}Remove installed skills${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Plugins${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack plugins${c.reset}                ${c.dim}List installed plugins${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack plugins install${c.reset}        ${c.dim}Install (preset or browse all)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack plugins presets${c.reset}        ${c.dim}Install from a preset (fullstack, etc.)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack plugins marketplaces${c.reset}   ${c.dim}Add third-party marketplaces${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Import & Export${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack import${c.reset}                 ${c.dim}Import AI configs (.cursorrules, CLAUDE.md, etc.)${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack export${c.reset}                 ${c.dim}Export vault as .tar.gz${c.reset}`);
@@ -76,6 +82,14 @@ async function run() {
     case 'skills':
     case 'skill': {
       const { main } = await import('../lib/skills.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Plugins ──
+    case 'plugins':
+    case 'plugin': {
+      const { main } = await import('../lib/plugins.mjs');
       await main(args.slice(1));
       break;
     }
