@@ -1,6 +1,6 @@
 # Roadmap — Claude Dev Stack
 
-## v0.2 — Current Release
+## v0.2 — Setup & UX ✅
 - [x] Interactive setup wizard (npx)
 - [x] Knowledge Vault with project context
 - [x] GSD, Obsidian Skills, Deep Research, NotebookLM
@@ -10,13 +10,20 @@
 - [x] Tab completion for all path inputs
 - [x] Claude Code plugin installation (official + external)
 - [x] Install hints for missing prerequisites
+- [x] Dynamic plugin list from marketplace
+- [x] Getting Started guide after setup
 
-## v0.3 — Project Management
-- [ ] `claude-dev-stack add-project` — add a project without re-running full wizard
-- [ ] `claude-dev-stack remove-project` — remove project from vault
-- [ ] `claude-dev-stack list` — show configured projects and their status
-- [ ] `claude-dev-stack doctor` — check health of vault, skills, plugins
-- [ ] `claude-dev-stack update` — update all installed components
+## v0.3 — Project & Skills Management ✅
+- [x] `claude-dev-stack projects` — list projects with status (context filled, sessions, ADRs)
+- [x] `claude-dev-stack projects add` / `add-project` — add project to vault
+- [x] `claude-dev-stack projects remove` / `remove-project` — remove from vault
+- [x] `claude-dev-stack skills` — list installed skills
+- [x] `claude-dev-stack skills install` — install from catalog + custom Git URL
+- [x] `claude-dev-stack skills remove` — remove installed skills
+- [x] `claude-dev-stack doctor` — health check (prereqs, vault, skills, plugins, settings)
+- [x] `claude-dev-stack update` — update git-based skills, GSD, Claude CLI
+- [x] `claude-dev-stack help` — structured command reference
+- [x] Use-case based plugin recommendations (fullstack, frontend, backend, etc.)
 
 ## v0.4 — Import & Migration
 - [ ] Import existing CLAUDE.md into vault context

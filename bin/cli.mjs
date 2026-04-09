@@ -2,15 +2,6 @@
 
 /**
  * Claude Dev Stack CLI
- *
- * Usage:
- *   npx claude-dev-stack                   Full setup wizard
- *   npx claude-dev-stack add-project       Add a project to vault
- *   npx claude-dev-stack skills            List installed skills
- *   npx claude-dev-stack skills install    Install skills from catalog
- *   npx claude-dev-stack skills remove     Remove installed skills
- *   npx claude-dev-stack doctor            Health check
- *   npx claude-dev-stack help              Show help
  */
 
 const args = process.argv.slice(2);
@@ -23,31 +14,60 @@ const c = {
   cyan: '\x1b[36m',
   white: '\x1b[37m',
   magenta: '\x1b[35m',
+  green: '\x1b[32m',
 };
 
 function printHelp() {
   console.log('');
   console.log(`  ${c.magenta}${c.bold}Claude Dev Stack${c.reset} — AI-powered development workflow`);
   console.log('');
-  console.log(`  ${c.bold}Setup:${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack${c.reset}                    ${c.dim}Full setup wizard${c.reset}`);
+  console.log(`  ${c.cyan}${c.bold}Setup${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack${c.reset}                       ${c.dim}Full interactive setup wizard${c.reset}`);
   console.log('');
-  console.log(`  ${c.bold}Projects:${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack add-project${c.reset}        ${c.dim}Add a project to vault${c.reset}`);
+  console.log(`  ${c.cyan}${c.bold}Projects${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack projects${c.reset}               ${c.dim}List projects and their status${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack projects add${c.reset}           ${c.dim}Add a project to vault${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack projects remove${c.reset}        ${c.dim}Remove project from vault${c.reset}`);
   console.log('');
-  console.log(`  ${c.bold}Skills:${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack skills${c.reset}              ${c.dim}List installed skills${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack skills install${c.reset}      ${c.dim}Install from catalog or Git URL${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack skills remove${c.reset}       ${c.dim}Remove installed skills${c.reset}`);
+  console.log(`  ${c.cyan}${c.bold}Skills${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack skills${c.reset}                 ${c.dim}List installed skills${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack skills install${c.reset}         ${c.dim}Install from catalog or Git URL${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack skills remove${c.reset}          ${c.dim}Remove installed skills${c.reset}`);
   console.log('');
-  console.log(`  ${c.bold}Maintenance:${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack doctor${c.reset}              ${c.dim}Health check${c.reset}`);
-  console.log(`    ${c.white}claude-dev-stack help${c.reset}                ${c.dim}Show this help${c.reset}`);
+  console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
+  console.log('');
+  console.log(`  ${c.cyan}${c.bold}Other${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack help${c.reset}                   ${c.dim}Show this help${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack version${c.reset}                ${c.dim}Show version${c.reset}`);
+  console.log('');
+  console.log(`  ${c.dim}Shortcuts: add-project = projects add, skill = skills${c.reset}`);
   console.log('');
 }
 
 async function run() {
   switch (command) {
+    // ── Projects ──
+    case 'projects':
+    case 'project': {
+      const { main } = await import('../lib/projects.mjs');
+      await main(args.slice(1));
+      break;
+    }
+    case 'add-project':
+    case 'add': {
+      const { main } = await import('../lib/add-project.mjs');
+      await main();
+      break;
+    }
+    case 'remove-project': {
+      const { removeProject } = await import('../lib/projects.mjs');
+      await removeProject();
+      break;
+    }
+
+    // ── Skills ──
     case 'skills':
     case 'skill': {
       const { main } = await import('../lib/skills.mjs');
@@ -55,20 +75,21 @@ async function run() {
       break;
     }
 
-    case 'add-project':
-    case 'add': {
-      const { main } = await import('../lib/add-project.mjs');
-      await main();
-      break;
-    }
-
+    // ── Maintenance ──
     case 'doctor':
     case 'check': {
       const { main } = await import('../lib/doctor.mjs');
       await main();
       break;
     }
+    case 'update':
+    case 'upgrade': {
+      const { main } = await import('../lib/update.mjs');
+      await main();
+      break;
+    }
 
+    // ── Meta ──
     case 'help':
     case '--help':
     case '-h':
@@ -87,8 +108,8 @@ async function run() {
       break;
     }
 
+    // ── Default: setup wizard ──
     default: {
-      // Default: run the full setup wizard
       const { default: setup } = await import('./install.mjs');
       await setup();
       break;
