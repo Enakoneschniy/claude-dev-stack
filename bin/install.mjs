@@ -2,13 +2,14 @@
 
 /**
  * Claude Dev Stack — Interactive Setup Wizard
- * 
+ *
  * Usage: npx claude-dev-stack
- * 
+ *
  * Installs: GSD + Obsidian Skills + Deep Research + NotebookLM +
  *           Session Management + Project Switching + Auto-routing
  */
 
+import prompts from 'prompts';
 import { execSync, spawnSync } from 'child_process';
 import { existsSync, mkdirSync, writeFileSync, readFileSync, cpSync, readdirSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
@@ -39,42 +40,26 @@ const fail = (msg) => console.log(`    ${c.red}✘${c.reset} ${msg}`);
 const warn = (msg) => console.log(`    ${c.yellow}⚠${c.reset} ${msg}`);
 const info = (msg) => console.log(`    ${c.blue}ℹ${c.reset} ${msg}`);
 
-// ── Readline ────────────────────────────────────────────────────
-const rl = createInterface({ input: process.stdin, output: process.stdout });
+// ── Ctrl+C ─────────────────────────────────────────────────────
+const onCancel = () => {
+  console.log(`\n  ${c.dim}Aborted. No changes made.${c.reset}\n`);
+  process.exit(0);
+};
 
-function ask(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => resolve(answer.trim()));
-  });
-}
-
-async function askDefault(label, explanation, defaultVal) {
-  console.log('');
-  console.log(`    ${c.bold}${label}${c.reset}`);
-  if (explanation) {
-    console.log(`    ${c.dim}${explanation}${c.reset}`);
-  }
-  const suffix = defaultVal ? ` ${c.dim}[${defaultVal}]${c.reset}` : '';
-  const answer = await ask(`    → ${suffix} `);
-  return answer || defaultVal || '';
-}
-
-async function askYN(label, defaultYes = true) {
-  const hint = defaultYes ? 'Y/n' : 'y/N';
-  const answer = await ask(`    ${label} ${c.dim}[${hint}]${c.reset} `);
-  if (!answer) return defaultYes;
-  return answer.toLowerCase().startsWith('y');
+/** Wrap a prompts() call so Ctrl+C always exits */
+async function prompt(questions, opts) {
+  return prompts(questions, { onCancel, ...opts });
 }
 
 // ── Helpers ──────────────────────────────────────────────────────
-function cmd(command, opts = {}) {
+function runCmd(command, opts = {}) {
   try {
     return execSync(command, { encoding: 'utf8', stdio: 'pipe', ...opts }).trim();
   } catch { return null; }
 }
 
 function hasCommand(name) {
-  return cmd(`which ${name}`) !== null;
+  return runCmd(`which ${name}`) !== null;
 }
 
 function mkdirp(dir) {
@@ -85,6 +70,73 @@ function step(num, total, title) {
   console.log('');
   console.log(`  ${c.cyan}${c.bold}— Step ${num} of ${total} —${c.reset} ${c.bold}${title}${c.reset}`);
   console.log('');
+}
+
+// ── Path input with tab completion ─────────────────────────────
+function askPath(message, defaultVal) {
+  return new Promise((res) => {
+    const rl = createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      completer: (line) => {
+        const expanded = (line || '').replace(/^~/, homedir());
+        const dir = expanded.endsWith('/') ? expanded : dirname(expanded);
+        const prefix = expanded.endsWith('/') ? '' : basename(expanded);
+
+        try {
+          const entries = readdirSync(dir, { withFileTypes: true })
+            .filter(e => e.isDirectory() && !e.name.startsWith('.'));
+
+          const matches = entries
+            .filter(e => !prefix || e.name.startsWith(prefix))
+            .map(e => {
+              const full = join(dir, e.name) + '/';
+              return line.startsWith('~') ? full.replace(homedir(), '~') : full;
+            });
+
+          return [matches.length ? matches : [line], line];
+        } catch {
+          return [[line], line];
+        }
+      },
+    });
+
+    const hint = defaultVal ? `${c.dim}[${defaultVal}]${c.reset} ` : '';
+    rl.question(`    ${c.cyan}→${c.reset} ${hint}`, (answer) => {
+      rl.close();
+      res(answer || defaultVal || '');
+    });
+  });
+}
+
+// ── Smart project directory search ─────────────────────────────
+function searchProjectDir(baseDir, projectName) {
+  if (!existsSync(baseDir)) return { type: 'none' };
+
+  try {
+    const entries = readdirSync(baseDir, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !e.name.startsWith('.') && !e.name.startsWith('_'));
+
+    const nameLower = projectName.toLowerCase();
+
+    // Exact match
+    const exact = entries.find(d => d.name.toLowerCase() === nameLower);
+    if (exact) return { type: 'exact', path: join(baseDir, exact.name) };
+
+    // Fuzzy: name contains project or project contains name
+    const similar = entries.filter(d => {
+      const dl = d.name.toLowerCase();
+      return dl.includes(nameLower) || nameLower.includes(dl);
+    });
+
+    if (similar.length > 0) {
+      return { type: 'similar', paths: similar.map(d => join(baseDir, d.name)) };
+    }
+
+    return { type: 'none' };
+  } catch {
+    return { type: 'none' };
+  }
 }
 
 // ── Header ──────────────────────────────────────────────────────
@@ -106,12 +158,12 @@ function printHeader() {
 // ── Step 1: Prerequisites ───────────────────────────────────────
 function checkPrerequisites(totalSteps) {
   step(1, totalSteps, '🔍 Checking prerequisites');
-  
+
   const required = ['git', 'node', 'npm'];
   const missing = [];
 
   for (const tool of required) {
-    const path = cmd(`which ${tool}`);
+    const path = runCmd(`which ${tool}`);
     if (path) {
       ok(`${tool} — ${c.dim}${path}${c.reset}`);
     } else {
@@ -124,7 +176,7 @@ function checkPrerequisites(totalSteps) {
   let pythonCmd = null;
   for (const py of ['python3', 'python']) {
     if (hasCommand(py)) {
-      const ver = cmd(`${py} --version`);
+      const ver = runCmd(`${py} --version`);
       ok(`${py} — ${c.dim}${ver}${c.reset}`);
       pythonCmd = py;
       break;
@@ -166,102 +218,196 @@ async function collectProfile(totalSteps) {
   step(2, totalSteps, '👤 Your profile');
 
   console.log(`    ${c.dim}These answers personalize CLAUDE.md and vault structure.${c.reset}`);
-  console.log(`    ${c.dim}Claude Code will use this to know who you are.${c.reset}`);
-
-  const name = await askDefault(
-    'Your name',
-    'Shows in CLAUDE.md and session logs',
-    'Developer'
-  );
-
-  const lang = await askDefault(
-    'Language you speak with Claude',
-    'ru = Russian, en = English, es = Spanish, de = German...',
-    'en'
-  );
-
-  const codeLang = await askDefault(
-    'Language for code comments and git commits',
-    null,
-    'en'
-  );
-
-  const company = await askDefault(
-    'Company / team name (optional)',
-    'Leave empty to skip',
-    ''
-  );
-
-  // Projects
   console.log('');
-  console.log(`  ${c.cyan}${c.bold}— Projects —${c.reset}`);
+
+  const profile = await prompt([
+    {
+      type: 'text',
+      name: 'name',
+      message: 'Your name',
+      initial: 'Developer',
+    },
+    {
+      type: 'text',
+      name: 'lang',
+      message: 'Communication language (ru/en/es/de...)',
+      initial: 'en',
+    },
+    {
+      type: 'text',
+      name: 'codeLang',
+      message: 'Code comments & git commits language',
+      initial: 'en',
+    },
+    {
+      type: 'text',
+      name: 'company',
+      message: 'Company / team name (enter to skip)',
+      initial: '',
+    },
+  ]);
+
   console.log('');
-  console.log(`    ${c.dim}List projects you actively develop.${c.reset}`);
-  console.log(`    ${c.dim}Claude Code will maintain separate context for each.${c.reset}`);
-  console.log(`    ${c.dim}Type a name, press Enter. Empty line when done.${c.reset}`);
-  console.log(`    ${c.dim}Examples: my-saas, client-app, mobile-backend${c.reset}`);
+  ok(`Profile: ${c.bold}${profile.name}${c.reset}, lang: ${profile.lang}`);
+
+  return profile;
+}
+
+// ── Step 3: Projects ────────────────────────────────────────────
+async function collectProjects(totalSteps) {
+  step(3, totalSteps, '📂 Projects');
+
+  console.log(`    ${c.dim}Specify where your projects live, then add each one.${c.reset}`);
+  console.log(`    ${c.dim}Claude Code will maintain separate context for each project.${c.reset}`);
+  console.log('');
+  console.log(`    ${c.bold}Projects base directory${c.reset}`);
+  console.log(`    ${c.dim}Press Tab to autocomplete path.${c.reset}`);
+
+  const baseDir = await askPath('', join(homedir(), 'Projects'));
+  const resolvedBase = baseDir.replace(/^~/, homedir());
+
+  console.log('');
+  console.log(`    ${c.dim}Add projects one by one. Press Enter with empty name to finish.${c.reset}`);
   console.log('');
 
   const projects = [];
+
   while (true) {
-    const name = await ask(`    ${c.cyan}+${c.reset} Project: `);
+    const { name } = await prompt({
+      type: 'text',
+      name: 'name',
+      message: 'Project name (enter to finish)',
+    });
+
     if (!name) break;
+
     const clean = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (clean) {
-      projects.push(clean);
-      ok(`Added: ${clean}`);
+    if (!clean) continue;
+
+    const result = searchProjectDir(resolvedBase, clean);
+
+    if (result.type === 'exact') {
+      ok(`${clean} → ${c.dim}${result.path.replace(homedir(), '~')}${c.reset}`);
+      projects.push({ name: clean, path: result.path });
+    } else if (result.type === 'similar') {
+      const { selected } = await prompt({
+        type: 'select',
+        name: 'selected',
+        message: 'No exact match. Choose directory:',
+        choices: [
+          ...result.paths.map(p => ({
+            title: `${basename(p)} ${c.dim}(${p.replace(homedir(), '~')})${c.reset}`,
+            value: p,
+          })),
+          { title: 'Enter path manually', value: '__manual__' },
+          { title: 'Skip (set later)', value: '__skip__' },
+        ],
+      });
+
+      if (selected === '__manual__') {
+        console.log(`    ${c.dim}Tab to autocomplete:${c.reset}`);
+        const p = await askPath('', resolvedBase + '/');
+        const resolved = p.replace(/^~/, homedir()).replace(/\/+$/, '');
+        projects.push({ name: clean, path: resolved });
+        ok(`${clean} → ${c.dim}${resolved.replace(homedir(), '~')}${c.reset}`);
+      } else if (selected === '__skip__') {
+        projects.push({ name: clean, path: null });
+        ok(`${clean} ${c.dim}(path not set)${c.reset}`);
+      } else {
+        projects.push({ name: clean, path: selected });
+        ok(`${clean} → ${c.dim}${selected.replace(homedir(), '~')}${c.reset}`);
+      }
+    } else {
+      const { selected } = await prompt({
+        type: 'select',
+        name: 'selected',
+        message: `"${clean}" not found in ${resolvedBase.replace(homedir(), '~')}`,
+        choices: [
+          { title: 'Enter path manually', value: '__manual__' },
+          { title: 'Skip (set later)', value: '__skip__' },
+        ],
+      });
+
+      if (selected === '__manual__') {
+        console.log(`    ${c.dim}Tab to autocomplete:${c.reset}`);
+        const p = await askPath('', resolvedBase + '/');
+        const resolved = p.replace(/^~/, homedir()).replace(/\/+$/, '');
+        projects.push({ name: clean, path: resolved });
+        ok(`${clean} → ${c.dim}${resolved.replace(homedir(), '~')}${c.reset}`);
+      } else {
+        projects.push({ name: clean, path: null });
+        ok(`${clean} ${c.dim}(path not set)${c.reset}`);
+      }
     }
   }
 
   if (projects.length === 0) {
-    warn('No projects. Adding "my-project" as default.');
-    projects.push('my-project');
+    warn('No projects added. Adding "my-project" as default.');
+    projects.push({ name: 'my-project', path: null });
   }
 
   console.log('');
-  ok(`Profile: ${c.bold}${name}${c.reset}, ${projects.length} project(s), lang: ${lang}`);
+  ok(`${c.bold}${projects.length} project(s)${c.reset} configured`);
 
-  return { name, lang, codeLang, company, projects };
+  return { baseDir: resolvedBase, projects };
 }
 
-// ── Step 3: Component Selection ─────────────────────────────────
+// ── Step 4: Component Selection ─────────────────────────────────
 async function selectComponents(totalSteps, hasPip) {
-  step(3, totalSteps, '📦 Choose components');
+  step(4, totalSteps, '📦 Choose components');
 
-  console.log(`    ${c.dim}Pick what to install. All are optional, all can be added later.${c.reset}`);
-  console.log('');
+  const choices = [
+    { title: '📁 Knowledge Vault (project context, session logs, ADRs)', value: 'vault', selected: true },
+    { title: '🚀 GSD — Get Shit Done (spec-driven dev with subagents)', value: 'gsd', selected: true },
+    { title: '🔌 Obsidian Skills by kepano (vault format support)', value: 'obsidianSkills', selected: true },
+    { title: '⚙️  Custom skills (session manager, project switcher, auto-router)', value: 'customSkills', selected: true },
+    { title: '🔍 Deep Research (structured web research from terminal)', value: 'deepResearch', selected: true },
+  ];
 
-  console.log(`    ${c.bold}Core:${c.reset}`);
-  const vault = await askYN('📁 Knowledge Vault (project context, session logs, ADRs)');
-  const gsd = await askYN('🚀 GSD — Get Shit Done (spec-driven dev with subagents)');
-  const obsidianSkills = await askYN('🔌 Obsidian Skills by kepano (vault format support)');
-  const customSkills = await askYN('⚙️  Custom skills (session manager, project switcher, auto-router)');
-
-  console.log('');
-  console.log(`    ${c.bold}Research:${c.reset}`);
-  const deepResearch = await askYN('🔍 Deep Research (structured web research from terminal)');
-  let notebooklm = false;
   if (hasPip) {
-    notebooklm = await askYN('📚 NotebookLM (docs-grounded research, needs Google account)', false);
+    choices.push({
+      title: '📚 NotebookLM (docs-grounded research, needs Google account)',
+      value: 'notebooklm',
+      selected: false,
+    });
   } else {
     info('NotebookLM skipped — pip not available');
+    console.log('');
   }
 
-  const count = [vault, gsd, obsidianSkills, customSkills, deepResearch, notebooklm].filter(Boolean).length;
-  console.log('');
-  ok(`Selected ${c.bold}${count}${c.reset} component(s)`);
+  const { selected } = await prompt({
+    type: 'multiselect',
+    name: 'selected',
+    message: 'Select components',
+    choices,
+    instructions: false,
+    hint: '↑↓ navigate, space toggle, enter confirm',
+  });
 
-  return { vault, gsd, obsidianSkills, customSkills, deepResearch, notebooklm };
+  const sel = selected || [];
+  console.log('');
+  ok(`Selected ${c.bold}${sel.length}${c.reset} component(s)`);
+
+  return {
+    vault: sel.includes('vault'),
+    gsd: sel.includes('gsd'),
+    obsidianSkills: sel.includes('obsidianSkills'),
+    customSkills: sel.includes('customSkills'),
+    deepResearch: sel.includes('deepResearch'),
+    notebooklm: sel.includes('notebooklm'),
+  };
 }
 
-// ── Step 4: Vault Path ──────────────────────────────────────────
+// ── Step 5: Vault Path ──────────────────────────────────────────
 async function getVaultPath(totalSteps) {
-  step(4, totalSteps, '📁 Vault location');
+  step(5, totalSteps, '📁 Vault location');
 
   console.log(`    ${c.dim}The vault is a folder of markdown files — your project memory.${c.reset}`);
   console.log(`    ${c.dim}Open it in Obsidian to browse, or let Claude Code read/write.${c.reset}`);
+  console.log(`    ${c.dim}Press Tab to autocomplete path.${c.reset}`);
+  console.log('');
 
-  const raw = await askDefault('Where to create the vault?', null, join(homedir(), 'vault'));
+  const raw = await askPath('Vault path', join(homedir(), 'vault'));
   const vaultPath = raw.replace(/^~/, homedir());
 
   info(`Vault: ${vaultPath}`);
@@ -269,16 +415,18 @@ async function getVaultPath(totalSteps) {
 }
 
 // ── Install: Vault ──────────────────────────────────────────────
-function installVault(vaultPath, profile, stepNum, totalSteps) {
+function installVault(vaultPath, projectsData, stepNum, totalSteps) {
   step(stepNum, totalSteps, '📁 Creating knowledge vault');
 
   mkdirp(join(vaultPath, 'meta'));
   mkdirp(join(vaultPath, 'shared'));
   mkdirp(join(vaultPath, 'research'));
 
-  for (const p of profile.projects) {
-    mkdirp(join(vaultPath, 'projects', p, 'decisions'));
-    mkdirp(join(vaultPath, 'projects', p, 'sessions'));
+  const projectNames = projectsData.projects.map(p => p.name);
+
+  for (const name of projectNames) {
+    mkdirp(join(vaultPath, 'projects', name, 'decisions'));
+    mkdirp(join(vaultPath, 'projects', name, 'sessions'));
   }
   mkdirp(join(vaultPath, 'projects', '_template', 'decisions'));
   mkdirp(join(vaultPath, 'projects', '_template', 'sessions'));
@@ -297,10 +445,10 @@ function installVault(vaultPath, profile, stepNum, totalSteps) {
     const srcPath = join(templatesDir, src);
     if (existsSync(srcPath) && !existsSync(dest)) {
       let content = readFileSync(srcPath, 'utf8');
-      content = content.replace(/\{\{USER_NAME\}\}/g, profile.name);
+      content = content.replace(/\{\{USER_NAME\}\}/g, projectsData._profileName || 'Developer');
       content = content.replace(/\{\{DATE\}\}/g, new Date().toISOString().split('T')[0]);
       content = content.replace(/\{\{PROJECTS_TABLE\}\}/g,
-        profile.projects.map(p => `| ${p} | active | — |`).join('\n')
+        projectNames.map(p => `| ${p} | active | — |`).join('\n')
       );
       writeFileSync(dest, content);
     }
@@ -311,17 +459,17 @@ function installVault(vaultPath, profile, stepNum, totalSteps) {
     ? readFileSync(join(templatesDir, 'context-template.md'), 'utf8')
     : '# Project: {{PROJECT_NAME}}\n\n## Overview\n\n## Stack\n\n## Current State\n';
 
-  for (const p of profile.projects) {
-    const ctx = join(vaultPath, 'projects', p, 'context.md');
+  for (const name of projectNames) {
+    const ctx = join(vaultPath, 'projects', name, 'context.md');
     if (!existsSync(ctx)) {
       writeFileSync(ctx, ctxTemplate
-        .replace(/\{\{PROJECT_NAME\}\}/g, p)
+        .replace(/\{\{PROJECT_NAME\}\}/g, name)
         .replace(/\{\{DATE\}\}/g, new Date().toISOString().split('T')[0])
       );
     }
   }
 
-  ok(`Vault created with ${profile.projects.length} project(s)`);
+  ok(`Vault created with ${projectNames.length} project(s)`);
   return true;
 }
 
@@ -331,7 +479,7 @@ function installGSD(stepNum, totalSteps) {
 
   info('Running npx get-shit-done-cc@latest (may take a minute)...');
   const result = spawnSync('npx', ['get-shit-done-cc@latest', '--claude', '--global'], {
-    stdio: 'pipe', timeout: 120000
+    stdio: 'pipe', timeout: 120000,
   });
 
   if (result.status === 0) {
@@ -353,13 +501,13 @@ function installObsidianSkills(skillsDir, stepNum, totalSteps) {
 
   if (existsSync(dest)) {
     info('Already installed, pulling latest...');
-    cmd('git pull --quiet', { cwd: dest });
+    runCmd('git pull --quiet', { cwd: dest });
     ok('Updated');
     return true;
   }
 
   const result = spawnSync('git', ['clone', '--quiet',
-    'https://github.com/kepano/obsidian-skills.git', dest
+    'https://github.com/kepano/obsidian-skills.git', dest,
   ], { stdio: 'pipe', timeout: 60000 });
 
   if (result.status === 0) {
@@ -406,7 +554,7 @@ function installDeepResearch(skillsDir, agentsDir, stepNum, totalSteps) {
 
   const tmpDir = `/tmp/deep-research-skills-${process.pid}`;
   const result = spawnSync('git', ['clone', '--quiet',
-    'https://github.com/Weizhena/Deep-Research-skills.git', tmpDir
+    'https://github.com/Weizhena/Deep-Research-skills.git', tmpDir,
   ], { stdio: 'pipe', timeout: 60000 });
 
   if (result.status !== 0) {
@@ -432,10 +580,10 @@ function installDeepResearch(skillsDir, agentsDir, stepNum, totalSteps) {
   }
 
   // Install pyyaml
-  cmd('pip3 install pyyaml --break-system-packages 2>/dev/null || pip3 install pyyaml 2>/dev/null || pip install pyyaml 2>/dev/null');
+  runCmd('pip3 install pyyaml --break-system-packages 2>/dev/null || pip3 install pyyaml 2>/dev/null || pip install pyyaml 2>/dev/null');
 
   // Cleanup
-  cmd(`rm -rf ${tmpDir}`);
+  runCmd(`rm -rf ${tmpDir}`);
 
   ok('Deep Research Skills installed');
   return true;
@@ -446,11 +594,11 @@ function installNotebookLM(pipCmd, stepNum, totalSteps) {
   step(stepNum, totalSteps, '📚 Installing NotebookLM');
 
   info('Installing notebooklm-py (this may take a minute)...');
-  const result = cmd(`${pipCmd} install "notebooklm-py[browser]" --break-system-packages 2>/dev/null || ${pipCmd} install "notebooklm-py[browser]"`);
+  const result = runCmd(`${pipCmd} install "notebooklm-py[browser]" --break-system-packages 2>/dev/null || ${pipCmd} install "notebooklm-py[browser]"`);
 
   if (result !== null) {
-    cmd('playwright install chromium 2>/dev/null');
-    cmd('notebooklm skill install 2>/dev/null');
+    runCmd('playwright install chromium 2>/dev/null');
+    runCmd('notebooklm skill install 2>/dev/null');
     ok('NotebookLM installed');
     warn('Run "notebooklm login" to authenticate with Google');
     return true;
@@ -461,7 +609,7 @@ function installNotebookLM(pipCmd, stepNum, totalSteps) {
 }
 
 // ── Generate CLAUDE.md ──────────────────────────────────────────
-async function generateClaudeMD(vaultPath, profile, skillsDir, stepNum, totalSteps) {
+async function generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps) {
   step(stepNum, totalSteps, '📝 Generating CLAUDE.md');
 
   let langLine = '';
@@ -520,38 +668,39 @@ Before starting, ALWAYS read:
   writeFileSync(templatePath, template);
   ok(`Template: ${templatePath}`);
 
-  // Offer to install into projects
-  console.log('');
-  const installNow = await askYN('Install CLAUDE.md into your project directories now?');
+  // Install CLAUDE.md into project directories with known paths
+  const projectsWithPaths = projectsData.projects.filter(p => p.path && existsSync(p.path));
+  const projectsWithoutPaths = projectsData.projects.filter(p => !p.path || !existsSync(p.path));
 
-  if (installNow) {
-    for (const project of profile.projects) {
-      const defaultPath = join(homedir(), 'projects', project);
-      const dir = await askDefault(
-        `Path to "${project}" source code`,
-        'Where the code repo lives on disk',
-        defaultPath
-      );
-      const resolved = dir.replace(/^~/, homedir());
+  if (projectsWithPaths.length > 0) {
+    console.log('');
+    const { installNow } = await prompt({
+      type: 'confirm',
+      name: 'installNow',
+      message: 'Install CLAUDE.md into project directories?',
+      initial: true,
+    });
 
-      if (existsSync(resolved)) {
+    if (installNow) {
+      for (const project of projectsWithPaths) {
         writeFileSync(
-          join(resolved, 'CLAUDE.md'),
-          template.replace(/THIS_PROJECT/g, project)
+          join(project.path, 'CLAUDE.md'),
+          template.replace(/THIS_PROJECT/g, project.name)
         );
-        ok(`${project} → CLAUDE.md installed`);
-      } else {
-        warn(`${resolved} doesn't exist yet — skipped`);
-        info(`Copy CLAUDE.md manually later from: ${templatePath}`);
+        ok(`${project.name} → CLAUDE.md installed`);
       }
     }
-  } else {
-    info(`Install later: copy ${templatePath} to each project root`);
+  }
+
+  if (projectsWithoutPaths.length > 0) {
+    for (const project of projectsWithoutPaths) {
+      warn(`${project.name} — no valid path, copy CLAUDE.md manually from: ${templatePath}`);
+    }
   }
 }
 
 // ── Summary ─────────────────────────────────────────────────────
-function printSummary(installed, failed, vaultPath, profile) {
+function printSummary(installed, failed, vaultPath, projectsData) {
   console.log('');
   console.log(`  ${c.magenta}${c.bold}╔════════════════════════════════════════════════════╗${c.reset}`);
   console.log(`  ${c.magenta}${c.bold}║            ✅ Setup Complete!                      ║${c.reset}`);
@@ -573,12 +722,18 @@ function printSummary(installed, failed, vaultPath, profile) {
   console.log(`  ${c.bold}What to do next:${c.reset}`);
   console.log('');
   console.log(`    ${c.cyan}1.${c.reset} ${c.bold}Fill in context.md for each project:${c.reset}`);
-  for (const p of profile.projects) {
-    console.log(`       ${c.dim}${vaultPath}/projects/${p}/context.md${c.reset}`);
+  for (const p of projectsData.projects) {
+    const pathHint = p.path ? ` ${c.dim}(${p.path.replace(homedir(), '~')})${c.reset}` : '';
+    console.log(`       ${c.dim}${vaultPath}/projects/${p.name}/context.md${c.reset}${pathHint}`);
   }
   console.log('');
   console.log(`    ${c.cyan}2.${c.reset} Open Claude Code in any project:`);
-  console.log(`       ${c.white}cd ~/projects/your-project && claude${c.reset}`);
+  if (projectsData.projects.some(p => p.path)) {
+    const first = projectsData.projects.find(p => p.path);
+    console.log(`       ${c.white}cd ${first.path.replace(homedir(), '~')} && claude${c.reset}`);
+  } else {
+    console.log(`       ${c.white}cd ~/projects/your-project && claude${c.reset}`);
+  }
   console.log('');
   console.log(`    ${c.cyan}3.${c.reset} Just talk naturally:`);
   console.log(`       ${c.dim}"hi, let's continue"      → loads context${c.reset}`);
@@ -595,49 +750,77 @@ function printSummary(installed, failed, vaultPath, profile) {
 async function main() {
   const skillsDir = join(homedir(), '.claude', 'skills');
   const agentsDir = join(homedir(), '.claude', 'agents');
-  const totalSteps = 10;
 
   printHeader();
 
-  if (!(await askYN('Ready to start?'))) {
+  const { ready } = await prompt({
+    type: 'confirm',
+    name: 'ready',
+    message: 'Ready to start?',
+    initial: true,
+  });
+
+  if (!ready) {
     console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`);
-    rl.close();
     return;
   }
 
-  const { pythonCmd, pipCmd } = checkPrerequisites(totalSteps);
-  const profile = await collectProfile(totalSteps);
-  const components = await selectComponents(totalSteps, !!pipCmd);
+  // Use placeholder total for early steps; recalculate after component selection
+  const earlyTotal = '...';
+
+  const { pythonCmd, pipCmd } = checkPrerequisites(earlyTotal);
+  const profile = await collectProfile(earlyTotal);
+  const projectsData = await collectProjects(earlyTotal);
+  projectsData._profileName = profile.name;
+
+  const components = await selectComponents(earlyTotal, !!pipCmd);
+
+  // Calculate actual total now that we know component selection
+  const setupSteps = 5;
+  const installCount = [
+    components.vault,
+    components.gsd,
+    components.obsidianSkills,
+    components.customSkills,
+    components.deepResearch,
+    components.notebooklm,
+  ].filter(Boolean).length;
+  const totalSteps = setupSteps + installCount + 1; // +1 for CLAUDE.md
+
   const vaultPath = await getVaultPath(totalSteps);
 
   const installed = [];
   const failed = [];
-  let stepNum = 5;
+  let stepNum = setupSteps + 1;
 
   if (components.vault) {
-    installVault(vaultPath, profile, stepNum++, totalSteps) ? installed.push('Knowledge Vault') : failed.push('Vault');
+    installVault(vaultPath, projectsData, stepNum++, totalSteps)
+      ? installed.push('Knowledge Vault') : failed.push('Vault');
   }
   if (components.gsd) {
-    installGSD(stepNum++, totalSteps) ? installed.push('GSD (Get Shit Done)') : failed.push('GSD');
+    installGSD(stepNum++, totalSteps)
+      ? installed.push('GSD (Get Shit Done)') : failed.push('GSD');
   }
   if (components.obsidianSkills) {
-    installObsidianSkills(skillsDir, stepNum++, totalSteps) ? installed.push('Obsidian Skills (kepano)') : failed.push('Obsidian Skills');
+    installObsidianSkills(skillsDir, stepNum++, totalSteps)
+      ? installed.push('Obsidian Skills (kepano)') : failed.push('Obsidian Skills');
   }
   if (components.customSkills) {
-    installCustomSkills(skillsDir, stepNum++, totalSteps) ? installed.push('Custom skills (sessions, projects, router)') : failed.push('Custom skills');
+    installCustomSkills(skillsDir, stepNum++, totalSteps)
+      ? installed.push('Custom skills (sessions, projects, router)') : failed.push('Custom skills');
   }
   if (components.deepResearch) {
-    installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
+    installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps)
+      ? installed.push('Deep Research') : failed.push('Deep Research');
   }
   if (components.notebooklm) {
-    installNotebookLM(pipCmd, stepNum++, totalSteps) ? installed.push('NotebookLM') : failed.push('NotebookLM');
+    installNotebookLM(pipCmd, stepNum++, totalSteps)
+      ? installed.push('NotebookLM') : failed.push('NotebookLM');
   }
 
-  await generateClaudeMD(vaultPath, profile, skillsDir, stepNum, totalSteps);
+  await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps);
 
-  printSummary(installed, failed, vaultPath, profile);
-
-  rl.close();
+  printSummary(installed, failed, vaultPath, projectsData);
 }
 
 main().catch((err) => {
