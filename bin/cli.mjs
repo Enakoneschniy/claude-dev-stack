@@ -29,6 +29,10 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack projects add${c.reset}           ${c.dim}Add a project to vault${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack projects remove${c.reset}        ${c.dim}Remove project from vault${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Documents${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack docs${c.reset}                  ${c.dim}List documents per project${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack docs add${c.reset}              ${c.dim}Add from files, Notion export, or paste${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Skills${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack skills${c.reset}                 ${c.dim}List installed skills${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack skills install${c.reset}         ${c.dim}Install from catalog or Git URL${c.reset}`);
@@ -78,6 +82,14 @@ async function run() {
       await main(args.slice(1));
       break;
     }
+    // ── Documents ──
+    case 'docs':
+    case 'doc': {
+      const { main } = await import('../lib/docs.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
     case 'add-project':
     case 'add': {
       const { main } = await import('../lib/add-project.mjs');

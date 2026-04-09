@@ -629,9 +629,11 @@ function installVault(vaultPath, projectsData, stepNum, totalSteps) {
   for (const name of projectNames) {
     mkdirp(join(vaultPath, 'projects', name, 'decisions'));
     mkdirp(join(vaultPath, 'projects', name, 'sessions'));
+    mkdirp(join(vaultPath, 'projects', name, 'docs'));
   }
   mkdirp(join(vaultPath, 'projects', '_template', 'decisions'));
   mkdirp(join(vaultPath, 'projects', '_template', 'sessions'));
+  mkdirp(join(vaultPath, 'projects', '_template', 'docs'));
 
   // Copy templates from package
   const templatesDir = join(PKG_ROOT, 'templates');
