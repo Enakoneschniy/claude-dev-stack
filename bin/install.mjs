@@ -137,6 +137,39 @@ function printHeader() {
   console.log('');
 }
 
+// ── Install hints for missing tools ─────────────────────────────
+const INSTALL_HINTS = {
+  git: {
+    darwin: 'xcode-select --install',
+    linux: 'sudo apt install git   # or: sudo yum install git',
+  },
+  node: {
+    darwin: 'brew install node   # or: https://nodejs.org',
+    linux: 'curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt install -y nodejs',
+  },
+  npm: {
+    darwin: 'comes with Node.js — install Node first',
+    linux: 'comes with Node.js — install Node first',
+  },
+  python3: {
+    darwin: 'brew install python3   # or: https://python.org',
+    linux: 'sudo apt install python3 python3-pip',
+  },
+  pip: {
+    darwin: 'python3 -m ensurepip --upgrade',
+    linux: 'sudo apt install python3-pip',
+  },
+  claude: {
+    darwin: 'npm install -g @anthropic-ai/claude-code',
+    linux: 'npm install -g @anthropic-ai/claude-code',
+  },
+};
+
+function getInstallHint(tool) {
+  const platform = process.platform === 'darwin' ? 'darwin' : 'linux';
+  return INSTALL_HINTS[tool]?.[platform] || '';
+}
+
 // ── Step 1: Prerequisites ───────────────────────────────────────
 function checkPrerequisites(totalSteps) {
   step(1, totalSteps, '🔍 Checking prerequisites');
@@ -150,6 +183,8 @@ function checkPrerequisites(totalSteps) {
       ok(`${tool} — ${c.dim}${path}${c.reset}`);
     } else {
       fail(`${tool} — not found`);
+      const hint = getInstallHint(tool);
+      if (hint) info(`Install: ${c.white}${hint}${c.reset}`);
       missing.push(tool);
     }
   }
@@ -164,7 +199,10 @@ function checkPrerequisites(totalSteps) {
       break;
     }
   }
-  if (!pythonCmd) warn('python — not found (NotebookLM unavailable)');
+  if (!pythonCmd) {
+    warn('python — not found (Deep Research & NotebookLM unavailable)');
+    info(`Install: ${c.white}${getInstallHint('python3')}${c.reset}`);
+  }
 
   // pip
   let pipCmd = null;
@@ -175,18 +213,24 @@ function checkPrerequisites(totalSteps) {
       break;
     }
   }
-  if (!pipCmd) warn('pip — not found (NotebookLM unavailable)');
+  if (!pipCmd && pythonCmd) {
+    warn('pip — not found (NotebookLM unavailable)');
+    info(`Install: ${c.white}${getInstallHint('pip')}${c.reset}`);
+  }
 
   // Claude Code
   if (hasCommand('claude')) {
-    ok('claude CLI');
+    const ver = runCmd('claude --version 2>/dev/null');
+    ok(`claude CLI${ver ? ` — ${c.dim}${ver}${c.reset}` : ''}`);
   } else {
-    warn('claude CLI — not found (install later from docs.claude.com)');
+    warn('claude CLI — not found (plugin installation will be skipped)');
+    info(`Install: ${c.white}${getInstallHint('claude')}${c.reset}`);
   }
 
   if (missing.length > 0) {
     console.log('');
-    fail(`${c.bold}Missing: ${missing.join(', ')}. Install them and re-run.${c.reset}`);
+    fail(`${c.bold}Missing required tools: ${missing.join(', ')}${c.reset}`);
+    console.log(`    ${c.dim}Install them and re-run this wizard.${c.reset}`);
     process.exit(1);
   }
 
@@ -405,9 +449,138 @@ async function selectComponents(totalSteps, hasPip) {
   };
 }
 
-// ── Step 5: Vault Path ──────────────────────────────────────────
+// ── Step 5: Claude Plugins ──────────────────────────────────────
+const RECOMMENDED_PLUGINS = [
+  // Official plugins
+  { id: 'superpowers', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'brainstorming, planning, TDD, debugging workflows' },
+  { id: 'commit-commands', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'commit, push, PR in one command' },
+  { id: 'claude-md-management', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'audit and improve CLAUDE.md files' },
+  { id: 'claude-code-setup', marketplace: 'claude-plugins-official', cat: 'Core', desc: 'automation recommendations for hooks, skills, plugins' },
+  { id: 'feature-dev', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'guided feature development with architecture focus' },
+  { id: 'code-review', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'code review a pull request' },
+  { id: 'pr-review-toolkit', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'comprehensive PR review with specialized agents' },
+  { id: 'frontend-design', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'production-grade frontend interfaces' },
+  { id: 'code-simplifier', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'simplify and refine code for clarity' },
+  { id: 'security-guidance', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'security best practices and vulnerability checks' },
+  { id: 'plugin-dev', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'create and validate Claude Code plugins' },
+  { id: 'skill-creator', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'create and improve skills' },
+  { id: 'hookify', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'create hooks to prevent unwanted behaviors' },
+  { id: 'agent-sdk-dev', marketplace: 'claude-plugins-official', cat: 'Dev', desc: 'build Claude Agent SDK applications' },
+  { id: 'typescript-lsp', marketplace: 'claude-plugins-official', cat: 'LSP', desc: 'TypeScript language server integration' },
+  { id: 'session-report', marketplace: 'claude-plugins-official', cat: 'Workflow', desc: 'session activity reports' },
+  { id: 'learning-output-style', marketplace: 'claude-plugins-official', cat: 'Style', desc: 'interactive learning with educational explanations' },
+  { id: 'explanatory-output-style', marketplace: 'claude-plugins-official', cat: 'Style', desc: 'educational insights about the codebase' },
+  // External plugins (from marketplace)
+  { id: 'context7', marketplace: 'claude-plugins-official', cat: 'External', desc: 'fetch up-to-date library/framework docs' },
+  { id: 'github', marketplace: 'claude-plugins-official', cat: 'External', desc: 'GitHub integration' },
+  { id: 'gitlab', marketplace: 'claude-plugins-official', cat: 'External', desc: 'GitLab integration' },
+  { id: 'Notion', marketplace: 'claude-plugins-official', cat: 'External', desc: 'Notion workspace integration' },
+  { id: 'playwright', marketplace: 'claude-plugins-official', cat: 'External', desc: 'browser automation and testing' },
+  { id: 'sentry', marketplace: 'claude-plugins-official', cat: 'External', desc: 'error monitoring and debugging' },
+  { id: 'figma', marketplace: 'claude-plugins-official', cat: 'External', desc: 'Figma design integration' },
+  { id: 'greptile', marketplace: 'claude-plugins-official', cat: 'External', desc: 'codebase search and understanding' },
+  { id: 'semgrep', marketplace: 'claude-plugins-official', cat: 'External', desc: 'static analysis and code scanning' },
+  { id: 'qodo-skills', marketplace: 'claude-plugins-official', cat: 'External', desc: 'coding rules and PR feedback' },
+];
+
+function getInstalledPlugins() {
+  if (!hasCommand('claude')) return new Set();
+
+  const json = runCmd('claude plugin list --json 2>/dev/null');
+  if (!json) return new Set();
+
+  try {
+    const plugins = JSON.parse(json);
+    return new Set(plugins.map(p => p.id));
+  } catch {
+    return new Set();
+  }
+}
+
+async function selectAndInstallPlugins(stepNum, totalSteps) {
+  step(stepNum, totalSteps, '🔌 Claude Code plugins');
+
+  if (!hasCommand('claude')) {
+    warn('claude CLI not found — skipping plugin installation');
+    info('Install Claude Code first, then run: claude plugin install <name>');
+    return { installed: [], failed: [] };
+  }
+
+  const alreadyInstalled = getInstalledPlugins();
+  const alreadyCount = RECOMMENDED_PLUGINS.filter(p =>
+    alreadyInstalled.has(`${p.id}@${p.marketplace}`)
+  ).length;
+
+  if (alreadyCount > 0) {
+    info(`${alreadyCount} plugin(s) already installed — they won't be modified`);
+  }
+  console.log('');
+
+  // Build choices grouped by category
+  let lastCat = '';
+  const choices = [];
+  for (const p of RECOMMENDED_PLUGINS) {
+    const fullId = `${p.id}@${p.marketplace}`;
+    const isInstalled = alreadyInstalled.has(fullId);
+
+    if (p.cat !== lastCat) {
+      lastCat = p.cat;
+      // Category separator (disabled choice acts as header)
+      choices.push({ title: `${c.bold}── ${p.cat} ──${c.reset}`, value: '__sep__', disabled: true });
+    }
+
+    const suffix = isInstalled ? ` ${c.green}(installed)${c.reset}` : '';
+    choices.push({
+      title: `${p.id}${suffix} ${c.dim}— ${p.desc}${c.reset}`,
+      value: fullId,
+      selected: !isInstalled, // pre-select only new ones
+      disabled: isInstalled,  // can't toggle already installed
+    });
+  }
+
+  const { selected } = await prompt({
+    type: 'multiselect',
+    name: 'selected',
+    message: 'Select plugins to install',
+    choices,
+    instructions: false,
+    hint: '↑↓ navigate, space toggle, enter confirm',
+  });
+
+  const toInstall = (selected || []).filter(id => id !== '__sep__');
+
+  if (toInstall.length === 0) {
+    info('No new plugins to install');
+    return { installed: [], failed: [] };
+  }
+
+  console.log('');
+  info(`Installing ${toInstall.length} plugin(s)...`);
+
+  const installed = [];
+  const failed = [];
+
+  for (const fullId of toInstall) {
+    const result = spawnSync('claude', ['plugin', 'install', fullId], {
+      stdio: 'pipe', timeout: 60000,
+    });
+
+    if (result.status === 0) {
+      ok(fullId);
+      installed.push(fullId);
+    } else {
+      const stderr = result.stderr ? result.stderr.toString().trim() : '';
+      fail(`${fullId}${stderr ? ` — ${stderr}` : ''}`);
+      failed.push(fullId);
+    }
+  }
+
+  return { installed, failed };
+}
+
+// ── Step 6: Vault Path ──────────────────────────────────────────
 async function getVaultPath(totalSteps) {
-  step(5, totalSteps, '📁 Vault location');
+  step(6, totalSteps, '📁 Vault location');
 
   console.log(`    ${c.dim}The vault is a folder of markdown files — your project memory.${c.reset}`);
   console.log(`    ${c.dim}Open it in Obsidian to browse, or let Claude Code read/write.${c.reset}`);
@@ -783,7 +956,7 @@ async function main() {
   const components = await selectComponents(earlyTotal, !!pipCmd);
 
   // Calculate actual total now that we know component selection
-  const setupSteps = 5;
+  const setupSteps = 6; // prereqs, profile, projects, components, plugins, vault
   const installCount = [
     components.vault,
     components.gsd,
@@ -794,11 +967,22 @@ async function main() {
   ].filter(Boolean).length;
   const totalSteps = setupSteps + installCount + 1; // +1 for CLAUDE.md
 
+  // Step 5: Plugins
+  const pluginResults = await selectAndInstallPlugins(5, totalSteps);
+
   const vaultPath = await getVaultPath(totalSteps);
 
   const installed = [];
   const failed = [];
   let stepNum = setupSteps + 1;
+
+  // Add plugin results to summary
+  if (pluginResults.installed.length > 0) {
+    installed.push(`Claude plugins (${pluginResults.installed.length} new)`);
+  }
+  if (pluginResults.failed.length > 0) {
+    failed.push(`Claude plugins (${pluginResults.failed.length} failed)`);
+  }
 
   if (components.vault) {
     installVault(vaultPath, projectsData, stepNum++, totalSteps)
