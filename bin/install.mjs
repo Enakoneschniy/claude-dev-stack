@@ -1194,8 +1194,59 @@ async function main() {
 
   await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps);
 
-  // Install session end hook
+  // Install session hooks
   installSessionHook();
+
+  // Offer vault sync setup (optional)
+  console.log('');
+  const { setupSync } = await prompt({
+    type: 'confirm',
+    name: 'setupSync',
+    message: 'Set up vault git sync? (backup + team sharing)',
+    initial: false,
+  });
+
+  if (setupSync) {
+    const { spawnSync: spawn } = await import('child_process');
+
+    // Init git if needed
+    if (!existsSync(join(vaultPath, '.git'))) {
+      spawn('git', ['init'], { cwd: vaultPath, stdio: 'pipe' });
+      const gitignorePath = join(vaultPath, '.gitignore');
+      if (!existsSync(gitignorePath)) {
+        writeFileSync(gitignorePath, `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/cache\n.DS_Store\n*.log\n`);
+      }
+      spawn('git', ['add', '.'], { cwd: vaultPath, stdio: 'pipe' });
+      spawn('git', ['commit', '-m', 'Initial vault commit'], { cwd: vaultPath, stdio: 'pipe' });
+      ok('Git repository initialized');
+    }
+
+    const { remoteUrl } = await prompt({
+      type: 'text',
+      name: 'remoteUrl',
+      message: 'Remote URL (e.g. git@github.com:user/vault.git)',
+    });
+
+    if (remoteUrl) {
+      spawn('git', ['remote', 'remove', 'origin'], { cwd: vaultPath, stdio: 'pipe' });
+      spawn('git', ['remote', 'add', 'origin', remoteUrl], { cwd: vaultPath, stdio: 'pipe' });
+      ok(`Remote: ${remoteUrl}`);
+
+      const branch = spawn('git', ['branch', '--show-current'], { cwd: vaultPath, stdio: 'pipe' });
+      const branchName = branch.stdout?.toString().trim() || 'main';
+      const pushResult = spawn('git', ['push', '-u', 'origin', branchName], {
+        cwd: vaultPath, stdio: 'pipe', timeout: 30000,
+      });
+      if (pushResult.status === 0) {
+        ok('Pushed to remote');
+        info('Auto-sync enabled: pull on start, push on end');
+      } else {
+        warn('Push failed — configure later: claude-dev-stack sync init');
+      }
+    }
+  } else {
+    info('Skip sync. Set up later: claude-dev-stack sync init');
+  }
 
   printSummary(installed, failed, vaultPath, projectsData, components);
 }
