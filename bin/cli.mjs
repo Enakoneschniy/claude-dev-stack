@@ -51,7 +51,8 @@ function printHelp() {
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Templates${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack new${c.reset}                   ${c.dim}Generate context.md from stack template${c.reset}`);
-  console.log(`    ${c.dim}Stacks: Next.js, React+Vite, FastAPI, Express, Rails, Django, Flutter, Go${c.reset}`);
+  console.log(`    ${c.dim}14 stacks: Next.js, Nuxt, SvelteKit, Astro, React, FastAPI, Express,${c.reset}`);
+  console.log(`    ${c.dim}Laravel, Spring Boot, Rails, Django, Flutter, Go, Blank${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Import & Export${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack import${c.reset}                 ${c.dim}Import AI configs (.cursorrules, CLAUDE.md, etc.)${c.reset}`);
