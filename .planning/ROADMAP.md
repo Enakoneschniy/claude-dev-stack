@@ -48,7 +48,10 @@ Plans:
   3. `npm test` exercises `tests/notebooklm.test.mjs` against a **fake `notebooklm` binary** (bash stub placed at the front of `PATH` during test setup). The test covers: success path with canned JSON output, fast-fail when binary is missing from `PATH`, non-zero exit with stderr captured in the thrown error, rate-limit stderr pattern (`"No result found for RPC ID"`) producing `NotebooklmRateLimitError`. No real `notebooklm` binary is invoked in tests.
   4. Calling any exported function on a machine without `notebooklm` in `PATH` produces a `NotebooklmNotInstalledError` whose message includes the install hint (`pipx install notebooklm-py`) — not an `ENOENT` stack trace from `spawnSync`.
   5. Authentication is entirely delegated to `notebooklm-py`: `lib/notebooklm.mjs` never reads any env var related to auth, never touches `~/.notebooklm/storage_state.json`, never invokes `notebooklm login`. Verified by `grep -r NOTEBOOKLM_API_KEY lib/notebooklm.mjs` returning zero matches and by code review confirming no credential handling.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 02-01-PLAN.md — lib/notebooklm.mjs scaffold (errors, dual-mode runNotebooklm helper, lazy detection, stub fixture, test harness)
+- [ ] 02-02-PLAN.md — 6 public async functions + full test coverage + PROJECT.md system dep entry
 **UI hint**: no
 
 ### Phase 3: Sync Manifest & Change Detection
@@ -103,7 +106,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Session-Manager Context Auto-Update | 2/2 | Complete   | 2026-04-10 |
-| 2. NotebookLM CLI Wrapper | 0/0 | Not started | - |
+| 2. NotebookLM CLI Wrapper | 0/2 | Not started | - |
 | 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
 | 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
 | 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
