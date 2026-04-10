@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-10T19:45:56.564Z"
+last_updated: "2026-04-10T20:12:09.704Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-10 (after Phase 1 executed to completion — both plans shipped, 68 tests passing)
+**Last updated:** 2026-04-10 (after Phase 2 executed to completion — both plans shipped, 96 tests passing)
 
 ---
 
@@ -35,19 +35,18 @@ progress:
 
 ## Current Position
 
-Phase: 2 (NotebookLM CLI Wrapper) — EXECUTING
-Plan: 1 of 2
-**Phase:** 1 complete; Phase 2 and Phase 3 remain parallel-ready with locked CONTEXT.md
-**Plan:** Phase 1 — 01-01 (helper + unit tests) + 01-02 (wrapper + wiring + integration test) both shipped
-**Status:** Executing Phase 2
-**Progress:** [██████████] 100% (Phase 1: 2/2 plans)
+Phase: 2 (NotebookLM CLI Wrapper) — COMPLETE
+Plan: 2 of 2
+**Phase:** 1 complete; Phase 2 complete; Phase 3 parallel-ready with locked CONTEXT.md
+**Plan:** Phase 2 — 02-01 (scaffold: error classes, runNotebooklm helper, test fixture) + 02-02 (public API: 6 functions, 22 new tests, PROJECT.md docs) both shipped
+**Status:** Phase 2 complete — ready to execute Phase 3 (sync manifest)
+**Progress:** [██████████] 100% (Phase 1: 2/2 plans, Phase 2: 2/2 plans)
 
 **Next step options:**
 
-- `/gsd-plan-phase 1` — start Phase 1 planning (context.md auto-update fix; 14 decisions locked)
-- `/gsd-plan-phase 2` — start Phase 2 planning (post-pivot CLI wrapper; 15 decisions locked, ADR-0001 required reading)
-- `/gsd-plan-phase 3` — start Phase 3 planning (sync manifest; 22 decisions locked across 5 gray areas)
-- `/gsd-autonomous` — chain plan+execute across all remaining phases
+- `/gsd-execute-phase 3` — execute Phase 3 (sync manifest; 03-CONTEXT.md locked)
+- `/gsd-plan-phase 3` — re-plan Phase 3 if context has changed
+- `/gsd-autonomous` — chain remaining phases (3 → 4 → 5)
 
 **Recent milestone-level change:** Phase 2 scope was pivoted from "HTTP client with API key" to "thin wrapper over `notebooklm-py` CLI" after discuss-phase investigation revealed Google NotebookLM has no public REST API. Full rationale in `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`. REQUIREMENTS.md NBLM-01..06 and ROADMAP.md Phase 2 + Phase 5 were rewritten accordingly. PROJECT.md Constraints now include a system dependency on `notebooklm-py >= 0.3.4` (NotebookLM feature only).
 
@@ -96,7 +95,8 @@ Plan: 1 of 2
 
 - [x] Plan + execute Phase 1 — DONE (plans 01-01 + 01-02 both shipped; SKILL-01..05 + TEST-03 fulfilled; 68 tests passing)
 - [x] Plan 02-01 executed — `lib/notebooklm.mjs` (error classes + runNotebooklm helper + _resetBinaryCache), `tests/fixtures/notebooklm-stub.sh`, `tests/notebooklm.test.mjs` (6 invariant tests). 74 tests passing. NBLM-02/03/04/05 scaffold + TEST-01 scaffold fulfilled.
-- [ ] Plan Phase 2 via `/gsd-plan-phase 2` (CONTEXT.md at `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md`; **downstream agents MUST read ADR-0001 first** — referenced in canonical_refs)
+- [x] Plan 02-02 executed — 6 public async functions (`createNotebook`, `listSources`, `uploadSource`, `deleteSource`, `deleteSourceByTitle`, `updateSource`) + 22 new tests. 96 tests passing. NBLM-01/06 + TEST-01 fully fulfilled. Phase 2 COMPLETE.
+- [ ] Execute Phase 3 via `/gsd-execute-phase 3` (CONTEXT.md at `.planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md`)
 - [ ] Plan Phase 3 via `/gsd-plan-phase 3` (CONTEXT.md at `.planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md`)
 - [ ] (Backlog, next stage) Reconcile `~/vault/projects/{name}/decisions/` ADR folder with GSD `.planning/phases/*/CONTEXT.md` — two parallel decision-capture systems exist; user flagged during Phase 1 discuss. ADR-0001 bootstrapped the decisions folder usage. Not scheduled yet. See `memory/project_vault_decisions_vs_gsd_planning.md`.
 - [ ] (Phase 5 planning task) Cross-platform install strategy for `notebooklm-py` during wizard: `pipx` vs `pip --user` vs `uv pip install` — validate on macOS/Linux/Windows

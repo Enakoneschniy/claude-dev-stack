@@ -12,7 +12,7 @@
 ## Phases
 
 - [x] **Phase 1: Fix Session-Manager Context Auto-Update** — Make `context.md` actually update on session end (prerequisite for syncing non-stale data) (completed 2026-04-10)
-- [ ] **Phase 2: NotebookLM CLI Wrapper** — Build `lib/notebooklm.mjs` as a thin wrapper over the `notebooklm-py` CLI (ADR-0001 pivot: no public NotebookLM REST API exists; delegate to upstream Python tool)
+- [x] **Phase 2: NotebookLM CLI Wrapper** — Build `lib/notebooklm.mjs` as a thin wrapper over the `notebooklm-py` CLI (ADR-0001 pivot: no public NotebookLM REST API exists; delegate to upstream Python tool) (completed 2026-04-10)
 - [ ] **Phase 3: Sync Manifest & Change Detection** — Local hash manifest at `~/vault/.notebooklm-sync.json` to skip unchanged files
 - [ ] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention
 - [ ] **Phase 5: CLI Integration, Trigger & Wizard** — `notebooklm sync`/`status` commands, session-end background trigger, installer + doctor integration
@@ -50,8 +50,8 @@ Plans:
   5. Authentication is entirely delegated to `notebooklm-py`: `lib/notebooklm.mjs` never reads any env var related to auth, never touches `~/.notebooklm/storage_state.json`, never invokes `notebooklm login`. Verified by `grep -r NOTEBOOKLM_API_KEY lib/notebooklm.mjs` returning zero matches and by code review confirming no credential handling.
 **Plans**: 2 plans
 Plans:
-- [ ] 02-01-PLAN.md — lib/notebooklm.mjs scaffold (errors, dual-mode runNotebooklm helper, lazy detection, stub fixture, test harness)
-- [ ] 02-02-PLAN.md — 6 public async functions + full test coverage + PROJECT.md system dep entry
+- [x] 02-01-PLAN.md — lib/notebooklm.mjs scaffold (errors, dual-mode runNotebooklm helper, lazy detection, stub fixture, test harness)
+- [x] 02-02-PLAN.md — 6 public async functions + full test coverage + PROJECT.md system dep entry
 **UI hint**: no
 
 ### Phase 3: Sync Manifest & Change Detection
@@ -106,7 +106,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Session-Manager Context Auto-Update | 2/2 | Complete   | 2026-04-10 |
-| 2. NotebookLM CLI Wrapper | 0/2 | Not started | - |
+| 2. NotebookLM CLI Wrapper | 2/2 | Complete   | 2026-04-10 |
 | 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
 | 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
 | 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |

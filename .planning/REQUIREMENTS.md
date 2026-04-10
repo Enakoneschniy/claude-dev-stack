@@ -24,12 +24,12 @@ New `lib/notebooklm.mjs` — thin wrapper over the `notebooklm-py` CLI (`pip ins
 
 **Pivot notice (2026-04-10, ADR-0001):** Google NotebookLM has no public REST API with API-key authentication. All programmatic access goes through the `notebooklm-py` Python CLI which uses browser OAuth cookies under the hood. Phase 2 is therefore a CLI wrapper, not an HTTP client. See `vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` for the full rationale.
 
-- [ ] **NBLM-01**: Module `lib/notebooklm.mjs` exports `createNotebook(name)`, `listSources(notebookId)`, `uploadSource(notebookId, filepath)`, `deleteSource(notebookId, sourceId)`, `deleteSourceByTitle(notebookId, title)`, and `updateSource(notebookId, sourceId, filepath)`; each function wraps a single `spawnSync('notebooklm', [...args, '--json'])` invocation, parses stdout as JSON, and returns the parsed object or throws a typed Error
-- [ ] **NBLM-02**: Module detects the `notebooklm` binary via `hasCommand('notebooklm')` (or equivalent PATH check) on first call; if missing, throws a `NotebooklmNotInstalledError` whose message includes the install hint `pipx install notebooklm-py` (or `pip install --user notebooklm-py`). Authentication is **delegated entirely** to `notebooklm-py` — the module never reads `NOTEBOOKLM_API_KEY`, never touches cookies, never stores credentials
-- [ ] **NBLM-03**: JavaScript side remains single-dep — `package.json` `dependencies` stays `{"prompts": "^2.4.2"}` after this phase. Adds one **system dependency**: `notebooklm-py >= 0.3.4` (documented in PROJECT.md Constraints; detected by `doctor.mjs` and offered in the install wizard during Phase 5)
-- [ ] **NBLM-04**: CLI non-zero exit codes are caught by inspecting the `spawnSync` result; errors thrown include the invoked command, exit code, and captured stderr. Errors are structured via a `NotebooklmCliError` class exported from the module, so callers can match `error instanceof NotebooklmCliError` and access `{ command, exitCode, stderr }`
-- [ ] **NBLM-05**: Rate-limit and transient upstream failures are detected by matching known `notebooklm-py` stderr patterns (e.g., `"No result found for RPC ID"`, `"GENERATION_FAILED"`); a `NotebooklmRateLimitError` subclass is thrown. Module optionally forwards a caller-supplied `retry: N` option to `notebooklm-py` via its `--retry` flag on generate-class commands. Claude-dev-stack does NOT implement its own retry loop — rate-limit handling is delegated to the CLI
-- [ ] **NBLM-06**: `tests/notebooklm.test.mjs` exercises all exported functions against a **fake `notebooklm` binary** — a bash stub placed at the front of `PATH` during the test run, emitting canned JSON on stdout and controlled exit codes. Covers: success path, binary-missing fast-fail, CLI non-zero exit with parsed stderr, rate-limit stderr pattern detection. Matches the existing `tests/hooks.test.mjs` shell-stub pattern. No real `notebooklm` binary is invoked in tests
+- [x] **NBLM-01**: Module `lib/notebooklm.mjs` exports `createNotebook(name)`, `listSources(notebookId)`, `uploadSource(notebookId, filepath)`, `deleteSource(notebookId, sourceId)`, `deleteSourceByTitle(notebookId, title)`, and `updateSource(notebookId, sourceId, filepath)`; each function wraps a single `spawnSync('notebooklm', [...args, '--json'])` invocation, parses stdout as JSON, and returns the parsed object or throws a typed Error
+- [x] **NBLM-02**: Module detects the `notebooklm` binary via `hasCommand('notebooklm')` (or equivalent PATH check) on first call; if missing, throws a `NotebooklmNotInstalledError` whose message includes the install hint `pipx install notebooklm-py` (or `pip install --user notebooklm-py`). Authentication is **delegated entirely** to `notebooklm-py` — the module never reads `NOTEBOOKLM_API_KEY`, never touches cookies, never stores credentials
+- [x] **NBLM-03**: JavaScript side remains single-dep — `package.json` `dependencies` stays `{"prompts": "^2.4.2"}` after this phase. Adds one **system dependency**: `notebooklm-py >= 0.3.4` (documented in PROJECT.md Constraints; detected by `doctor.mjs` and offered in the install wizard during Phase 5)
+- [x] **NBLM-04**: CLI non-zero exit codes are caught by inspecting the `spawnSync` result; errors thrown include the invoked command, exit code, and captured stderr. Errors are structured via a `NotebooklmCliError` class exported from the module, so callers can match `error instanceof NotebooklmCliError` and access `{ command, exitCode, stderr }`
+- [x] **NBLM-05**: Rate-limit and transient upstream failures are detected by matching known `notebooklm-py` stderr patterns (e.g., `"No result found for RPC ID"`, `"GENERATION_FAILED"`); a `NotebooklmRateLimitError` subclass is thrown. Module optionally forwards a caller-supplied `retry: N` option to `notebooklm-py` via its `--retry` flag on generate-class commands. Claude-dev-stack does NOT implement its own retry loop — rate-limit handling is delegated to the CLI
+- [x] **NBLM-06**: `tests/notebooklm.test.mjs` exercises all exported functions against a **fake `notebooklm` binary** — a bash stub placed at the front of `PATH` during the test run, emitting canned JSON on stdout and controlled exit codes. Covers: success path, binary-missing fast-fail, CLI non-zero exit with parsed stderr, rate-limit stderr pattern detection. Matches the existing `tests/hooks.test.mjs` shell-stub pattern. No real `notebooklm` binary is invoked in tests
 
 ### Sync Pipeline
 
@@ -70,7 +70,7 @@ Prevent unnecessary re-uploads.
 
 ### Testing
 
-- [ ] **TEST-01**: `tests/notebooklm.test.mjs` covers: manifest read/write/update, hash computation, upload/replace logic (with mocked HTTP), error propagation
+- [x] **TEST-01**: `tests/notebooklm.test.mjs` covers: manifest read/write/update, hash computation, upload/replace logic (with mocked HTTP), error propagation
 - [ ] **TEST-02**: `tests/project-setup.test.mjs` extended with a smoke test that `claude-dev-stack notebooklm status` exits cleanly on a fresh vault
 - [x] **TEST-03**: `tests/skills.test.mjs` or new `tests/session-manager.test.mjs` verifies SKILL-01/SKILL-02 (context.md actually gets updated)
 - [ ] **TEST-04**: Full test suite still passes (`npm test` → 54 → 54+N passed, 0 failed)
@@ -132,12 +132,12 @@ Prevent unnecessary re-uploads.
 | SKILL-03 | Phase 1 | Complete |
 | SKILL-04 | Phase 1 | Complete |
 | SKILL-05 | Phase 1 | Complete |
-| NBLM-01 | Phase 2 | Pending |
-| NBLM-02 | Phase 2 | Pending |
-| NBLM-03 | Phase 2 | Pending |
-| NBLM-04 | Phase 2 | Pending |
-| NBLM-05 | Phase 2 | Pending |
-| NBLM-06 | Phase 2 | Pending |
+| NBLM-01 | Phase 2 | Complete |
+| NBLM-02 | Phase 2 | Complete |
+| NBLM-03 | Phase 2 | Complete |
+| NBLM-04 | Phase 2 | Complete |
+| NBLM-05 | Phase 2 | Complete |
+| NBLM-06 | Phase 2 | Complete |
 | NBLM-14 | Phase 3 | Pending |
 | NBLM-15 | Phase 3 | Pending |
 | NBLM-16 | Phase 3 | Pending |
@@ -159,7 +159,7 @@ Prevent unnecessary re-uploads.
 | NBLM-25 | Phase 5 | Pending |
 | NBLM-26 | Phase 5 | Pending |
 | NBLM-27 | Phase 5 | Pending |
-| TEST-01 | Phase 2 | Pending |
+| TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 5 | Pending |
 | TEST-03 | Phase 1 | Complete |
 | TEST-04 | All phases | Continuous |
