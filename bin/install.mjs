@@ -403,10 +403,10 @@ async function selectComponents(totalSteps, hasPip) {
 
   const choices = [
     { title: '📁 Knowledge Vault (project context, session logs, ADRs)', value: 'vault', selected: true },
-    { title: '🚀 GSD — Get Shit Done (spec-driven dev with subagents)', value: 'gsd', selected: true },
-    { title: '🔌 Obsidian Skills by kepano (vault format support)', value: 'obsidianSkills', selected: true },
     { title: '⚙️  Custom skills (session manager, project switcher, auto-router)', value: 'customSkills', selected: true },
+    { title: '🔌 Obsidian Skills by kepano (vault format support)', value: 'obsidianSkills', selected: true },
     { title: '🔍 Deep Research (structured web research from terminal)', value: 'deepResearch', selected: true },
+    { title: '🚀 GSD — Get Shit Done (advanced spec-driven workflow, 78 slash commands)', value: 'gsd', selected: false },
   ];
 
   if (hasPip) {
@@ -497,6 +497,23 @@ async function selectAndInstallPlugins(stepNum, totalSteps) {
   if (available.length === 0 && installedList.length === 0) {
     warn('No plugins found in marketplace');
     return { installed: [], failed: [] };
+  }
+
+  // Auto-install superpowers (essential for auto-triggered workflows)
+  const hasSuperpowers = installedList.some(p => p.id.startsWith('superpowers@'));
+  if (!hasSuperpowers) {
+    info('Installing superpowers (essential for auto-invoked skills)...');
+    const result = spawnSync('claude', ['plugin', 'install', 'superpowers@claude-plugins-official'], {
+      stdio: 'pipe', timeout: 60000,
+    });
+    if (result.status === 0) {
+      ok('superpowers installed');
+    } else {
+      warn('superpowers auto-install failed — install manually: claude plugin install superpowers');
+    }
+    console.log('');
+  } else {
+    info(`${c.dim}superpowers already installed${c.reset}`);
   }
 
   // Show already installed count (available list already excludes them)
