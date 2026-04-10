@@ -1,6 +1,6 @@
 import { describe, it, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, copyFileSync, chmodSync, existsSync } from 'fs';
+import { mkdirSync, rmSync, copyFileSync, chmodSync, existsSync, readFileSync } from 'fs';
 import { join, dirname, delimiter } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
@@ -49,6 +49,15 @@ after(() => {
   process.env.PATH = originalPath;
   if (existsSync(stubDir)) rmSync(stubDir, { recursive: true, force: true });
 });
+
+// ── Helper: set stub scenario env vars in one call ──────────────────────────
+function stub({ stdout = '', stderr = '', exit = 0 } = {}) {
+  if (stdout) process.env.NOTEBOOKLM_STUB_STDOUT = stdout;
+  else delete process.env.NOTEBOOKLM_STUB_STDOUT;
+  if (stderr) process.env.NOTEBOOKLM_STUB_STDERR = stderr;
+  else delete process.env.NOTEBOOKLM_STUB_STDERR;
+  process.env.NOTEBOOKLM_STUB_EXIT = String(exit);
+}
 
 describe('lib/notebooklm.mjs — error classes and invariants', () => {
   it('NotebooklmRateLimitError is subclass of NotebooklmCliError', () => {
@@ -109,5 +118,212 @@ describe('lib/notebooklm.mjs — error classes and invariants', () => {
     assert.equal(nblm._resetBinaryCache(), undefined);
     // Calling again must remain safe (idempotent).
     nblm._resetBinaryCache();
+  });
+});
+
+describe('createNotebook', () => {
+  it('returns { id, title } on successful JSON response', async () => {
+    stub({ stdout: '{"notebook":{"id":"nb-1","title":"Test"}}', exit: 0 });
+    const result = await nblm.createNotebook('Test');
+    assert.deepEqual(result, { id: 'nb-1', title: 'Test' });
+  });
+
+  it('throws NotebooklmCliError when parsed.notebook is missing', async () => {
+    stub({ stdout: '{}', exit: 0 });
+    await assert.rejects(
+      () => nblm.createNotebook('Test'),
+      (err) => err instanceof nblm.NotebooklmCliError && /expected.*notebook/.test(err.message)
+    );
+  });
+
+  it('throws TypeError on empty name', async () => {
+    await assert.rejects(
+      () => nblm.createNotebook(''),
+      (err) => err instanceof TypeError
+    );
+  });
+});
+
+describe('listSources', () => {
+  it('returns normalized array stripping index/type/url/status_id/created_at', async () => {
+    const fullShape = {
+      notebook_id: 'nb-1',
+      notebook_title: 'Test',
+      sources: [
+        {
+          index: 1,
+          id: 'src-1',
+          title: 'file.md',
+          type: 'SourceType.MARKDOWN',
+          url: null,
+          status: 'processing',
+          status_id: 1,
+          created_at: '2026-04-10T21:05:26',
+        },
+      ],
+      count: 1,
+    };
+    stub({ stdout: JSON.stringify(fullShape), exit: 0 });
+    const result = await nblm.listSources('nb-1');
+    assert.deepEqual(result, [{ id: 'src-1', title: 'file.md', status: 'processing' }]);
+  });
+
+  it('returns empty array on empty notebook (benign WARNING on stderr)', async () => {
+    stub({
+      stdout: '{"notebook_id":"nb-1","notebook_title":"Empty","sources":[],"count":0}',
+      stderr: 'WARNING [notebooklm._sources] Sources data for nb-1 is not a list (type=NoneType), returning empty list',
+      exit: 0,
+    });
+    const result = await nblm.listSources('nb-1');
+    assert.deepEqual(result, []);
+  });
+
+  it('throws NotebooklmCliError when sources is not an array', async () => {
+    stub({ stdout: '{"sources":"not an array"}', exit: 0 });
+    await assert.rejects(
+      () => nblm.listSources('nb-1'),
+      (err) => err instanceof nblm.NotebooklmCliError
+    );
+  });
+
+  it('throws TypeError on empty notebookId', async () => {
+    await assert.rejects(
+      () => nblm.listSources(''),
+      (err) => err instanceof TypeError
+    );
+  });
+});
+
+describe('uploadSource', () => {
+  it('returns { sourceId, title } from nested parsed.source (corrected v0.3.4 shape)', async () => {
+    stub({
+      stdout: '{"source":{"id":"src-42","title":"file.md","type":"SourceType.UNKNOWN","url":null}}',
+      exit: 0,
+    });
+    const result = await nblm.uploadSource('nb-1', '/tmp/file.md');
+    assert.deepEqual(result, { sourceId: 'src-42', title: 'file.md' });
+  });
+
+  it('throws NotebooklmCliError when parsed.source is missing (flat shape from SKILL.md is wrong)', async () => {
+    stub({ stdout: '{"source_id":"flat-shape-from-skill-md"}', exit: 0 });
+    await assert.rejects(
+      () => nblm.uploadSource('nb-1', '/tmp/x.md'),
+      (err) => err instanceof nblm.NotebooklmCliError
+    );
+  });
+
+  it('throws TypeError on empty filepath', async () => {
+    await assert.rejects(
+      () => nblm.uploadSource('nb-1', ''),
+      (err) => err instanceof TypeError
+    );
+  });
+});
+
+describe('deleteSource', () => {
+  it('returns { deleted: true, sourceId } on success text output', async () => {
+    stub({ stdout: 'Deleted source: abc-123', exit: 0 });
+    const result = await nblm.deleteSource('nb-1', 'abc-123');
+    assert.deepEqual(result, { deleted: true, sourceId: 'abc-123' });
+  });
+
+  it('throws NotebooklmCliError on unexpected output format', async () => {
+    stub({ stdout: 'Something completely unexpected', exit: 0 });
+    await assert.rejects(
+      () => nblm.deleteSource('nb-1', 'abc-123'),
+      (err) => err instanceof nblm.NotebooklmCliError && /unexpected output format/.test(err.message)
+    );
+  });
+});
+
+describe('deleteSourceByTitle', () => {
+  it('returns { deleted: true, sourceId } on success', async () => {
+    stub({ stdout: 'Deleted source: xyz-789', exit: 0 });
+    const result = await nblm.deleteSourceByTitle('nb-1', 'My Doc');
+    assert.deepEqual(result, { deleted: true, sourceId: 'xyz-789' });
+  });
+
+  it('throws TypeError on empty title', async () => {
+    await assert.rejects(
+      () => nblm.deleteSourceByTitle('nb-1', ''),
+      (err) => err instanceof TypeError
+    );
+  });
+});
+
+describe('updateSource', () => {
+  it('propagates deleteSource failures without attempting upload', async () => {
+    stub({ stderr: 'Error: Not found', exit: 1 });
+    await assert.rejects(
+      () => nblm.updateSource('nb-1', 'src-dead', '/tmp/new.md'),
+      (err) => err instanceof nblm.NotebooklmCliError
+    );
+  });
+
+  it('throws TypeError on empty filepath', async () => {
+    await assert.rejects(
+      () => nblm.updateSource('nb-1', 'src-1', ''),
+      (err) => err instanceof TypeError
+    );
+  });
+});
+
+describe('error propagation through runNotebooklm', () => {
+  it('non-zero exit with generic stderr throws NotebooklmCliError', async () => {
+    stub({ stderr: 'boom', exit: 1 });
+    await assert.rejects(
+      () => nblm.createNotebook('Test'),
+      (err) => err instanceof nblm.NotebooklmCliError &&
+               !(err instanceof nblm.NotebooklmRateLimitError) &&
+               err.exitCode === 1 &&
+               err.stderr === 'boom'
+    );
+  });
+
+  it('non-zero exit with JSON RATE_LIMITED code throws NotebooklmRateLimitError', async () => {
+    stub({
+      stdout: '{"error":true,"code":"RATE_LIMITED","message":"Rate limited."}',
+      exit: 1,
+    });
+    await assert.rejects(
+      () => nblm.createNotebook('Test'),
+      (err) => err instanceof nblm.NotebooklmRateLimitError &&
+               err.matchedPattern === 'RATE_LIMITED'
+    );
+  });
+
+  it('non-zero exit with stderr rate-limit text triggers rate-limit error (text mode path)', async () => {
+    stub({ stderr: 'Error: Rate limited.', exit: 1 });
+    await assert.rejects(
+      () => nblm.deleteSource('nb-1', 'src-1'),
+      (err) => err instanceof nblm.NotebooklmRateLimitError
+    );
+  });
+
+  it('exit 0 with unparseable stdout throws NotebooklmCliError with rawOutput set', async () => {
+    stub({ stdout: 'not json at all', exit: 0 });
+    await assert.rejects(
+      () => nblm.createNotebook('Test'),
+      (err) => err instanceof nblm.NotebooklmCliError &&
+               err.rawOutput === 'not json at all' &&
+               /failed to parse/.test(err.message)
+    );
+  });
+});
+
+describe('lib/notebooklm.mjs — static invariants', () => {
+  it('package.json dependencies has exactly one key: prompts (NBLM-03)', () => {
+    const pkgRaw = readFileSync(join(__dirname, '..', 'package.json'), 'utf8');
+    const pkg = JSON.parse(pkgRaw);
+    const depKeys = Object.keys(pkg.dependencies || {});
+    assert.equal(depKeys.length, 1);
+    assert.equal(depKeys[0], 'prompts');
+  });
+
+  it('lib/notebooklm.mjs contains no credential references (SC5)', () => {
+    const src = readFileSync(join(__dirname, '..', 'lib', 'notebooklm.mjs'), 'utf8');
+    assert.equal(src.match(/NOTEBOOKLM_API_KEY/g), null, 'must not reference NOTEBOOKLM_API_KEY');
+    assert.equal(src.match(/storage_state/g), null, 'must not reference storage_state');
+    assert.equal(src.match(/notebooklm login/g), null, 'must not reference notebooklm login');
   });
 });
