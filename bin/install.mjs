@@ -65,6 +65,13 @@ function mkdirp(dir) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
+/** Create dir + .gitkeep so empty dirs are tracked by git */
+function mkdirpKeep(dir) {
+  mkdirp(dir);
+  const gitkeep = join(dir, '.gitkeep');
+  if (!existsSync(gitkeep)) writeFileSync(gitkeep, '');
+}
+
 function step(num, total, title) {
   console.log('');
   console.log(`  ${c.cyan}${c.bold}— Step ${num} of ${total} —${c.reset} ${c.bold}${title}${c.reset}`);
@@ -617,18 +624,18 @@ function installVault(vaultPath, projectsData, stepNum, totalSteps) {
 
   mkdirp(join(vaultPath, 'meta'));
   mkdirp(join(vaultPath, 'shared'));
-  mkdirp(join(vaultPath, 'research'));
+  mkdirpKeep(join(vaultPath, 'research'));
 
   const projectNames = projectsData.projects.map(p => p.name);
 
   for (const name of projectNames) {
-    mkdirp(join(vaultPath, 'projects', name, 'decisions'));
-    mkdirp(join(vaultPath, 'projects', name, 'sessions'));
-    mkdirp(join(vaultPath, 'projects', name, 'docs'));
+    mkdirpKeep(join(vaultPath, 'projects', name, 'decisions'));
+    mkdirpKeep(join(vaultPath, 'projects', name, 'sessions'));
+    mkdirpKeep(join(vaultPath, 'projects', name, 'docs'));
   }
-  mkdirp(join(vaultPath, 'projects', '_template', 'decisions'));
-  mkdirp(join(vaultPath, 'projects', '_template', 'sessions'));
-  mkdirp(join(vaultPath, 'projects', '_template', 'docs'));
+  mkdirpKeep(join(vaultPath, 'projects', '_template', 'decisions'));
+  mkdirpKeep(join(vaultPath, 'projects', '_template', 'sessions'));
+  mkdirpKeep(join(vaultPath, 'projects', '_template', 'docs'));
 
   // Copy templates from package
   const templatesDir = join(PKG_ROOT, 'templates');
