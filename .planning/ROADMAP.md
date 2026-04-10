@@ -64,7 +64,9 @@ Plans:
   3. Editing a single vault file and running sync again re-uploads only that file; the manifest's `hash`, `notebook_source_id`, and `uploaded_at` update accordingly.
   4. Killing the process mid-write during a manifest update leaves the previous `.notebooklm-sync.json` intact (atomic write via `.tmp` + rename verified by test).
   5. Freshly initialized vault's `.gitignore` includes `.notebooklm-sync.json`, and an existing vault is migrated idempotently on first run.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 03-01-PLAN.md — lib/notebooklm-manifest.mjs (5 exports: MANIFEST_VERSION, hashFile, readManifest, writeManifest, ensureManifestGitignored) + tests/notebooklm-manifest.test.mjs (3 tasks, ~28 new tests)
 **UI hint**: no
 
 ### Phase 4: Vault → NotebookLM Sync Pipeline
@@ -107,7 +109,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Fix Session-Manager Context Auto-Update | 2/2 | Complete   | 2026-04-10 |
 | 2. NotebookLM CLI Wrapper | 2/2 | Complete   | 2026-04-10 |
-| 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
+| 3. Sync Manifest & Change Detection | 0/1 | Planned | - |
 | 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
 | 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
 
