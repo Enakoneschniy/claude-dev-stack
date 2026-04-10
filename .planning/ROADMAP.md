@@ -1,0 +1,144 @@
+# Roadmap: claude-dev-stack — NotebookLM Auto-Sync (v0.8)
+
+**Created:** 2026-04-10
+**Milestone:** v0.8 — NotebookLM Auto-Sync MVP
+**Granularity:** standard (3-5 plans per phase)
+**Coverage:** 36/36 v1 requirements mapped (TEST-04 is continuous across all phases)
+
+**Core Value:** Claude Code can resume work across sessions as if it remembered everything — extended with grounded recall from historical vault content via NotebookLM.
+
+---
+
+## Phases
+
+- [ ] **Phase 1: Fix Session-Manager Context Auto-Update** — Make `context.md` actually update on session end (prerequisite for syncing non-stale data)
+- [ ] **Phase 2: NotebookLM API Client** — Build `lib/notebooklm.mjs` as a single-dep HTTP client with env-based auth and rate-limit handling
+- [ ] **Phase 3: Sync Manifest & Change Detection** — Local hash manifest at `~/vault/.notebooklm-sync.json` to skip unchanged files
+- [ ] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention
+- [ ] **Phase 5: CLI Integration, Trigger & Wizard** — `notebooklm sync`/`status` commands, session-end background trigger, installer + doctor integration
+
+---
+
+## Phase Details
+
+### Phase 1: Fix Session-Manager Context Auto-Update
+**Goal**: `context.md` reliably gains a linked Session History entry every time a user ends a session, eliminating the stale-data risk that would otherwise poison NotebookLM sync.
+**Depends on**: Nothing (first phase)
+**Requirements**: SKILL-01, SKILL-02, SKILL-03, SKILL-04, SKILL-05, TEST-03
+**Success Criteria** (what must be TRUE):
+  1. After a user invokes `session-manager /end` and a new session log is written, `~/vault/projects/{name}/context.md` contains a new entry under "Session History" linking that log file.
+  2. All other sections of `context.md` (Overview, key decisions, footers) remain byte-for-byte intact after the update.
+  3. If a project's `context.md` has no "Session History" section yet, the first `/end` creates it at a predictable anchor and subsequent ends append to it.
+  4. The update logic lives in executable code (bash helper or Node.js script invoked by the skill), not as prose inside `SKILL.md`.
+  5. `npm test` includes a test that simulates a session end and asserts `context.md` was actually modified with the expected entry.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 2: NotebookLM API Client
+**Goal**: A developer using `lib/notebooklm.mjs` can create a notebook, list its sources, and upload/replace/delete a source over HTTP, with no new npm dependencies and with meaningful errors on failure.
+**Depends on**: Nothing (can run in parallel with Phase 1)
+**Requirements**: NBLM-01, NBLM-02, NBLM-03, NBLM-04, NBLM-05, NBLM-06, TEST-01
+**Success Criteria** (what must be TRUE):
+  1. `lib/notebooklm.mjs` exports `createNotebook`, `listSources`, `uploadSource`, `deleteSource`, `updateSource` and each returns a resolved value or throws with a human-readable message identifying the HTTP status and endpoint.
+  2. The module reads `NOTEBOOKLM_API_KEY` from `process.env` only; `package.json` still lists `prompts` as the sole runtime dependency after this phase.
+  3. A test run (`npm test`) exercises `tests/notebooklm.test.mjs` against a local `node:http` mock server and asserts: success path, 4xx error propagation, 429 with `Retry-After` causing a delayed retry.
+  4. Calling any client function without `NOTEBOOKLM_API_KEY` set produces a descriptive error (not a stack trace referencing `undefined.headers`).
+  5. Phase-level research report documents whether the discovered `notebooklm` Claude Code skill exposes a reusable client, and the phase plan reflects that finding (reuse vs. write from scratch).
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 3: Sync Manifest & Change Detection
+**Goal**: A sync run can cheaply decide which vault files actually need to be re-uploaded by comparing SHA-256 hashes against a local manifest that survives crashes and is never committed to git.
+**Depends on**: Nothing (can run in parallel with Phases 1 and 2)
+**Requirements**: NBLM-14, NBLM-15, NBLM-16, NBLM-17, NBLM-18
+**Success Criteria** (what must be TRUE):
+  1. After a first sync run over a vault, `~/vault/.notebooklm-sync.json` exists and contains one entry per uploaded file with shape `{filepath: {hash, notebook_source_id, uploaded_at}}`.
+  2. A second sync run immediately after the first makes zero upload API calls (all files report as unchanged via hash comparison).
+  3. Editing a single vault file and running sync again re-uploads only that file; the manifest's `hash`, `notebook_source_id`, and `uploaded_at` update accordingly.
+  4. Killing the process mid-write during a manifest update leaves the previous `.notebooklm-sync.json` intact (atomic write via `.tmp` + rename verified by test).
+  5. Freshly initialized vault's `.gitignore` includes `.notebooklm-sync.json`, and an existing vault is migrated idempotently on first run.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 4: Vault → NotebookLM Sync Pipeline
+**Goal**: A single function call walks all per-project vault content (sessions, ADRs, docs, context.md) and pushes it to a shared NotebookLM notebook with the correct `{project}__` naming convention and replace-by-filename semantics.
+**Depends on**: Phase 2 (API client), Phase 3 (manifest)
+**Requirements**: NBLM-07, NBLM-08, NBLM-09, NBLM-10, NBLM-11, NBLM-12, NBLM-13
+**Success Criteria** (what must be TRUE):
+  1. Running the sync function against a vault with at least two projects produces sources in the target notebook with filenames matching `{project}__{YYYY-MM-DD}-{slug}.md` (sessions), `{project}__ADR-{NNNN}-{slug}.md` (ADRs), `{project}__doc-{slug}.md` (docs), and `{project}__context.md` (context).
+  2. Re-running sync after editing an ADR replaces the existing source (same filename, new content) rather than creating a duplicate — verified by listing sources before and after.
+  3. Files under `~/vault/shared/` and `~/vault/meta/` are demonstrably skipped (not present in the notebook after sync).
+  4. If the target notebook (default name `claude-dev-stack-vault`, or `NOTEBOOKLM_NOTEBOOK_NAME` if set) does not exist on first run, it is auto-created; subsequent runs reuse it.
+  5. The pipeline reuses `projects.mjs::reverseProjectMap()` for path → project-slug lookup rather than introducing a fourth slug-generation code path.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 5: CLI Integration, Trigger & Wizard
+**Goal**: A user with `NOTEBOOKLM_API_KEY` set can discover the feature through `claude-dev-stack install`, run sync manually, observe status, see health in `doctor`, and get automatic best-effort sync after every session end without any terminal noise on failure.
+**Depends on**: Phase 1 (session-manager fix), Phase 2 (API client), Phase 3 (manifest), Phase 4 (pipeline)
+**Requirements**: NBLM-19, NBLM-20, NBLM-21, NBLM-22, NBLM-23, NBLM-24, NBLM-25, NBLM-26, NBLM-27, TEST-02
+**Success Criteria** (what must be TRUE):
+  1. `claude-dev-stack notebooklm sync` runs end-to-end, prints per-file status, and exits 0 on success; `claude-dev-stack notebooklm status` prints last sync time, file count, and stale count on a real vault.
+  2. Running `claude-dev-stack notebooklm status` on a freshly initialized vault (no manifest yet) exits 0 with a "no sync yet" message and does not throw — verified by `tests/project-setup.test.mjs`.
+  3. After the Phase 1 fix is in place, ending a session via `session-manager /end` with `NOTEBOOKLM_API_KEY` set causes a detached background sync to run; session-end UI does not block on network I/O and returns control to the user immediately.
+  4. Sync failures during the session-end trigger are appended to `~/vault/.notebooklm-sync.log` and never surface as errors in the user's terminal; with `NOTEBOOKLM_API_KEY` unset, no sync attempt is made and nothing is logged.
+  5. The install wizard offers "Set up NotebookLM sync?" as an optional step that explains the feature, accepts an API key, persists it to a user config (not the repo), and tests connectivity; `claude-dev-stack doctor` reports both "API key configured" and "last sync status" when run afterwards.
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+## Continuous Requirements
+
+**TEST-04**: Full test suite (`npm test`) must pass at the end of every plan in every phase. This is not a phase — it is a non-negotiable quality gate applied during each plan's verify step.
+
+---
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Fix Session-Manager Context Auto-Update | 0/0 | Not started | - |
+| 2. NotebookLM API Client | 0/0 | Not started | - |
+| 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
+| 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
+| 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
+
+Plans counts populate during `/gsd-plan-phase N`.
+
+---
+
+## Dependency Graph
+
+```
+Phase 1 (session-manager fix) ─┐
+                               │
+Phase 2 (API client) ──────────┼──> Phase 5 (CLI + trigger + wizard)
+                               │
+Phase 3 (manifest) ────────────┤
+                               │
+Phase 4 (sync pipeline) ───────┘
+  ↑
+  └── depends on Phase 2 + Phase 3
+```
+
+**Parallelism notes** (config.parallelization = true):
+- Phases 1, 2, and 3 have no dependencies on each other and can be planned/executed in any order or in parallel waves.
+- Phase 4 blocks on both Phase 2 and Phase 3.
+- Phase 5 blocks on Phases 1, 2, 3, and 4 (the full stack).
+
+---
+
+## Research Notes for Phase Planning
+
+Per-phase research is enabled (`config.workflow.research = true`). Each phase should research at planning time. Key things to investigate per phase:
+
+- **Phase 1**: Examine `skills/session-manager/SKILL.md` line 80 and the current bash script to understand the execution model (what does the skill actually invoke today? where would a helper live?).
+- **Phase 2**: **Investigate the discovered `notebooklm` Claude Code skill first.** If it wraps a reusable HTTP client or contains a spec of the NotebookLM API surface, Phase 2 may shrink to "write a thin adapter". If not, Phase 2 ships a from-scratch client. This decision gates plan count and effort estimate for the phase.
+- **Phase 3**: Confirm Node 18 `fs.rename` atomicity guarantees across platforms (macOS/Linux); verify SHA-256 via `node:crypto` has no hidden cost on large files.
+- **Phase 4**: Audit `lib/projects.mjs::reverseProjectMap` API shape; confirm it returns what the pipeline needs without widening the path↔slug surface area (per `CONCERNS.md`).
+- **Phase 5**: Check current `bin/install.mjs` wizard structure for the right insertion point; decide config-file location for the API key (`~/.claude/.env`? `~/.claude/config.json`?) and document the choice.
+
+---
+
+*Roadmap created: 2026-04-10*
