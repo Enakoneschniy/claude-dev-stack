@@ -12,7 +12,7 @@
 ## Phases
 
 - [ ] **Phase 1: Fix Session-Manager Context Auto-Update** — Make `context.md` actually update on session end (prerequisite for syncing non-stale data)
-- [ ] **Phase 2: NotebookLM API Client** — Build `lib/notebooklm.mjs` as a single-dep HTTP client with env-based auth and rate-limit handling
+- [ ] **Phase 2: NotebookLM CLI Wrapper** — Build `lib/notebooklm.mjs` as a thin wrapper over the `notebooklm-py` CLI (ADR-0001 pivot: no public NotebookLM REST API exists; delegate to upstream Python tool)
 - [ ] **Phase 3: Sync Manifest & Change Detection** — Local hash manifest at `~/vault/.notebooklm-sync.json` to skip unchanged files
 - [ ] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention
 - [ ] **Phase 5: CLI Integration, Trigger & Wizard** — `notebooklm sync`/`status` commands, session-end background trigger, installer + doctor integration
@@ -34,16 +34,17 @@
 **Plans**: TBD
 **UI hint**: no
 
-### Phase 2: NotebookLM API Client
-**Goal**: A developer using `lib/notebooklm.mjs` can create a notebook, list its sources, and upload/replace/delete a source over HTTP, with no new npm dependencies and with meaningful errors on failure.
+### Phase 2: NotebookLM CLI Wrapper (`notebooklm-py`)
+**Goal**: A developer using `lib/notebooklm.mjs` can create a notebook, list its sources, and upload/replace/delete a source by delegating to the `notebooklm-py` CLI via `spawnSync`, with no new npm dependencies, structured error types, and a fast-fail path when the binary is missing.
 **Depends on**: Nothing (can run in parallel with Phase 1)
 **Requirements**: NBLM-01, NBLM-02, NBLM-03, NBLM-04, NBLM-05, NBLM-06, TEST-01
+**Scope pivot (2026-04-10, ADR-0001):** Originally scoped as an HTTP client to a public NotebookLM REST API with `NOTEBOOKLM_API_KEY`. Research during discuss-phase established that no such API exists — all programmatic NotebookLM access goes through `notebooklm-py` (Python CLI with browser OAuth). Phase 2 is therefore a thin wrapper over that CLI. See `vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` for rationale, alternatives considered, and consequences.
 **Success Criteria** (what must be TRUE):
-  1. `lib/notebooklm.mjs` exports `createNotebook`, `listSources`, `uploadSource`, `deleteSource`, `updateSource` and each returns a resolved value or throws with a human-readable message identifying the HTTP status and endpoint.
-  2. The module reads `NOTEBOOKLM_API_KEY` from `process.env` only; `package.json` still lists `prompts` as the sole runtime dependency after this phase.
-  3. A test run (`npm test`) exercises `tests/notebooklm.test.mjs` against a local `node:http` mock server and asserts: success path, 4xx error propagation, 429 with `Retry-After` causing a delayed retry.
-  4. Calling any client function without `NOTEBOOKLM_API_KEY` set produces a descriptive error (not a stack trace referencing `undefined.headers`).
-  5. Phase-level research report documents whether the discovered `notebooklm` Claude Code skill exposes a reusable client, and the phase plan reflects that finding (reuse vs. write from scratch).
+  1. `lib/notebooklm.mjs` exports `createNotebook`, `listSources`, `uploadSource`, `deleteSource`, `deleteSourceByTitle`, and `updateSource`. Each function calls `spawnSync('notebooklm', [...args, '--json'])` exactly once, parses stdout as JSON on success, and throws a typed Error (`NotebooklmCliError`, `NotebooklmRateLimitError`, or `NotebooklmNotInstalledError`) on failure.
+  2. `package.json` `dependencies` block still contains only `{"prompts": "^2.4.2"}` after this phase — JavaScript single-dep constraint preserved. `notebooklm-py >= 0.3.4` is documented as a **system dependency** in `.planning/PROJECT.md` Constraints and checked by `lib/doctor.mjs` (Phase 5).
+  3. `npm test` exercises `tests/notebooklm.test.mjs` against a **fake `notebooklm` binary** (bash stub placed at the front of `PATH` during test setup). The test covers: success path with canned JSON output, fast-fail when binary is missing from `PATH`, non-zero exit with stderr captured in the thrown error, rate-limit stderr pattern (`"No result found for RPC ID"`) producing `NotebooklmRateLimitError`. No real `notebooklm` binary is invoked in tests.
+  4. Calling any exported function on a machine without `notebooklm` in `PATH` produces a `NotebooklmNotInstalledError` whose message includes the install hint (`pipx install notebooklm-py`) — not an `ENOENT` stack trace from `spawnSync`.
+  5. Authentication is entirely delegated to `notebooklm-py`: `lib/notebooklm.mjs` never reads any env var related to auth, never touches `~/.notebooklm/storage_state.json`, never invokes `notebooklm login`. Verified by `grep -r NOTEBOOKLM_API_KEY lib/notebooklm.mjs` returning zero matches and by code review confirming no credential handling.
 **Plans**: TBD
 **UI hint**: no
 
@@ -74,15 +75,15 @@
 **UI hint**: no
 
 ### Phase 5: CLI Integration, Trigger & Wizard
-**Goal**: A user with `NOTEBOOKLM_API_KEY` set can discover the feature through `claude-dev-stack install`, run sync manually, observe status, see health in `doctor`, and get automatic best-effort sync after every session end without any terminal noise on failure.
-**Depends on**: Phase 1 (session-manager fix), Phase 2 (API client), Phase 3 (manifest), Phase 4 (pipeline)
+**Goal**: A user with `notebooklm-py` installed and authenticated can discover the feature through `claude-dev-stack install`, run sync manually, observe status, see health in `doctor`, and get automatic best-effort sync after every session end without any terminal noise on failure. Users without `notebooklm-py` are guided through installation inside the wizard.
+**Depends on**: Phase 1 (session-manager fix), Phase 2 (CLI wrapper), Phase 3 (manifest), Phase 4 (pipeline)
 **Requirements**: NBLM-19, NBLM-20, NBLM-21, NBLM-22, NBLM-23, NBLM-24, NBLM-25, NBLM-26, NBLM-27, TEST-02
 **Success Criteria** (what must be TRUE):
   1. `claude-dev-stack notebooklm sync` runs end-to-end, prints per-file status, and exits 0 on success; `claude-dev-stack notebooklm status` prints last sync time, file count, and stale count on a real vault.
   2. Running `claude-dev-stack notebooklm status` on a freshly initialized vault (no manifest yet) exits 0 with a "no sync yet" message and does not throw — verified by `tests/project-setup.test.mjs`.
-  3. After the Phase 1 fix is in place, ending a session via `session-manager /end` with `NOTEBOOKLM_API_KEY` set causes a detached background sync to run; session-end UI does not block on network I/O and returns control to the user immediately.
-  4. Sync failures during the session-end trigger are appended to `~/vault/.notebooklm-sync.log` and never surface as errors in the user's terminal; with `NOTEBOOKLM_API_KEY` unset, no sync attempt is made and nothing is logged.
-  5. The install wizard offers "Set up NotebookLM sync?" as an optional step that explains the feature, accepts an API key, persists it to a user config (not the repo), and tests connectivity; `claude-dev-stack doctor` reports both "API key configured" and "last sync status" when run afterwards.
+  3. After the Phase 1 fix is in place, ending a session via `session-manager /end` on a machine where `notebooklm` binary is in `PATH` AND `notebooklm auth check` returns exit 0 causes a detached background sync to run; session-end UI does not block on network I/O and returns control to the user immediately.
+  4. Sync failures during the session-end trigger are appended to `~/vault/.notebooklm-sync.log` and never surface as errors in the user's terminal; when `notebooklm` binary is absent or `notebooklm auth check` fails, no sync attempt is made and the skip is logged at info level (not as an error).
+  5. The install wizard offers "Set up NotebookLM sync?" as an optional step that: (a) explains the feature and its `notebooklm-py` system dependency, (b) detects if `notebooklm` is already in `PATH`, (c) if absent, offers to install via `pipx install notebooklm-py` with a `pip install --user notebooklm-py` fallback, (d) runs `notebooklm login` as an interactive subprocess to kick off browser OAuth, (e) verifies the setup with `notebooklm auth check`. No API key is ever prompted for or persisted by claude-dev-stack. `claude-dev-stack doctor` reports `notebooklm` binary presence, `notebooklm auth check` status, and last sync status as three separate lines when run afterwards.
 **Plans**: TBD
 **UI hint**: no
 
@@ -99,7 +100,7 @@
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fix Session-Manager Context Auto-Update | 0/0 | Not started | - |
-| 2. NotebookLM API Client | 0/0 | Not started | - |
+| 2. NotebookLM CLI Wrapper | 0/0 | Not started | - |
 | 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
 | 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
 | 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
@@ -113,7 +114,7 @@ Plans counts populate during `/gsd-plan-phase N`.
 ```
 Phase 1 (session-manager fix) ─┐
                                │
-Phase 2 (API client) ──────────┼──> Phase 5 (CLI + trigger + wizard)
+Phase 2 (CLI wrapper) ─────────┼──> Phase 5 (CLI + trigger + wizard)
                                │
 Phase 3 (manifest) ────────────┤
                                │

@@ -44,7 +44,7 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 
 <!-- Upcoming scope. First GSD-managed milestone on this project. -->
 
-- [ ] **NotebookLM auto-sync MVP** — automatically upload vault content (session logs, ADRs, docs, context.md) to a shared NotebookLM notebook so Claude can ground answers in project history
+- [ ] **NotebookLM auto-sync MVP** — automatically upload vault content (session logs, ADRs, docs, context.md) to a shared NotebookLM notebook so Claude can ground answers in project history. Implemented as a thin wrapper over the `notebooklm-py` CLI (not a direct HTTP client — there is no public NotebookLM REST API). See ADR-0001.
 - [ ] **Fix session-manager context.md auto-update** — currently a dead comment in `skills/session-manager/SKILL.md:80`; context.md drifts stale (confirmed: says v0.7.0 when shipped is v0.7.8)
 - [ ] **Local manifest with content hashes** — prevent re-uploading unchanged files to NotebookLM
 
@@ -82,13 +82,14 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 ## Constraints
 
 - **Runtime**: Node.js 18+ — do not use APIs that require Node 20+ (e.g., `fetch` is OK, `navigator` is not)
-- **Dependencies**: Stay single-dep (`prompts` only) — NotebookLM client must use `node:https` or `fetch`, NOT `axios`/`node-fetch`
+- **JavaScript dependencies**: Stay single-dep (`prompts` only) — no `axios`, `node-fetch`, `playwright`, or similar additions. Use `node:https`, `fetch`, or `child_process.spawnSync` instead.
+- **System dependencies (NotebookLM feature only)**: `notebooklm-py >= 0.3.4` is a system dependency required **only for the NotebookLM sync feature**, not for core `claude-dev-stack` operation. Installation is guided by the install wizard in Phase 5 (`pipx install notebooklm-py` or `pip install --user notebooklm-py`). Users who skip NotebookLM setup have no Python requirement. Per ADR-0001 (`vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`).
 - **Distribution**: Must install via `npx` with no post-install step — cannot require compilation or native bindings
 - **Style**: Conventional commits (feat/fix/chore/docs), no Co-Authored-By, no linter but consistent ESM + destructuring + template literals + `c.X` color strings (NOT functions)
 - **Comms**: Code and commits in English; user-facing CLI output in English; communication (issues, PRs, chat) in Russian
-- **Testing**: Every new `lib/*.mjs` module needs a matching `tests/*.test.mjs` file; tests use `node:test` only, no external frameworks
+- **Testing**: Every new `lib/*.mjs` module needs a matching `tests/*.test.mjs` file; tests use `node:test` only, no external frameworks. External CLI dependencies (like `notebooklm`) are mocked via bash stubs placed at the front of `PATH` in the test, never by invoking the real binary.
 - **Backward compatibility**: Project already shipped v0.7.8 to real users — breaking changes to public commands/flags require major bump and migration notes
-- **Secrets**: NotebookLM API tokens must NEVER be committed; read from env (`NOTEBOOKLM_API_KEY`) or user's Claude config; no `.env` files in repo
+- **Secrets**: Claude-dev-stack never stores NotebookLM credentials. Authentication is delegated entirely to `notebooklm-py` (browser OAuth via `notebooklm login`, cookies at `~/.notebooklm/storage_state.json`). No `NOTEBOOKLM_API_KEY` env var, no `.env` files in repo. Per ADR-0001.
 
 ## Key Decisions
 
@@ -101,6 +102,7 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 | Filename prefix `{project}__` in shared notebook | Lets user ask "only look at biko-pro__ files" to scope queries; cheap disambiguation | — Pending validation |
 | Fix context.md auto-update inside NotebookLM milestone (not as separate fix) | Sync of stale context.md is worse than not syncing — the fix is a hard prerequisite for the sync feature. Bundling keeps the feedback loop closed. | — Pending |
 | Manual Notion export step kept for now | Already works via `docs add`; automating via Notion MCP is a future phase once pilot validates the pipeline | — Deferred |
+| NotebookLM integration via `notebooklm-py` CLI wrapper, not a custom HTTP client (ADR-0001) | Google NotebookLM has no public REST API. `notebooklm-py` already implements the reverse-engineered RPC + browser OAuth layer. Writing our own would break single-dep (needs playwright) and duplicate work. | ✓ Good — accepted during Phase 2 discuss-phase 2026-04-10; full rationale in `vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` |
 
 ## Evolution
 
@@ -120,4 +122,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after initialization*
+*Last updated: 2026-04-10 after Phase 2 pivot (ADR-0001): NotebookLM integration reframed as `notebooklm-py` CLI wrapper; Constraints updated with system dep; Active section annotated; Key Decisions table gained pivot row.*
