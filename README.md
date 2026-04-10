@@ -250,6 +250,27 @@ claude-dev-stack sync init    # Initialize vault as git repo
 
 ---
 
+## Dev Containers
+
+Claude Dev Stack works great inside VS Code / GitHub Codespaces dev containers. See [`examples/devcontainer/`](examples/devcontainer/) for a complete configuration.
+
+Minimum setup:
+
+```json
+{
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/node/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}/.claude,target=/home/node/.claude,type=bind"
+  ],
+  "postCreateCommand": "npm install -g @anthropic-ai/claude-code && npx --yes claude-dev-stack"
+}
+```
+
+With vault git sync, your context follows you between host and container automatically.
+
+---
+
 ## Updating
 
 When new versions are released with bug fixes and improvements:
