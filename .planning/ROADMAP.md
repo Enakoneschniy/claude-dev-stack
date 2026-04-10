@@ -31,7 +31,10 @@
   3. If a project's `context.md` has no "Session History" section yet, the first `/end` creates it at a predictable anchor and subsequent ends append to it.
   4. The update logic lives in executable code (bash helper or Node.js script invoked by the skill), not as prose inside `SKILL.md`.
   5. `npm test` includes a test that simulates a session end and asserts `context.md` was actually modified with the expected entry.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 01-01-PLAN.md — Pure session-context helper + unit tests (lib/session-context.mjs)
+- [ ] 01-02-PLAN.md — Wire wrapper, hook, skill, integration test
 **UI hint**: no
 
 ### Phase 2: NotebookLM CLI Wrapper (`notebooklm-py`)
@@ -99,7 +102,7 @@
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fix Session-Manager Context Auto-Update | 0/0 | Not started | - |
+| 1. Fix Session-Manager Context Auto-Update | 0/2 | Planned | - |
 | 2. NotebookLM CLI Wrapper | 0/0 | Not started | - |
 | 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
 | 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
