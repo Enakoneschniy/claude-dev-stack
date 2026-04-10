@@ -13,9 +13,9 @@
 Fix the existing bug where `context.md` doesn't actually update on session end, which would make NotebookLM sync upload stale data.
 
 - [x] **SKILL-01**: `session-manager /end` writes a "Session History" entry to `vault/projects/{name}/context.md` linking the new session log file
-- [ ] **SKILL-02**: `context.md` update preserves all other sections (the existing markers-based or section-based replace pattern, not full-file rewrite)
+- [x] **SKILL-02**: `context.md` update preserves all other sections (the existing markers-based or section-based replace pattern, not full-file rewrite)
 - [x] **SKILL-03**: The logic lives in executable code (bash or Node.js helper), not as a markdown comment in `SKILL.md`
-- [ ] **SKILL-04**: If `context.md` doesn't yet have a "Session History" section, it is created and appended at a predictable location (after "## Overview" or at the end before any footer)
+- [x] **SKILL-04**: If `context.md` doesn't yet have a "Session History" section, it is created and appended at a predictable location (after "## Overview" or at the end before any footer)
 - [x] **SKILL-05**: Existing `tests/hooks.test.mjs` or new test verifies context.md is actually modified after a simulated session end
 
 ### NotebookLM Client Module
@@ -128,9 +128,9 @@ Prevent unnecessary re-uploads.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SKILL-01 | Phase 1 | Complete |
-| SKILL-02 | Phase 1 | Pending |
+| SKILL-02 | Phase 1 | Complete |
 | SKILL-03 | Phase 1 | Complete |
-| SKILL-04 | Phase 1 | Pending |
+| SKILL-04 | Phase 1 | Complete |
 | SKILL-05 | Phase 1 | Complete |
 | NBLM-01 | Phase 2 | Pending |
 | NBLM-02 | Phase 2 | Pending |
