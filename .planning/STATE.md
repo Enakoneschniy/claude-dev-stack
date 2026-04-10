@@ -1,6 +1,6 @@
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-10 (after Phase 2 context captured + scope pivot via ADR-0001)
+**Last updated:** 2026-04-10 (after Phase 3 context captured — all 3 parallel-ready phases done for discuss)
 
 ---
 
@@ -15,28 +15,26 @@
 **Roadmap:** `.planning/ROADMAP.md` (5 phases)
 
 **Current milestone:** v0.8 — NotebookLM Auto-Sync MVP
-**Current focus:** Phases 1 and 2 context captured; scope pivoted for Phase 2 via ADR-0001 — ready to plan 1 or discuss 3
+**Current focus:** All 3 parallel-ready phases (1, 2, 3) have CONTEXT.md captured. Ready to start planning wave.
 
 ---
 
 ## Current Position
 
-**Phase:** 2 — NotebookLM CLI Wrapper (last discussed); Phase 1 also has CONTEXT captured
-**Plan:** n/a (both phases awaiting planning)
-**Status:** 01-CONTEXT.md and 02-CONTEXT.md written, phases 1 and 2 ready for `/gsd-plan-phase`
-**Progress:** ░░░░░░░░░░ 0% (0/5 phases complete, 2/5 discuss-phase done)
+**Phase:** 1, 2, 3 — all discuss-phase complete; planning wave can start
+**Plan:** n/a (no phase has plans yet)
+**Status:** 01-CONTEXT.md, 02-CONTEXT.md, 03-CONTEXT.md all written and committed
+**Progress:** ░░░░░░░░░░ 0% (0/5 phases complete, 3/5 discuss-phase done)
 
 **Next step options:**
-- `/gsd-discuss-phase 3` — continue parallel discuss chain for Phase 3 (sync manifest, SHA-256, atomic write)
-- `/gsd-plan-phase 1` or `/gsd-plan-phase 2` — start planning for Phase 1 or 2 (both have locked context)
+- `/gsd-plan-phase 1` — start Phase 1 planning (context.md auto-update fix; 14 decisions locked)
+- `/gsd-plan-phase 2` — start Phase 2 planning (post-pivot CLI wrapper; 15 decisions locked, ADR-0001 required reading)
+- `/gsd-plan-phase 3` — start Phase 3 planning (sync manifest; 22 decisions locked across 5 gray areas)
+- `/gsd-autonomous` — chain plan+execute across all remaining phases
 
 **Recent milestone-level change:** Phase 2 scope was pivoted from "HTTP client with API key" to "thin wrapper over `notebooklm-py` CLI" after discuss-phase investigation revealed Google NotebookLM has no public REST API. Full rationale in `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`. REQUIREMENTS.md NBLM-01..06 and ROADMAP.md Phase 2 + Phase 5 were rewritten accordingly. PROJECT.md Constraints now include a system dependency on `notebooklm-py >= 0.3.4` (NotebookLM feature only).
 
-**Alternative parallel starts** (config.parallelization = true):
-- Phase 3 (manifest) — pure local file work, still parallel-ready, no dependencies
-- Phase 1 (session-manager fix) — small phase, tight scope, can plan anytime
-
-Phases 4 and 5 are blocked and cannot start yet.
+**Parallel-ready wave:** Phases 1, 2, 3 have no cross-dependencies — planner can decompose any of them in any order. Phases 4 and 5 remain blocked (4 depends on 2+3, 5 depends on 1+2+3+4).
 
 ---
 
@@ -77,9 +75,9 @@ Phases 4 and 5 are blocked and cannot start yet.
 
 ### Todos
 
-- [ ] Plan Phase 1 via `/gsd-plan-phase 1` (CONTEXT.md ready at `.planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md`)
-- [ ] Plan Phase 2 via `/gsd-plan-phase 2` (post-pivot CONTEXT.md at `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md`; downstream agents MUST read ADR-0001 first — referenced in canonical_refs)
-- [ ] Discuss Phase 3 via `/gsd-discuss-phase 3` — sync manifest (SHA-256, atomic write)
+- [ ] Plan Phase 1 via `/gsd-plan-phase 1` (CONTEXT.md at `.planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md`)
+- [ ] Plan Phase 2 via `/gsd-plan-phase 2` (CONTEXT.md at `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md`; **downstream agents MUST read ADR-0001 first** — referenced in canonical_refs)
+- [ ] Plan Phase 3 via `/gsd-plan-phase 3` (CONTEXT.md at `.planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md`)
 - [ ] (Backlog, next stage) Reconcile `~/vault/projects/{name}/decisions/` ADR folder with GSD `.planning/phases/*/CONTEXT.md` — two parallel decision-capture systems exist; user flagged during Phase 1 discuss. ADR-0001 bootstrapped the decisions folder usage. Not scheduled yet. See `memory/project_vault_decisions_vs_gsd_planning.md`.
 - [ ] (Phase 5 planning task) Cross-platform install strategy for `notebooklm-py` during wizard: `pipx` vs `pip --user` vs `uv pip install` — validate on macOS/Linux/Windows
 - [ ] (Phase 5 research task) `notebooklm login` UX inside `install.mjs` wizard — subprocess inheritance of stdin for browser OAuth flow may be tricky in some terminals
@@ -101,24 +99,26 @@ None currently. Ready to start planning.
 
 ## Session Continuity
 
-**Last session activity:** Phase 2 CONTEXT.md captured via `/gsd-discuss-phase 2`. The session uncovered a fundamental scope contradiction (Google NotebookLM has no public REST API), led to a milestone-level pivot formalized as ADR-0001, atomic rewrite of REQUIREMENTS.md NBLM-01..06 + ROADMAP.md Phases 2 & 5 + PROJECT.md Constraints (commit `e6c21b7`), then resumed discuss on the new scope with 4 tactical gray areas. All recommendations accepted in single turn (`1`). 15 decisions (D-01..D-15) locked in 02-CONTEXT.md. Committed as `docs(02): capture phase context` (`a5399f8`).
+**Last session activity:** Phases 1, 2, 3 all got CONTEXT.md captured in a single session. Phase 1 (Fix Session-Manager Context Auto-Update) completed normally in `5c56dfe`. Phase 2 (NotebookLM CLI Wrapper) uncovered the scope contradiction → ADR-0001 pivot → atomic rewrite of REQUIREMENTS + ROADMAP + PROJECT in `e6c21b7` → resumed discuss with 4 tactical gray areas → `a5399f8`. Phase 3 (Sync Manifest) straightforward discuss on 5 tactical gray areas (schema, hash format, atomic write, corrupt recovery, gitignore migration) → `6794793`. All 3 phases accepted recommended defaults in single-turn batches (user typed `1` each time after reviewing pre-analysis).
 
-Session also wrote ADR-0001 to `~/vault/projects/claude-dev-stack/decisions/`, bootstrapping the use of the previously-unused decisions folder. Vault auto-sync hook already committed it (vault commit `a5f2aaf`).
+Session also wrote ADR-0001 to `~/vault/projects/claude-dev-stack/decisions/`, bootstrapping the use of the previously-unused decisions folder. Vault auto-sync hook already committed it to vault git.
 
 **To resume next session:**
 1. `cat .planning/PROJECT.md` — core value and constraints (post-pivot)
 2. `cat .planning/ROADMAP.md` — 5 phases and dependency graph (Phase 2 + 5 rewritten)
 3. `cat .planning/STATE.md` — this file
-4. `cat ~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` — the architectural pivot rationale, **required reading before touching Phase 2 code**
+4. `cat ~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` — architectural pivot rationale, **required reading before touching Phase 2 code**
 5. `cat .planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md` — locked decisions for Phase 1
 6. `cat .planning/phases/02-notebooklm-api-client/02-CONTEXT.md` — locked decisions for Phase 2
-7. Continue: `/gsd-discuss-phase 3` (Phase 3 — sync manifest) OR start planning with `/gsd-plan-phase 1` or `/gsd-plan-phase 2`
+7. `cat .planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md` — locked decisions for Phase 3
+8. Continue: `/gsd-plan-phase 1` / `2` / `3` to start the planning wave. Or `/gsd-autonomous` to chain plan+execute across all three parallel-ready phases.
 
-**Files written during Phase 2 context session:**
+**Files written across this session:**
 - `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` (new, in vault — auto-committed via vault hook)
-- `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md` (new)
-- `.planning/phases/02-notebooklm-api-client/02-DISCUSSION-LOG.md` (new)
-- `.planning/REQUIREMENTS.md` (updated — NBLM-01..06 rewritten, NBLM-21/23/26/27 updated, count corrected 37→36)
+- `.planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md` + `01-DISCUSSION-LOG.md` (new)
+- `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md` + `02-DISCUSSION-LOG.md` (new)
+- `.planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md` + `03-DISCUSSION-LOG.md` (new)
+- `.planning/REQUIREMENTS.md` (updated — NBLM-01..06 rewritten via pivot, NBLM-21/23/26/27 updated, count corrected 37→36)
 - `.planning/ROADMAP.md` (updated — Phase 2 and Phase 5 rewritten)
 - `.planning/PROJECT.md` (updated — Constraints, Active, Key Decisions sections)
 - `.planning/STATE.md` (this file — updated)
@@ -128,10 +128,13 @@ Session also wrote ADR-0001 to `~/vault/projects/claude-dev-stack/decisions/`, b
 - `63654af` — docs(state): record phase 1 context session
 - `e6c21b7` — docs: pivot phase 2 scope to notebooklm-py CLI wrapper (ADR-0001)
 - `a5399f8` — docs(02): capture phase context [Phase 2]
-- (pending) — docs(state): record phase 2 context session + pivot
+- `351ec38` — docs(state): record phase 2 context session + pivot
+- `6794793` — docs(03): capture phase context [Phase 3]
+- (pending) — docs(state): record phase 3 context session
 
 ---
 
 *State initialized: 2026-04-10 after roadmap creation*
 *State updated: 2026-04-10 after Phase 1 context captured*
 *State updated: 2026-04-10 after Phase 2 context captured + ADR-0001 pivot*
+*State updated: 2026-04-10 after Phase 3 context captured — parallel discuss wave complete*
