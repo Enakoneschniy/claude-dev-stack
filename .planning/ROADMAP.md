@@ -11,7 +11,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Fix Session-Manager Context Auto-Update** — Make `context.md` actually update on session end (prerequisite for syncing non-stale data)
+- [x] **Phase 1: Fix Session-Manager Context Auto-Update** — Make `context.md` actually update on session end (prerequisite for syncing non-stale data) (completed 2026-04-10)
 - [ ] **Phase 2: NotebookLM CLI Wrapper** — Build `lib/notebooklm.mjs` as a thin wrapper over the `notebooklm-py` CLI (ADR-0001 pivot: no public NotebookLM REST API exists; delegate to upstream Python tool)
 - [ ] **Phase 3: Sync Manifest & Change Detection** — Local hash manifest at `~/vault/.notebooklm-sync.json` to skip unchanged files
 - [ ] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention
@@ -33,8 +33,8 @@
   5. `npm test` includes a test that simulates a session end and asserts `context.md` was actually modified with the expected entry.
 **Plans**: 2 plans
 Plans:
-- [ ] 01-01-PLAN.md — Pure session-context helper + unit tests (lib/session-context.mjs)
-- [ ] 01-02-PLAN.md — Wire wrapper, hook, skill, integration test
+- [x] 01-01-PLAN.md — Pure session-context helper + unit tests (lib/session-context.mjs)
+- [x] 01-02-PLAN.md — Wire wrapper, hook, skill, integration test
 **UI hint**: no
 
 ### Phase 2: NotebookLM CLI Wrapper (`notebooklm-py`)
@@ -102,7 +102,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fix Session-Manager Context Auto-Update | 0/2 | Planned | - |
+| 1. Fix Session-Manager Context Auto-Update | 2/2 | Complete   | 2026-04-10 |
 | 2. NotebookLM CLI Wrapper | 0/0 | Not started | - |
 | 3. Sync Manifest & Change Detection | 0/0 | Not started | - |
 | 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |

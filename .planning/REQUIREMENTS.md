@@ -12,11 +12,11 @@
 
 Fix the existing bug where `context.md` doesn't actually update on session end, which would make NotebookLM sync upload stale data.
 
-- [ ] **SKILL-01**: `session-manager /end` writes a "Session History" entry to `vault/projects/{name}/context.md` linking the new session log file
+- [x] **SKILL-01**: `session-manager /end` writes a "Session History" entry to `vault/projects/{name}/context.md` linking the new session log file
 - [ ] **SKILL-02**: `context.md` update preserves all other sections (the existing markers-based or section-based replace pattern, not full-file rewrite)
-- [ ] **SKILL-03**: The logic lives in executable code (bash or Node.js helper), not as a markdown comment in `SKILL.md`
+- [x] **SKILL-03**: The logic lives in executable code (bash or Node.js helper), not as a markdown comment in `SKILL.md`
 - [ ] **SKILL-04**: If `context.md` doesn't yet have a "Session History" section, it is created and appended at a predictable location (after "## Overview" or at the end before any footer)
-- [ ] **SKILL-05**: Existing `tests/hooks.test.mjs` or new test verifies context.md is actually modified after a simulated session end
+- [x] **SKILL-05**: Existing `tests/hooks.test.mjs` or new test verifies context.md is actually modified after a simulated session end
 
 ### NotebookLM Client Module
 
@@ -72,7 +72,7 @@ Prevent unnecessary re-uploads.
 
 - [ ] **TEST-01**: `tests/notebooklm.test.mjs` covers: manifest read/write/update, hash computation, upload/replace logic (with mocked HTTP), error propagation
 - [ ] **TEST-02**: `tests/project-setup.test.mjs` extended with a smoke test that `claude-dev-stack notebooklm status` exits cleanly on a fresh vault
-- [ ] **TEST-03**: `tests/skills.test.mjs` or new `tests/session-manager.test.mjs` verifies SKILL-01/SKILL-02 (context.md actually gets updated)
+- [x] **TEST-03**: `tests/skills.test.mjs` or new `tests/session-manager.test.mjs` verifies SKILL-01/SKILL-02 (context.md actually gets updated)
 - [ ] **TEST-04**: Full test suite still passes (`npm test` → 54 → 54+N passed, 0 failed)
 
 ---
@@ -127,11 +127,11 @@ Prevent unnecessary re-uploads.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SKILL-01 | Phase 1 | Pending |
+| SKILL-01 | Phase 1 | Complete |
 | SKILL-02 | Phase 1 | Pending |
-| SKILL-03 | Phase 1 | Pending |
+| SKILL-03 | Phase 1 | Complete |
 | SKILL-04 | Phase 1 | Pending |
-| SKILL-05 | Phase 1 | Pending |
+| SKILL-05 | Phase 1 | Complete |
 | NBLM-01 | Phase 2 | Pending |
 | NBLM-02 | Phase 2 | Pending |
 | NBLM-03 | Phase 2 | Pending |
@@ -161,7 +161,7 @@ Prevent unnecessary re-uploads.
 | NBLM-27 | Phase 5 | Pending |
 | TEST-01 | Phase 2 | Pending |
 | TEST-02 | Phase 5 | Pending |
-| TEST-03 | Phase 1 | Pending |
+| TEST-03 | Phase 1 | Complete |
 | TEST-04 | All phases | Continuous |
 
 **Coverage:**
