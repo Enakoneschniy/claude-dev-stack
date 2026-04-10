@@ -1,6 +1,6 @@
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-10 (after Phase 1 context captured)
+**Last updated:** 2026-04-10 (after Phase 2 context captured + scope pivot via ADR-0001)
 
 ---
 
@@ -15,22 +15,26 @@
 **Roadmap:** `.planning/ROADMAP.md` (5 phases)
 
 **Current milestone:** v0.8 — NotebookLM Auto-Sync MVP
-**Current focus:** Phase 1 context captured — ready to plan
+**Current focus:** Phases 1 and 2 context captured; scope pivoted for Phase 2 via ADR-0001 — ready to plan 1 or discuss 3
 
 ---
 
 ## Current Position
 
-**Phase:** 1 — Fix Session-Manager Context Auto-Update
-**Plan:** n/a (context just captured)
-**Status:** CONTEXT.md written, awaiting `/gsd-plan-phase 1`
-**Progress:** ░░░░░░░░░░ 0% (0/5 phases complete)
+**Phase:** 2 — NotebookLM CLI Wrapper (last discussed); Phase 1 also has CONTEXT captured
+**Plan:** n/a (both phases awaiting planning)
+**Status:** 01-CONTEXT.md and 02-CONTEXT.md written, phases 1 and 2 ready for `/gsd-plan-phase`
+**Progress:** ░░░░░░░░░░ 0% (0/5 phases complete, 2/5 discuss-phase done)
 
-**Next step:** `/gsd-plan-phase 1` to decompose "Fix Session-Manager Context Auto-Update" into executable plans using the 14 decisions captured in `01-CONTEXT.md`.
+**Next step options:**
+- `/gsd-discuss-phase 3` — continue parallel discuss chain for Phase 3 (sync manifest, SHA-256, atomic write)
+- `/gsd-plan-phase 1` or `/gsd-plan-phase 2` — start planning for Phase 1 or 2 (both have locked context)
+
+**Recent milestone-level change:** Phase 2 scope was pivoted from "HTTP client with API key" to "thin wrapper over `notebooklm-py` CLI" after discuss-phase investigation revealed Google NotebookLM has no public REST API. Full rationale in `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`. REQUIREMENTS.md NBLM-01..06 and ROADMAP.md Phase 2 + Phase 5 were rewritten accordingly. PROJECT.md Constraints now include a system dependency on `notebooklm-py >= 0.3.4` (NotebookLM feature only).
 
 **Alternative parallel starts** (config.parallelization = true):
-- Phase 2 (API client) — has no dependency on Phase 1 and front-loads the highest-uncertainty work (external API). Good candidate if user wants to de-risk fastest.
-- Phase 3 (manifest) — pure local file work, low risk, can proceed independently.
+- Phase 3 (manifest) — pure local file work, still parallel-ready, no dependencies
+- Phase 1 (session-manager fix) — small phase, tight scope, can plan anytime
 
 Phases 4 and 5 are blocked and cannot start yet.
 
@@ -58,26 +62,27 @@ Phases 4 and 5 are blocked and cannot start yet.
 
 - **Single shared NotebookLM notebook** for MVP with `{project}__` filename prefixes. Per-project notebooks deferred to v2.
 - **Context.md fix bundled into NotebookLM milestone** as Phase 1 — syncing stale data is worse than not syncing, so the fix is a hard prerequisite.
-- **Single-dep constraint preserved**: Phase 2 API client must use `fetch` or `node:https`, never add `axios`/`node-fetch`.
-- **Env var auth only** (`NOTEBOOKLM_API_KEY`) — no keyring/OAuth in MVP.
+- **JavaScript single-dep constraint preserved**: `package.json` stays `{"prompts": "^2.4.2"}` after v0.8 ships. No `axios`, `node-fetch`, `playwright`, etc.
+- **NotebookLM integration is a CLI wrapper** over `notebooklm-py` — Google has no public REST API. System dep `notebooklm-py >= 0.3.4` documented in PROJECT.md Constraints. **Per ADR-0001, established 2026-04-10 during Phase 2 discuss.**
+- **Authentication is delegated entirely to `notebooklm-py`** (browser OAuth via `notebooklm login`). Claude-dev-stack never stores credentials or handles `NOTEBOOKLM_API_KEY` (that env var was invalidated during the pivot).
 - **Replace-by-filename** semantics for all non-session uploads (sessions are append-only).
 
 ### Decisions (made during roadmap creation)
 
 - **Phases 1-3 are independent** and can run in parallel waves. Phase 4 blocks on 2+3, Phase 5 blocks on 1+2+3+4. Dependency graph is explicit in `ROADMAP.md`.
 - **TEST-04 treated as continuous requirement**, not a standalone phase — each plan's verify step runs `npm test`.
-- **The `notebooklm` Claude Code skill** discovered in the environment is flagged in Phase 2 research notes as the first thing to investigate; it may shrink Phase 2 scope if it provides a reusable client.
+- **The `notebooklm` Claude Code skill** at `~/.claude/skills/notebooklm/` was investigated during Phase 2 discuss. It's `notebooklm-py v0.3.4` — a Python CLI, not a reusable JS HTTP client. This investigation invalidated the original Phase 2 scope and led to ADR-0001 pivot. ✓ done.
 - **No UI phase needed** — every phase marked `UI hint: no`. This is a pure CLI/backend milestone; `config.workflow.ui_phase = true` stays on for future UI-touching milestones but does not apply here.
-- **Source count discrepancy noted**: REQUIREMENTS.md traceability table lists 36 rows but summary says 37. Roadmap uses 36 (the actual row count); worth reconciling in REQUIREMENTS.md at next edit.
+- **REQUIREMENTS.md count mismatch corrected** from "37 total" to "36 total" during the pivot commit (`e6c21b7`). ✓ done.
 
 ### Todos
 
 - [ ] Plan Phase 1 via `/gsd-plan-phase 1` (CONTEXT.md ready at `.planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md`)
-- [ ] Discuss Phase 2 via `/gsd-discuss-phase 2` — API client (research must investigate existing `notebooklm` skill first, may shrink scope)
+- [ ] Plan Phase 2 via `/gsd-plan-phase 2` (post-pivot CONTEXT.md at `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md`; downstream agents MUST read ADR-0001 first — referenced in canonical_refs)
 - [ ] Discuss Phase 3 via `/gsd-discuss-phase 3` — sync manifest (SHA-256, atomic write)
-- [ ] (Phase 2 research task, to do when Phase 2 is planned) Investigate the discovered `notebooklm` Claude Code skill — does it wrap a reusable HTTP client or at least document the NotebookLM API surface?
-- [ ] (Phase 5 research task) Decide where to persist `NOTEBOOKLM_API_KEY` when set via install wizard: `~/.claude/.env`? `~/.claude/config.json`? Document and commit the decision in an ADR.
-- [ ] Optional housekeeping: reconcile REQUIREMENTS.md summary (says 37) vs. actual row count (36).
+- [ ] (Backlog, next stage) Reconcile `~/vault/projects/{name}/decisions/` ADR folder with GSD `.planning/phases/*/CONTEXT.md` — two parallel decision-capture systems exist; user flagged during Phase 1 discuss. ADR-0001 bootstrapped the decisions folder usage. Not scheduled yet. See `memory/project_vault_decisions_vs_gsd_planning.md`.
+- [ ] (Phase 5 planning task) Cross-platform install strategy for `notebooklm-py` during wizard: `pipx` vs `pip --user` vs `uv pip install` — validate on macOS/Linux/Windows
+- [ ] (Phase 5 research task) `notebooklm login` UX inside `install.mjs` wizard — subprocess inheritance of stdin for browser OAuth flow may be tricky in some terminals
 
 ### Blockers
 
@@ -85,29 +90,48 @@ None currently. Ready to start planning.
 
 ### Risks to monitor
 
-- **NotebookLM API stability** (external dependency, unknown rate limits, unknown auth behavior) — mitigated by front-loading in Phase 2.
-- **Single-dep constraint** under pressure — any Phase 2 plan that introduces a new npm dep must be rejected at code-review.
+- **`notebooklm-py` upstream fragility** — the pivot inherited a transitive dependency on a reverse-engineered RPC layer. When Google changes internal APIs and breaks `notebooklm-py`, claude-dev-stack breaks until upstream releases a fix. Mitigated by typed errors (users see actionable messages, not stack traces) and the session-end trigger treating failures as "skip silently".
+- **Python runtime requirement for NotebookLM feature** — new class of user who hits "feature not available because `notebooklm-py` isn't installed". Mitigated by Phase 5 install wizard doing the setup and `doctor` check reporting status.
+- **Cross-platform `pipx install notebooklm-py`** — Phase 5 wizard needs to work on macOS, Linux, Windows. Fallback paths (`pip install --user`, system-level pip) add complexity. Mitigated by treating NotebookLM as opt-in during install.
+- **JavaScript single-dep constraint** under pressure — any plan that tries to add `playwright` or similar must be rejected at code-review. Wrapper-over-CLI approach eliminates the temptation.
 - **context.md regressions** — Phase 1 must not break existing session-manager behavior for users who don't use NotebookLM sync at all.
+- **Parallel agent safety** in `notebooklm-py` — upstream's shared `~/.notebooklm/context.json` is unsafe across concurrent processes. Mitigated by always passing explicit `-n <notebookId>` in Phase 2 wrapper (D-09 in 02-CONTEXT.md).
 
 ---
 
 ## Session Continuity
 
-**Last session activity:** Phase 1 CONTEXT.md captured via `/gsd-discuss-phase 1` (routed through `gsd-do`). All 4 gray areas (implementation site, entry format, section find, cap behavior) resolved with recommended defaults — user accepted the pre-analysis in a single turn (`1` = accept all). 14 decisions (D-01..D-14) locked. Committed as `docs(01): capture phase context` (`5c56dfe`). No code changes.
+**Last session activity:** Phase 2 CONTEXT.md captured via `/gsd-discuss-phase 2`. The session uncovered a fundamental scope contradiction (Google NotebookLM has no public REST API), led to a milestone-level pivot formalized as ADR-0001, atomic rewrite of REQUIREMENTS.md NBLM-01..06 + ROADMAP.md Phases 2 & 5 + PROJECT.md Constraints (commit `e6c21b7`), then resumed discuss on the new scope with 4 tactical gray areas. All recommendations accepted in single turn (`1`). 15 decisions (D-01..D-15) locked in 02-CONTEXT.md. Committed as `docs(02): capture phase context` (`a5399f8`).
+
+Session also wrote ADR-0001 to `~/vault/projects/claude-dev-stack/decisions/`, bootstrapping the use of the previously-unused decisions folder. Vault auto-sync hook already committed it (vault commit `a5f2aaf`).
 
 **To resume next session:**
-1. `cat .planning/PROJECT.md` — core value and constraints
-2. `cat .planning/ROADMAP.md` — 5 phases and dependency graph
+1. `cat .planning/PROJECT.md` — core value and constraints (post-pivot)
+2. `cat .planning/ROADMAP.md` — 5 phases and dependency graph (Phase 2 + 5 rewritten)
 3. `cat .planning/STATE.md` — this file
-4. `cat .planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md` — locked decisions for Phase 1
-5. Run `/gsd-plan-phase 1` (or continue the parallel discuss chain with `/gsd-discuss-phase 2` then `/gsd-discuss-phase 3`)
+4. `cat ~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` — the architectural pivot rationale, **required reading before touching Phase 2 code**
+5. `cat .planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md` — locked decisions for Phase 1
+6. `cat .planning/phases/02-notebooklm-api-client/02-CONTEXT.md` — locked decisions for Phase 2
+7. Continue: `/gsd-discuss-phase 3` (Phase 3 — sync manifest) OR start planning with `/gsd-plan-phase 1` or `/gsd-plan-phase 2`
 
-**Files written during Phase 1 context session:**
-- `.planning/phases/01-fix-session-manager-context-auto-update/01-CONTEXT.md` (new)
-- `.planning/phases/01-fix-session-manager-context-auto-update/01-DISCUSSION-LOG.md` (new)
+**Files written during Phase 2 context session:**
+- `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` (new, in vault — auto-committed via vault hook)
+- `.planning/phases/02-notebooklm-api-client/02-CONTEXT.md` (new)
+- `.planning/phases/02-notebooklm-api-client/02-DISCUSSION-LOG.md` (new)
+- `.planning/REQUIREMENTS.md` (updated — NBLM-01..06 rewritten, NBLM-21/23/26/27 updated, count corrected 37→36)
+- `.planning/ROADMAP.md` (updated — Phase 2 and Phase 5 rewritten)
+- `.planning/PROJECT.md` (updated — Constraints, Active, Key Decisions sections)
 - `.planning/STATE.md` (this file — updated)
+
+**Git trail (this session, in chronological order):**
+- `5c56dfe` — docs(01): capture phase context [Phase 1]
+- `63654af` — docs(state): record phase 1 context session
+- `e6c21b7` — docs: pivot phase 2 scope to notebooklm-py CLI wrapper (ADR-0001)
+- `a5399f8` — docs(02): capture phase context [Phase 2]
+- (pending) — docs(state): record phase 2 context session + pivot
 
 ---
 
 *State initialized: 2026-04-10 after roadmap creation*
 *State updated: 2026-04-10 after Phase 1 context captured*
+*State updated: 2026-04-10 after Phase 2 context captured + ADR-0001 pivot*
