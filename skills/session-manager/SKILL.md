@@ -77,8 +77,15 @@ cat > "$SESSION_FILE" << 'EOF'
 - (new packages added, version changes)
 EOF
 
-# Update context.md "Session History" section
-# Add link to new session log
+# Update context.md "Session History" section (D-01, D-02)
+# Invokes the same Node wrapper the Stop hook uses — idempotent by filename.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$(git rev-parse --show-toplevel 2>/dev/null || pwd)" && pwd)"
+UPDATER="$REPO_ROOT/hooks/update-context.mjs"
+if [ -f "$UPDATER" ]; then
+  VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
+    node "$UPDATER" "$(basename "$SESSION_FILE")" 2>/dev/null || true
+fi
 ```
 
 Replace SESSION_SLUG with a kebab-case summary (e.g., "fix-auth-flow", "add-telegram-pipeline").

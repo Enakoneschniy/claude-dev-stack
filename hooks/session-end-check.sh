@@ -27,6 +27,18 @@ fi
 
 # Check if session was already logged today
 if ls "$SESSION_DIR/$TODAY"*.md 1>/dev/null 2>&1; then
+  # Update context.md Session History via the Node wrapper (D-02 safety net)
+  # Pick the newest session log for today as the one to link.
+  SESSION_LOG=$(ls -t "$SESSION_DIR/$TODAY"*.md 2>/dev/null | head -1)
+  if [ -n "$SESSION_LOG" ]; then
+    SESSION_LOG_FILENAME=$(basename "$SESSION_LOG")
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    if [ -f "$SCRIPT_DIR/update-context.mjs" ]; then
+      VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
+        node "$SCRIPT_DIR/update-context.mjs" "$SESSION_LOG_FILENAME" 2>/dev/null || true
+    fi
+  fi
+
   # Session logged — auto-push vault if remote configured
   if [ -d "$VAULT/.git" ]; then
     HAS_REMOTE=$(git -C "$VAULT" remote 2>/dev/null)
