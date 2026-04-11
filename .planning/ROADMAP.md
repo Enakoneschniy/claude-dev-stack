@@ -95,7 +95,11 @@ Plans:
   3. After the Phase 1 fix is in place, ending a session via `session-manager /end` on a machine where `notebooklm` binary is in `PATH` AND `notebooklm auth check` returns exit 0 causes a detached background sync to run; session-end UI does not block on network I/O and returns control to the user immediately.
   4. Sync failures during the session-end trigger are appended to `~/vault/.notebooklm-sync.log` and never surface as errors in the user's terminal; when `notebooklm` binary is absent or `notebooklm auth check` fails, no sync attempt is made and the skip is logged at info level (not as an error).
   5. The install wizard offers "Set up NotebookLM sync?" as an optional step that: (a) explains the feature and its `notebooklm-py` system dependency, (b) detects if `notebooklm` is already in `PATH`, (c) if absent, offers to install via `pipx install notebooklm-py` with a `pip install --user notebooklm-py` fallback, (d) runs `notebooklm login` as an interactive subprocess to kick off browser OAuth, (e) verifies the setup with `notebooklm auth check`. No API key is ever prompted for or persisted by claude-dev-stack. `claude-dev-stack doctor` reports `notebooklm` binary presence, `notebooklm auth check` status, and last sync status as three separate lines when run afterwards.
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 05-01-PLAN.md — lib/notebooklm-cli.mjs dispatcher + bin/cli.mjs routing + help + TEST-02 smoke (NBLM-19, 20, 24, 25, TEST-02)
+- [ ] 05-02-PLAN.md — hooks/notebooklm-sync-trigger.mjs + runner + session-end-check.sh wiring (NBLM-21, 22, 23)
+- [ ] 05-03-PLAN.md — install wizard replacement + doctor section + Phase 3 gitignore migration (NBLM-26, 27)
 **UI hint**: no
 
 ---
@@ -114,7 +118,7 @@ Plans:
 | 2. NotebookLM CLI Wrapper | 2/2 | Complete   | 2026-04-10 |
 | 3. Sync Manifest & Change Detection | 1/1 | Complete   | 2026-04-11 |
 | 4. Vault → NotebookLM Sync Pipeline | 2/2 | Complete   | 2026-04-11 |
-| 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
+| 5. CLI Integration, Trigger & Wizard | 0/3 | Planned     | - |
 
 Plans counts populate during `/gsd-plan-phase N`.
 
