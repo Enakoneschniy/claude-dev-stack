@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
 status: shipped
-last_updated: "2026-04-11T18:45:00.000Z"
+last_updated: "2026-04-11T19:15:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -14,9 +14,9 @@ progress:
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-11 (after quick task 260411-sg2 — v0.8.1 hotfix: uploadSource title via cp-to-tmp, 247 tests passing)
+**Last updated:** 2026-04-11 (after quick task 260411-tgg — GitHub Actions v4 → v5 deps bump, 247 tests passing)
 
-**Last activity:** 2026-04-11 - Completed quick task 260411-sg2: v0.8.1 hotfix (uploadSource respects custom title via cp-to-tmp workaround)
+**Last activity:** 2026-04-11 - Completed quick task 260411-tgg: bump actions/checkout + actions/setup-node from v4 to v5 in CI and publish workflows (closes backlog P2-#1)
 
 ---
 
@@ -122,6 +122,7 @@ None currently. Ready to start planning.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260411-sg2 | v0.8.1 hotfix: uploadSource must respect custom title via cp-to-tmp workaround | 2026-04-11 | 5d3a1fa | [260411-sg2-v0-8-1-hotfix-uploadsource-must-respect-](./quick/260411-sg2-v0-8-1-hotfix-uploadsource-must-respect-/) |
+| 260411-tgg | Bump GitHub Actions to v5 (actions/checkout, actions/setup-node) — closes backlog P2-#1, addresses Node 20 deprecation deadline June 2026 | 2026-04-11 | a30045b | [260411-tgg-update-github-actions-workflows-from-v4-](./quick/260411-tgg-update-github-actions-workflows-from-v4-/) |
 
 ---
 
