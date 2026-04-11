@@ -40,13 +40,27 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 - ✓ Superpowers auto-install, GSD optional — workflow engine shift (GSD off by default) — v0.7.8
 - ✓ Missing project-map entries surfaced instead of silent skip (commit e4a03ad) — v0.7.9 (unreleased)
 
+### Current State
+
+**Last shipped:** v0.8 NotebookLM Auto-Sync (2026-04-11) — SHIPPED ✅
+
+5 phases, 10 plans, 36/36 requirements, 243 tests (+189 from baseline). Full architecture rationale in 12 ADRs at `~/vault/projects/claude-dev-stack/decisions/`. Milestone archive: [`.planning/milestones/v0.8-ROADMAP.md`](milestones/v0.8-ROADMAP.md).
+
+**What shipped in v0.8:**
+- `lib/notebooklm.mjs` — 7-function CLI wrapper over `notebooklm-py` (ADR-0001 pivot)
+- `lib/notebooklm-sync.mjs` — `syncVault(opts)` walks vault → uploads с `{project}__` naming
+- `lib/notebooklm-manifest.mjs` — SHA-256 change detection с atomic writes + corrupt recovery
+- `lib/notebooklm-cli.mjs` — `notebooklm sync`/`status` CLI commands
+- `lib/session-context.mjs` — real fix for context.md auto-update bug
+- `hooks/notebooklm-sync-trigger.mjs` + runner — detached background sync после session end
+- `bin/install.mjs` — full NotebookLM wizard (pipx → login stdio inherit → first sync)
+- `lib/doctor.mjs` — 3-line NotebookLM health section с ADR-0012 severity discipline
+
 ### Active
 
-<!-- Upcoming scope. First GSD-managed milestone on this project. -->
+<!-- No milestone in progress. Ready for next. Run /gsd-new-milestone to start. -->
 
-- [ ] **NotebookLM auto-sync MVP** — automatically upload vault content (session logs, ADRs, docs, context.md) to a shared NotebookLM notebook so Claude can ground answers in project history. Implemented as a thin wrapper over the `notebooklm-py` CLI (not a direct HTTP client — there is no public NotebookLM REST API). See ADR-0001.
-- [ ] **Fix session-manager context.md auto-update** — currently a dead comment in `skills/session-manager/SKILL.md:80`; context.md drifts stale (confirmed: says v0.7.0 when shipped is v0.7.8)
-- [ ] **Local manifest with content hashes** — prevent re-uploading unchanged files to NotebookLM
+No milestone currently active. Next milestone can be started with `/gsd-new-milestone`. Phase numbering continues from Phase 6+.
 
 ### Out of Scope
 
