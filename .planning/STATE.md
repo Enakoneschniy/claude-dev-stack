@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
 status: shipped
-last_updated: "2026-04-11T19:35:00.000Z"
+last_updated: "2026-04-11T19:50:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -14,9 +14,9 @@ progress:
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-11 (after quick task 260411-trq — sync log rotation, 257 tests passing)
+**Last updated:** 2026-04-11 (after quick task 260411-u3g — output-style hijack defense, 264 tests passing)
 
-**Last activity:** 2026-04-11 - Completed quick task 260411-trq: add `_rotateLogIfNeeded` to lib/notebooklm-sync.mjs, wire into hooks/notebooklm-sync-runner.mjs (closes backlog P2-#5)
+**Last activity:** 2026-04-11 - Completed quick task 260411-u3g: doctor check + CLAUDE.md template override defending against learning/explanatory output-style plugin SessionStart hijack
 
 ---
 
@@ -124,6 +124,7 @@ None currently. Ready to start planning.
 | 260411-sg2 | v0.8.1 hotfix: uploadSource must respect custom title via cp-to-tmp workaround | 2026-04-11 | 5d3a1fa | [260411-sg2-v0-8-1-hotfix-uploadsource-must-respect-](./quick/260411-sg2-v0-8-1-hotfix-uploadsource-must-respect-/) |
 | 260411-tgg | Bump GitHub Actions to v5 (actions/checkout, actions/setup-node) — closes backlog P2-#1, addresses Node 20 deprecation deadline June 2026 | 2026-04-11 | a30045b | [260411-tgg-update-github-actions-workflows-from-v4-](./quick/260411-tgg-update-github-actions-workflows-from-v4-/) |
 | 260411-trq | Add `_rotateLogIfNeeded` for `~/vault/.notebooklm-sync.log` (last 100 lines retained) — closes backlog P2-#5 | 2026-04-11 | d992957 | [260411-trq-add-log-rotation-to-vault-notebooklm-syn](./quick/260411-trq-add-log-rotation-to-vault-notebooklm-syn/) |
+| 260411-u3g | Defend against `learning-output-style`/`explanatory-output-style` SessionStart hijack: doctor check + CLAUDE.md template override section | 2026-04-11 | e4c2798 | [260411-u3g-doctor-check-claude-md-template-override](./quick/260411-u3g-doctor-check-claude-md-template-override/) |
 
 ---
 
