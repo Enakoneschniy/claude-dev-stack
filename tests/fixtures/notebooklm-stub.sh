@@ -16,6 +16,17 @@
 STDOUT="${NOTEBOOKLM_STUB_STDOUT:-}"
 STDERR="${NOTEBOOKLM_STUB_STDERR:-}"
 EXIT="${NOTEBOOKLM_STUB_EXIT:-0}"
+ARGV_LOG="${NOTEBOOKLM_STUB_ARGV_LOG:-}"
+
+# Optional argv-logging mode. When NOTEBOOKLM_STUB_ARGV_LOG is set to a
+# writable file path, append $3 (the file path argument from
+# `notebooklm source add <path> -n <id> --json`) as a single line. Used by
+# uploadSource tests to assert the CLI received the expected path.
+# Existing tests that do not set NOTEBOOKLM_STUB_ARGV_LOG get unchanged
+# behavior (no log file written, no other side effect).
+if [ -n "$ARGV_LOG" ]; then
+  printf '%s\n' "$3" >> "$ARGV_LOG"
+fi
 
 if [ -n "$STDERR" ]; then
   printf '%s\n' "$STDERR" >&2
