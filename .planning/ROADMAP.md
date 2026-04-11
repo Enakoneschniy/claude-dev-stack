@@ -14,7 +14,7 @@
 - [x] **Phase 1: Fix Session-Manager Context Auto-Update** — Make `context.md` actually update on session end (prerequisite for syncing non-stale data) (completed 2026-04-10)
 - [x] **Phase 2: NotebookLM CLI Wrapper** — Build `lib/notebooklm.mjs` as a thin wrapper over the `notebooklm-py` CLI (ADR-0001 pivot: no public NotebookLM REST API exists; delegate to upstream Python tool) (completed 2026-04-10)
 - [x] **Phase 3: Sync Manifest & Change Detection** — Local hash manifest at `~/vault/.notebooklm-sync.json` to skip unchanged files (completed 2026-04-11)
-- [ ] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention
+- [x] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention (completed 2026-04-11)
 - [ ] **Phase 5: CLI Integration, Trigger & Wizard** — `notebooklm sync`/`status` commands, session-end background trigger, installer + doctor integration
 
 ---
@@ -81,8 +81,8 @@ Plans:
   5. The pipeline reuses `projects.mjs::reverseProjectMap()` for path → project-slug lookup rather than introducing a fourth slug-generation code path.
 **Plans**: 2 plans
 Plans:
-- [ ] 04-01-PLAN.md — lib/notebooklm.mjs listNotebooks (7th fn) + lib/notebooklm-sync.mjs scaffold + buildTitle + argv-aware stub fixture
-- [ ] 04-02-PLAN.md — walkProjectFiles + ensureNotebook + syncOneFile + syncVault orchestration + integration tests covering NBLM-07..13 + 04-VALIDATION update
+- [x] 04-01-PLAN.md — lib/notebooklm.mjs listNotebooks (7th fn) + lib/notebooklm-sync.mjs scaffold + buildTitle + argv-aware stub fixture
+- [x] 04-02-PLAN.md — walkProjectFiles + ensureNotebook + syncOneFile + syncVault orchestration + integration tests covering NBLM-07..13 + 04-VALIDATION update
 **UI hint**: no
 
 ### Phase 5: CLI Integration, Trigger & Wizard
@@ -113,7 +113,7 @@ Plans:
 | 1. Fix Session-Manager Context Auto-Update | 2/2 | Complete   | 2026-04-10 |
 | 2. NotebookLM CLI Wrapper | 2/2 | Complete   | 2026-04-10 |
 | 3. Sync Manifest & Change Detection | 1/1 | Complete   | 2026-04-11 |
-| 4. Vault → NotebookLM Sync Pipeline | 0/2 | Planning complete | - |
+| 4. Vault → NotebookLM Sync Pipeline | 2/2 | Complete   | 2026-04-11 |
 | 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
 
 Plans counts populate during `/gsd-plan-phase N`.
