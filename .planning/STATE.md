@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-11T13:22:03.907Z"
+last_updated: "2026-04-11T15:45:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-11 (after Phase 3 executed to completion — 03-01 plan shipped, 128 tests passing)
+**Last updated:** 2026-04-11 (after Phase 4 executed to completion — both plans shipped, 183 tests passing)
 
 ---
 
@@ -29,24 +29,21 @@ progress:
 **Roadmap:** `.planning/ROADMAP.md` (5 phases)
 
 **Current milestone:** v0.8 — NotebookLM Auto-Sync MVP
-**Current focus:** Phase 04 — vault-notebooklm-sync-pipeline
+**Current focus:** Phases 1–4 shipped. Next: discuss/plan/execute Phase 5 (CLI integration + trigger + install wizard + doctor).
 
 ---
 
 ## Current Position
 
-Phase: 04 (vault-notebooklm-sync-pipeline) — EXECUTING
-Plan: 1 of 2
-**Phase:** 1, 2, 3 complete (5/5 planned plans shipped). Phase 4 + Phase 5 not yet discussed.
-**Plan:** 03-01 (notebooklm-manifest.mjs: MANIFEST_VERSION, hashFile, readManifest, writeManifest, ensureManifestGitignored) shipped in single wave with 32 new tests.
-**Status:** Executing Phase 04
-**Progress:** [████████▱▱] Phase 1: 2/2 ✓ · Phase 2: 2/2 ✓ · Phase 3: 1/1 ✓ · Phase 4: 0/TBD · Phase 5: 0/TBD
+**Phase:** 1, 2, 3, 4 complete (7/7 planned plans shipped). Phase 5 not yet discussed.
+**Plan:** 04-02 (notebooklm-sync.mjs full orchestration: walkProjectFiles, ensureNotebook, syncOneFile, syncVault) shipped with 32 new tests closing NBLM-07..13.
+**Status:** Milestone v0.8 — 80% phases complete (4/5); 7/7 currently-planned plans complete; Phase 5 remains to be discussed/planned/executed.
+**Progress:** [████████▱▱] Phase 1: 2/2 ✓ · Phase 2: 2/2 ✓ · Phase 3: 1/1 ✓ · Phase 4: 2/2 ✓ · Phase 5: 0/TBD
 
 **Next step options:**
 
-- `/gsd-discuss-phase 4` — Vault → NotebookLM sync pipeline (depends on Phase 2 + 3, both now shipped)
-- `/gsd-discuss-phase 5` — CLI integration + session-end trigger + install wizard + doctor (depends on 1+2+3+4)
-- `/gsd-autonomous` — chain discuss+plan+execute for Phases 4 and 5 (long-running)
+- `/gsd-discuss-phase 5` — CLI integration + session-end trigger + install wizard + doctor (all upstream deps now shipped)
+- `/gsd-autonomous` — chain discuss+plan+execute for Phase 5 (long-running, last phase of milestone)
 
 **Recent milestone-level change:** Phase 2 scope was pivoted from "HTTP client with API key" to "thin wrapper over `notebooklm-py` CLI" after discuss-phase investigation revealed Google NotebookLM has no public REST API. Full rationale in `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`. REQUIREMENTS.md NBLM-01..06 and ROADMAP.md Phase 2 + Phase 5 were rewritten accordingly. PROJECT.md Constraints now include a system dependency on `notebooklm-py >= 0.3.4` (NotebookLM feature only).
 

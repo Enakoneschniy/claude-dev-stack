@@ -35,13 +35,13 @@ New `lib/notebooklm.mjs` — thin wrapper over the `notebooklm-py` CLI (`pip ins
 
 Actual logic that walks vault content and pushes it to NotebookLM.
 
-- [ ] **NBLM-07**: New module/function walks `vault/projects/*/sessions/*.md` and uploads each as a separate source with filename `{project}__{YYYY-MM-DD}-{slug}.md`
-- [ ] **NBLM-08**: Walks `vault/projects/*/decisions/*.md` (ADRs) and uploads with filename `{project}__ADR-{NNNN}-{slug}.md` — uses **replace-by-filename** (delete old source with same name before upload)
-- [ ] **NBLM-09**: Walks `vault/projects/*/docs/*.md` (includes Notion-imported docs) and uploads with filename `{project}__doc-{slug}.md` — uses replace-by-filename
-- [ ] **NBLM-10**: Uploads `vault/projects/*/context.md` as `{project}__context.md` with replace-by-filename
-- [ ] **NBLM-11**: `shared/patterns.md` and `meta/*.md` are NOT synced (explicitly out of scope for per-project pipeline — see Out of Scope)
-- [ ] **NBLM-12**: Target notebook is a single shared notebook named `claude-dev-stack-vault` (or configured name); notebook is auto-created on first sync if it doesn't exist
-- [ ] **NBLM-13**: Notebook name is configurable via env var `NOTEBOOKLM_NOTEBOOK_NAME` (default: `claude-dev-stack-vault`)
+- [x] **NBLM-07**: New module/function walks `vault/projects/*/sessions/*.md` and uploads each as a separate source with filename `{project}__{YYYY-MM-DD}-{slug}.md`
+- [x] **NBLM-08**: Walks `vault/projects/*/decisions/*.md` (ADRs) and uploads with filename `{project}__ADR-{NNNN}-{slug}.md` — uses **replace-by-filename** (delete old source with same name before upload)
+- [x] **NBLM-09**: Walks `vault/projects/*/docs/*.md` (includes Notion-imported docs) and uploads with filename `{project}__doc-{slug}.md` — uses replace-by-filename
+- [x] **NBLM-10**: Uploads `vault/projects/*/context.md` as `{project}__context.md` with replace-by-filename
+- [x] **NBLM-11**: `shared/patterns.md` and `meta/*.md` are NOT synced (explicitly out of scope for per-project pipeline — see Out of Scope)
+- [x] **NBLM-12**: Target notebook is a single shared notebook named `claude-dev-stack-vault` (or configured name); notebook is auto-created on first sync if it doesn't exist
+- [x] **NBLM-13**: Notebook name is configurable via env var `NOTEBOOKLM_NOTEBOOK_NAME` (default: `claude-dev-stack-vault`)
 
 ### Change Detection (Manifest)
 
@@ -143,13 +143,13 @@ Prevent unnecessary re-uploads.
 | NBLM-16 | Phase 3 | Complete |
 | NBLM-17 | Phase 3 | Complete |
 | NBLM-18 | Phase 3 | Complete |
-| NBLM-07 | Phase 4 | Pending |
-| NBLM-08 | Phase 4 | Pending |
-| NBLM-09 | Phase 4 | Pending |
-| NBLM-10 | Phase 4 | Pending |
-| NBLM-11 | Phase 4 | Pending |
-| NBLM-12 | Phase 4 | Pending |
-| NBLM-13 | Phase 4 | Pending |
+| NBLM-07 | Phase 4 | Complete |
+| NBLM-08 | Phase 4 | Complete |
+| NBLM-09 | Phase 4 | Complete |
+| NBLM-10 | Phase 4 | Complete |
+| NBLM-11 | Phase 4 | Complete |
+| NBLM-12 | Phase 4 | Complete |
+| NBLM-13 | Phase 4 | Complete |
 | NBLM-19 | Phase 5 | Pending |
 | NBLM-20 | Phase 5 | Pending |
 | NBLM-21 | Phase 5 | Pending |
