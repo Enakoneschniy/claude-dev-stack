@@ -27,6 +27,27 @@ fi
 
 # Check if session was already logged today
 if ls "$SESSION_DIR/$TODAY"*.md 1>/dev/null 2>&1; then
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+  # Update context.md Session History via the Node wrapper (D-02 safety net)
+  # Pick the newest session log for today as the one to link.
+  SESSION_LOG=$(ls -t "$SESSION_DIR/$TODAY"*.md 2>/dev/null | head -1)
+  if [ -n "$SESSION_LOG" ]; then
+    SESSION_LOG_FILENAME=$(basename "$SESSION_LOG")
+    if [ -f "$SCRIPT_DIR/update-context.mjs" ]; then
+      VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
+        node "$SCRIPT_DIR/update-context.mjs" "$SESSION_LOG_FILENAME" 2>/dev/null || true
+    fi
+  fi
+
+  # Trigger NotebookLM background sync (D-04 fire-and-forget).
+  # NBLM-21/22/23: silent skip if binary absent or auth fails; detached spawn;
+  # never blocks session-end UI; bash 2>/dev/null || true as double-safety.
+  TRIGGER="$SCRIPT_DIR/notebooklm-sync-trigger.mjs"
+  if [ -f "$TRIGGER" ]; then
+    VAULT_PATH="$VAULT" node "$TRIGGER" 2>/dev/null || true
+  fi
+
   # Session logged — auto-push vault if remote configured
   if [ -d "$VAULT/.git" ]; then
     HAS_REMOTE=$(git -C "$VAULT" remote 2>/dev/null)

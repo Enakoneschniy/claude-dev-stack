@@ -3,5 +3,4 @@ node_modules/
 *.log
 
 # Claude Code local files (per-developer, not committed)
-CLAUDE.md
 .claude/
