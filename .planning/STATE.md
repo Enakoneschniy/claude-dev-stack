@@ -2,19 +2,19 @@
 gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
-status: executing
-last_updated: "2026-04-11T15:29:47.008Z"
+status: shipped
+last_updated: "2026-04-11T18:45:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 10
-  completed_plans: 7
-  percent: 70
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-11 (after Phase 4 executed to completion — both plans shipped, 183 tests passing)
+**Last updated:** 2026-04-11 (after Phase 5 executed to completion — all 3 plans shipped, Task 4 human-verified, 243 tests passing, milestone v0.8 READY FOR RELEASE)
 
 ---
 
@@ -29,23 +29,23 @@ progress:
 **Roadmap:** `.planning/ROADMAP.md` (5 phases)
 
 **Current milestone:** v0.8 — NotebookLM Auto-Sync MVP
-**Current focus:** Phase 05 — cli-integration-trigger-wizard
+**Current focus:** Milestone v0.8 SHIPPED. All 5 phases complete, 243 tests passing. Next: `/gsd-complete-milestone` → v0.8.0 release.
 
 ---
 
 ## Current Position
 
-Phase: 05 (cli-integration-trigger-wizard) — EXECUTING
-Plan: 1 of 3
-**Phase:** 1, 2, 3, 4 complete (7/7 planned plans shipped). Phase 5 not yet discussed.
-**Plan:** 04-02 (notebooklm-sync.mjs full orchestration: walkProjectFiles, ensureNotebook, syncOneFile, syncVault) shipped with 32 new tests closing NBLM-07..13.
-**Status:** Executing Phase 05
-**Progress:** [████████▱▱] Phase 1: 2/2 ✓ · Phase 2: 2/2 ✓ · Phase 3: 1/1 ✓ · Phase 4: 2/2 ✓ · Phase 5: 0/TBD
+**Phase:** 1, 2, 3, 4, 5 complete (10/10 plans shipped). Milestone v0.8 READY FOR RELEASE.
+**Plan:** 05-03 (install wizard + doctor + gitignore migration) Task 4 verified via automated sandbox testing. Final plan of milestone.
+**Status:** Shipped — awaiting `/gsd-complete-milestone` + release steps.
+**Progress:** [██████████] Phase 1: 2/2 ✓ · Phase 2: 2/2 ✓ · Phase 3: 1/1 ✓ · Phase 4: 2/2 ✓ · Phase 5: 3/3 ✓ · **10/10 plans**
+
+**Test count evolution:** 54 baseline → 68 (P1) → 96 (P2) → 128 (P3) → 183 (P4) → **243 (P5)**. +189 tests across milestone. Single-dep constraint preserved (`{"prompts": "^2.4.2"}`).
 
 **Next step options:**
 
-- `/gsd-discuss-phase 5` — CLI integration + session-end trigger + install wizard + doctor (all upstream deps now shipped)
-- `/gsd-autonomous` — chain discuss+plan+execute for Phase 5 (long-running, last phase of milestone)
+- **`/gsd-complete-milestone`** — archive v0.8 milestone, prepare for v0.8.0 npm release
+- Bump `package.json` version 0.7.8 → 0.8.0 + release notes + GitHub release → OIDC trusted publish to npm
 
 **Recent milestone-level change:** Phase 2 scope was pivoted from "HTTP client with API key" to "thin wrapper over `notebooklm-py` CLI" after discuss-phase investigation revealed Google NotebookLM has no public REST API. Full rationale in `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`. REQUIREMENTS.md NBLM-01..06 and ROADMAP.md Phase 2 + Phase 5 were rewritten accordingly. PROJECT.md Constraints now include a system dependency on `notebooklm-py >= 0.3.4` (NotebookLM feature only).
 

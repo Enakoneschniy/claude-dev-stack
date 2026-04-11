@@ -55,23 +55,23 @@ Prevent unnecessary re-uploads.
 
 ### Sync Trigger (Integration)
 
-- [ ] **NBLM-19**: New CLI command `claude-dev-stack notebooklm sync` runs the full sync manually
-- [ ] **NBLM-20**: New CLI command `claude-dev-stack notebooklm status` shows manifest state (last sync, file count, stale count)
-- [ ] **NBLM-21**: `session-manager /end` skill, after the SKILL-01 fix, triggers a background sync — only if `notebooklm` binary is present in PATH AND `notebooklm auth check` returns exit code 0. Otherwise sync step is silently skipped (no hard dependency on NotebookLM being set up).
-- [ ] **NBLM-22**: Trigger mechanism uses detached `spawn` (not `spawnSync`) so session-end flow isn't blocked by network I/O
-- [ ] **NBLM-23**: Sync failures on session-end trigger are logged to `~/vault/.notebooklm-sync.log` but do NOT propagate errors to the user's terminal (best-effort). `NotebooklmNotInstalledError` and auth-check failures are treated as "feature not configured" and logged at info level, not as errors
+- [x] **NBLM-19**: New CLI command `claude-dev-stack notebooklm sync` runs the full sync manually
+- [x] **NBLM-20**: New CLI command `claude-dev-stack notebooklm status` shows manifest state (last sync, file count, stale count)
+- [x] **NBLM-21**: `session-manager /end` skill, after the SKILL-01 fix, triggers a background sync — only if `notebooklm` binary is present in PATH AND `notebooklm auth check` returns exit code 0. Otherwise sync step is silently skipped (no hard dependency on NotebookLM being set up).
+- [x] **NBLM-22**: Trigger mechanism uses detached `spawn` (not `spawnSync`) so session-end flow isn't blocked by network I/O
+- [x] **NBLM-23**: Sync failures on session-end trigger are logged to `~/vault/.notebooklm-sync.log` but do NOT propagate errors to the user's terminal (best-effort). `NotebooklmNotInstalledError` and auth-check failures are treated as "feature not configured" and logged at info level, not as errors
 
 ### CLI Integration & UX
 
-- [ ] **NBLM-24**: `bin/cli.mjs` routes `notebooklm` subcommand to `lib/notebooklm.mjs::main(args)`
-- [ ] **NBLM-25**: Help text in `cli.mjs` includes `notebooklm sync` and `notebooklm status` commands
-- [ ] **NBLM-26**: Setup wizard (`bin/install.mjs`) offers NotebookLM setup as an optional step: (a) explains what it does and that it requires `notebooklm-py`, (b) detects whether `notebooklm` binary is already in PATH, (c) if absent, offers to install via `pipx install notebooklm-py` (fallback `pip install --user notebooklm-py`), (d) runs `notebooklm login` as an interactive subprocess to kick off the browser OAuth flow, (e) verifies setup by running `notebooklm auth check` and reporting the result. No API key is ever prompted for or stored by claude-dev-stack
-- [ ] **NBLM-27**: `lib/doctor.mjs` adds a check: "`notebooklm` binary in PATH? `notebooklm auth check` passing? Last sync status?" — each reported as a separate line. Doctor does NOT attempt to install the binary; only reports and points to `claude-dev-stack install` for setup
+- [x] **NBLM-24**: `bin/cli.mjs` routes `notebooklm` subcommand to `lib/notebooklm.mjs::main(args)`
+- [x] **NBLM-25**: Help text in `cli.mjs` includes `notebooklm sync` and `notebooklm status` commands
+- [x] **NBLM-26**: Setup wizard (`bin/install.mjs`) offers NotebookLM setup as an optional step: (a) explains what it does and that it requires `notebooklm-py`, (b) detects whether `notebooklm` binary is already in PATH, (c) if absent, offers to install via `pipx install notebooklm-py` (fallback `pip install --user notebooklm-py`), (d) runs `notebooklm login` as an interactive subprocess to kick off the browser OAuth flow, (e) verifies setup by running `notebooklm auth check` and reporting the result. No API key is ever prompted for or stored by claude-dev-stack
+- [x] **NBLM-27**: `lib/doctor.mjs` adds a check: "`notebooklm` binary in PATH? `notebooklm auth check` passing? Last sync status?" — each reported as a separate line. Doctor does NOT attempt to install the binary; only reports and points to `claude-dev-stack install` for setup
 
 ### Testing
 
 - [x] **TEST-01**: `tests/notebooklm.test.mjs` covers: manifest read/write/update, hash computation, upload/replace logic (with mocked HTTP), error propagation
-- [ ] **TEST-02**: `tests/project-setup.test.mjs` extended with a smoke test that `claude-dev-stack notebooklm status` exits cleanly on a fresh vault
+- [x] **TEST-02**: `tests/project-setup.test.mjs` extended with a smoke test that `claude-dev-stack notebooklm status` exits cleanly on a fresh vault
 - [x] **TEST-03**: `tests/skills.test.mjs` or new `tests/session-manager.test.mjs` verifies SKILL-01/SKILL-02 (context.md actually gets updated)
 - [ ] **TEST-04**: Full test suite still passes (`npm test` → 54 → 54+N passed, 0 failed)
 
@@ -150,17 +150,17 @@ Prevent unnecessary re-uploads.
 | NBLM-11 | Phase 4 | Complete |
 | NBLM-12 | Phase 4 | Complete |
 | NBLM-13 | Phase 4 | Complete |
-| NBLM-19 | Phase 5 | Pending |
-| NBLM-20 | Phase 5 | Pending |
-| NBLM-21 | Phase 5 | Pending |
-| NBLM-22 | Phase 5 | Pending |
-| NBLM-23 | Phase 5 | Pending |
-| NBLM-24 | Phase 5 | Pending |
-| NBLM-25 | Phase 5 | Pending |
-| NBLM-26 | Phase 5 | Pending |
-| NBLM-27 | Phase 5 | Pending |
+| NBLM-19 | Phase 5 | Complete |
+| NBLM-20 | Phase 5 | Complete |
+| NBLM-21 | Phase 5 | Complete |
+| NBLM-22 | Phase 5 | Complete |
+| NBLM-23 | Phase 5 | Complete |
+| NBLM-24 | Phase 5 | Complete |
+| NBLM-25 | Phase 5 | Complete |
+| NBLM-26 | Phase 5 | Complete |
+| NBLM-27 | Phase 5 | Complete |
 | TEST-01 | Phase 2 | Complete |
-| TEST-02 | Phase 5 | Pending |
+| TEST-02 | Phase 5 | Complete |
 | TEST-03 | Phase 1 | Complete |
 | TEST-04 | All phases | Continuous |
 

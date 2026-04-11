@@ -15,7 +15,7 @@
 - [x] **Phase 2: NotebookLM CLI Wrapper** — Build `lib/notebooklm.mjs` as a thin wrapper over the `notebooklm-py` CLI (ADR-0001 pivot: no public NotebookLM REST API exists; delegate to upstream Python tool) (completed 2026-04-10)
 - [x] **Phase 3: Sync Manifest & Change Detection** — Local hash manifest at `~/vault/.notebooklm-sync.json` to skip unchanged files (completed 2026-04-11)
 - [x] **Phase 4: Vault → NotebookLM Sync Pipeline** — Walk vault content categories and upload with `{project}__` naming convention (completed 2026-04-11)
-- [ ] **Phase 5: CLI Integration, Trigger & Wizard** — `notebooklm sync`/`status` commands, session-end background trigger, installer + doctor integration
+- [x] **Phase 5: CLI Integration, Trigger & Wizard** — `notebooklm sync`/`status` commands, session-end background trigger, installer + doctor integration (completed 2026-04-11)
 
 ---
 
@@ -118,7 +118,7 @@ Plans:
 | 2. NotebookLM CLI Wrapper | 2/2 | Complete   | 2026-04-10 |
 | 3. Sync Manifest & Change Detection | 1/1 | Complete   | 2026-04-11 |
 | 4. Vault → NotebookLM Sync Pipeline | 2/2 | Complete   | 2026-04-11 |
-| 5. CLI Integration, Trigger & Wizard | 0/3 | Planned     | - |
+| 5. CLI Integration, Trigger & Wizard | 3/3 | Complete   | 2026-04-11 |
 
 Plans counts populate during `/gsd-plan-phase N`.
 
