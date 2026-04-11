@@ -79,7 +79,10 @@ Plans:
   3. Files under `~/vault/shared/` and `~/vault/meta/` are demonstrably skipped (not present in the notebook after sync).
   4. If the target notebook (default name `claude-dev-stack-vault`, or `NOTEBOOKLM_NOTEBOOK_NAME` if set) does not exist on first run, it is auto-created; subsequent runs reuse it.
   5. The pipeline reuses `projects.mjs::reverseProjectMap()` for path → project-slug lookup rather than introducing a fourth slug-generation code path.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — lib/notebooklm.mjs listNotebooks (7th fn) + lib/notebooklm-sync.mjs scaffold + buildTitle + argv-aware stub fixture
+- [ ] 04-02-PLAN.md — walkProjectFiles + ensureNotebook + syncOneFile + syncVault orchestration + integration tests covering NBLM-07..13 + 04-VALIDATION update
 **UI hint**: no
 
 ### Phase 5: CLI Integration, Trigger & Wizard
@@ -110,7 +113,7 @@ Plans:
 | 1. Fix Session-Manager Context Auto-Update | 2/2 | Complete   | 2026-04-10 |
 | 2. NotebookLM CLI Wrapper | 2/2 | Complete   | 2026-04-10 |
 | 3. Sync Manifest & Change Detection | 1/1 | Complete   | 2026-04-11 |
-| 4. Vault → NotebookLM Sync Pipeline | 0/0 | Not started | - |
+| 4. Vault → NotebookLM Sync Pipeline | 0/2 | Planning complete | - |
 | 5. CLI Integration, Trigger & Wizard | 0/0 | Not started | - |
 
 Plans counts populate during `/gsd-plan-phase N`.
