@@ -12,6 +12,15 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
+## Current Milestone: v0.9 — Git Conventions & NotebookLM Per-Project
+
+**Goal:** Make per-project workflow first-class — every claude-dev-stack project gets its own git policy enforcement (commits/branches/scopes) and its own dedicated NotebookLM notebook, with automated Notion imports for selected pages.
+
+**Target features:**
+- **git-conventions skill ecosystem (full)** — per-project skill that auto-triggers on git intents, reads `.claude/git-scopes.json`, includes auto-detection for 7+ stack types, `claude-dev-stack scopes` subcommand, optional commitlint installer, wizard prompts integration. Reference implementation: `~/Work/NMP/.claude/skills/git-conventions/`.
+- **NotebookLM per-project notebooks (with migration)** — extend `lib/notebooklm*.mjs` from single shared notebook to one notebook per project. One-time migration script moves existing 27 sources from shared `claude-dev-stack-vault` notebook into per-project notebooks.
+- **Notion auto-import via MCP** — `.claude/notion_pages.json` config + `lib/notion-import.mjs` using `claude.ai Notion` MCP server. Intent-triggered (no cron). Imports specific pages per config to `vault/projects/{project}/docs/`, then existing NotebookLM sync picks them up.
+
 ## Requirements
 
 ### Validated
@@ -42,12 +51,12 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 
 ### Current State
 
-**Last shipped:** v0.8 NotebookLM Auto-Sync (2026-04-11) — SHIPPED ✅
+**Last shipped:** v0.8.1 NotebookLM Auto-Sync hotfix (2026-04-11) — SHIPPED ✅
 
-5 phases, 10 plans, 36/36 requirements, 243 tests (+189 from baseline). Full architecture rationale in 12 ADRs at `~/vault/projects/claude-dev-stack/decisions/`. Milestone archive: [`.planning/milestones/v0.8-ROADMAP.md`](milestones/v0.8-ROADMAP.md).
+v0.8.0 + v0.8.1 hotfix: 5 phases, 10 plans, 36/36 requirements, 247 tests (+193 from baseline). Full architecture rationale in 12 ADRs at `~/vault/projects/claude-dev-stack/decisions/`. Milestone archive: [`.planning/milestones/v0.8-ROADMAP.md`](milestones/v0.8-ROADMAP.md).
 
-**What shipped in v0.8:**
-- `lib/notebooklm.mjs` — 7-function CLI wrapper over `notebooklm-py` (ADR-0001 pivot)
+**What shipped in v0.8 / v0.8.1:**
+- `lib/notebooklm.mjs` — 7-function CLI wrapper over `notebooklm-py` (ADR-0001 pivot), with cp-to-tmp `uploadSource` title workaround (v0.8.1)
 - `lib/notebooklm-sync.mjs` — `syncVault(opts)` walks vault → uploads с `{project}__` naming
 - `lib/notebooklm-manifest.mjs` — SHA-256 change detection с atomic writes + corrupt recovery
 - `lib/notebooklm-cli.mjs` — `notebooklm sync`/`status` CLI commands
@@ -56,23 +65,44 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 - `bin/install.mjs` — full NotebookLM wizard (pipx → login stdio inherit → first sync)
 - `lib/doctor.mjs` — 3-line NotebookLM health section с ADR-0012 severity discipline
 
+**Post-v0.8 tech-debt cleanup (2026-04-11, between v0.8.1 and v0.9 init):**
+- ✅ GitHub Actions v4→v5 migration (PR #17, `becd975`) — fixes Node 20 deprecation warning
+- ✅ Sync log rotation in `notebooklm-sync-runner.mjs` (PR #18, `fd7fdba`) — `_rotateLogIfNeeded` keeps last 100 lines
+- ✅ Output-style hijack defense (PR #19, `288ec69`) — doctor warning + CLAUDE.md template override against `learning-output-style`/`explanatory-output-style` plugin SessionStart hooks that hijack agent behavior
+- ✅ GSD `branching_strategy` → `none` + `quick_branch_template` → `chore/{slug}` (PR #20, `3725def`) — workaround for upstream `cmdCommit` branch hijack bug, enables clean per-quick-task branches
+
+Test count after cleanup: **264** (247 + 17 from cleanup PRs).
+
 ### Active
 
-<!-- No milestone in progress. Ready for next. Run /gsd-new-milestone to start. -->
+<!-- v0.9 milestone active — see Current Milestone section above for goal and target features. -->
 
-No milestone currently active. Next milestone can be started with `/gsd-new-milestone`. Phase numbering continues from Phase 6+.
+**Milestone v0.9 in progress.** See "Current Milestone: v0.9" section above for goal and target features. Phase numbering starts at **Phase 6** (continues from v0.8 which ended at Phase 5). Branching strategy is `none` — each phase will be on a feature branch + PR + CI → merge to main, like the 4 cleanup PRs above.
 
 ### Out of Scope
 
-<!-- Explicit boundaries for the NotebookLM sync milestone. Deferred or rejected. -->
+<!-- Explicit boundaries — this section spans v0.8 (closed) and v0.9 (active). Deferred items revisited at next milestone boundary. -->
 
-- **Per-project NotebookLM notebooks** — deferred; MVP uses one shared notebook with `{project}__` filename prefixes. Migration path open if shared approach gets noisy.
-- **Notion → NotebookLM direct integration** — deferred; Notion docs flow through existing `docs add` → `vault/docs/` → standard sync pipeline. Automating Notion export via Notion MCP is a future phase.
-- **Two-way sync (NotebookLM → vault)** — rejected; NotebookLM is read-only consumer, vault is the source of truth.
-- **Context.md sync during active edit** — out for MVP; sync context.md only on session end after the fix-auto-update task stabilizes the file.
-- **External library docs sync** (e.g. React docs into NotebookLM) — separate concern, belongs to `dev-research` skill, not vault sync.
-- **Cron-based periodic sync** — out for MVP; trigger is on-session-end only. Background sync comes later if needed.
-- **Shared patterns (`~/vault/shared/patterns.md`) sync** — deferred; not part of per-project flow.
+**Now in v0.9 (no longer out of scope):**
+- **Per-project NotebookLM notebooks** — promoted to v0.9, with full migration script for existing 27 sources
+- **Notion → vault auto-import via MCP** — promoted to v0.9, intent-triggered, page-specific config
+
+**Still out of scope for v0.9 (deferred to v0.10+):**
+- **`.planning/` structural split** (team contract vs execution state) — deferred to v0.10
+- **Analytics dashboard NotebookLM integration** — deferred to v0.10
+- **`dev-research` skill standalone improvements** — deferred to v0.10 (per-project notebooks in v0.9 automatically improve `{project}__` filter)
+- **Cron-based periodic NotebookLM sync** — rejected; intent-based and session-end is sufficient
+- **vault/decisions vs `.planning/decisions/` policy unification** — orthogonal cleanup, not blocking
+- **Migration helper from prose CLAUDE.md → structured `git-scopes.json`** — deferred to v0.10
+- **Whole-workspace Notion imports** — rejected; page-specific only per `notion_pages.json`
+- **Notion REST API fallback when MCP unavailable** — rejected; MCP-only
+- **Two-way Notion sync** (vault → Notion) — rejected; vault is canonical source of truth
+- **Hybrid NotebookLM mode** (some projects shared, some per-project) — rejected; strict per-project from v0.9 migration onwards
+
+**Still out of scope (carried forward from v0.8):**
+- **Two-way sync (NotebookLM → vault)** — rejected; NotebookLM is read-only consumer, vault is source of truth
+- **External library docs sync** (e.g. React docs into NotebookLM) — separate concern, belongs to `dev-research` skill, not vault sync
+- **Shared patterns (`~/vault/shared/patterns.md`) sync** — deferred; not part of per-project flow
 
 ## Context
 
@@ -136,4 +166,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-10 after Phase 2 pivot (ADR-0001): NotebookLM integration reframed as `notebooklm-py` CLI wrapper; Constraints updated with system dep; Active section annotated; Key Decisions table gained pivot row.*
+*Last updated: 2026-04-11 — milestone v0.9 (Git Conventions & NotebookLM Per-Project) initiated via `/gsd-new-milestone`. Added Current Milestone section, refreshed Current State with v0.8.1 hotfix and 4 post-v0.8 cleanup PRs (#17/#18/#19/#20), Out of Scope reorganized into "now in v0.9", "still deferred to v0.10+", and "carried forward from v0.8". Phase numbering continues from Phase 6.*
