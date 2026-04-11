@@ -1,12 +1,14 @@
-import { describe, it, before, beforeEach, after } from 'node:test';
+import { describe, it, before, beforeEach, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, chmodSync, copyFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { existsSync, mkdirSync, rmSync, chmodSync, copyFileSync, writeFileSync } from 'node:fs';
+import { join, dirname, relative, sep, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 
-import { syncVault, buildTitle } from '../lib/notebooklm-sync.mjs';
+import { syncVault, buildTitle, _walkProjectFiles } from '../lib/notebooklm-sync.mjs';
+import { _resetBinaryCache as _resetNotebooklmBinary } from '../lib/notebooklm.mjs';
+import { hashFile, readManifest } from '../lib/notebooklm-manifest.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fixturesDir = join(__dirname, 'fixtures');
@@ -69,20 +71,136 @@ describe('lib/notebooklm-sync.mjs — syncVault scaffold', () => {
     );
   });
 
-  it('syncVault scaffold marker throws orchestration-not-implemented when vault IS valid', async () => {
-    // Create a minimal valid vault fixture with meta/ + projects/ so findVault/assertVaultRoot
-    // style checks pass, then call syncVault expecting the scaffold throw (Plan 04-02 replaces this).
-    const vaultRoot = join(tmpBase, 'vault-scaffold');
-    if (existsSync(vaultRoot)) rmSync(vaultRoot, { recursive: true, force: true });
-    mkdirSync(join(vaultRoot, 'projects'), { recursive: true });
-    mkdirSync(join(vaultRoot, 'meta'), { recursive: true });
+  it('syncVault is an async function (replaced scaffold, now real implementation)', () => {
+    // Plan 04-01 scaffold test updated: syncVault is now fully implemented in Plan 04-02.
+    assert.equal(typeof syncVault, 'function');
+    // The constructor.name for async functions is 'AsyncFunction'
+    assert.equal(syncVault.constructor.name, 'AsyncFunction');
+  });
+});
 
-    await assert.rejects(
-      () => syncVault({ vaultRoot, notebookName: 'stub-vault' }),
-      /orchestration not yet implemented — Plan 04-02/,
+describe('lib/notebooklm-sync.mjs — walkProjectFiles (D-11, D-17, D-18, D-19)', () => {
+  const walkTmpBase = join(tmpdir(), `claude-test-notebooklm-sync-walk-${process.pid}`);
+  const walkVaultRoot = join(walkTmpBase, 'vault');
+
+  function resetWalkVault() {
+    if (existsSync(walkVaultRoot)) rmSync(walkVaultRoot, { recursive: true, force: true });
+    mkdirSync(join(walkVaultRoot, 'projects'), { recursive: true });
+    mkdirSync(join(walkVaultRoot, 'meta'), { recursive: true });
+  }
+
+  function writeWalkFile(relativePath, content = '# test\n') {
+    const abs = join(walkVaultRoot, relativePath);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, content);
+    return abs;
+  }
+
+  beforeEach(() => resetWalkVault());
+  after(() => {
+    if (existsSync(walkTmpBase)) rmSync(walkTmpBase, { recursive: true, force: true });
+  });
+
+  it('emits files in D-11 order: context → decisions → docs → sessions (single project)', async () => {
+    writeWalkFile('projects/proj-a/context.md');
+    writeWalkFile('projects/proj-a/decisions/0001-a.md');
+    writeWalkFile('projects/proj-a/decisions/0002-b.md');
+    writeWalkFile('projects/proj-a/docs/x.md');
+    writeWalkFile('projects/proj-a/docs/y.md');
+    writeWalkFile('projects/proj-a/sessions/2026-01-01-s.md');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    const categories = result.map((r) => r.category);
+    const paths = result.map((r) => r.vaultRelativePath);
+
+    assert.deepEqual(categories, ['context', 'adr', 'adr', 'doc', 'doc', 'session']);
+    assert.deepEqual(paths, [
+      'projects/proj-a/context.md',
+      'projects/proj-a/decisions/0001-a.md',
+      'projects/proj-a/decisions/0002-b.md',
+      'projects/proj-a/docs/x.md',
+      'projects/proj-a/docs/y.md',
+      'projects/proj-a/sessions/2026-01-01-s.md',
+    ]);
+  });
+
+  it('emits projects alphabetically (D-11 cross-project)', async () => {
+    writeWalkFile('projects/beta/context.md');
+    writeWalkFile('projects/alpha/context.md');
+    writeWalkFile('projects/gamma/context.md');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    assert.deepEqual(
+      result.map((r) => r.projectSlug),
+      ['alpha', 'beta', 'gamma'],
     );
+  });
 
-    rmSync(vaultRoot, { recursive: true, force: true });
+  it('NEVER descends into shared/ or meta/ (NBLM-11 / D-19)', async () => {
+    writeWalkFile('projects/p1/context.md');
+    writeWalkFile('shared/patterns.md');
+    writeWalkFile('meta/project-registry.md');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].vaultRelativePath, 'projects/p1/context.md');
+
+    const sharedCount = result.filter((r) => r.vaultRelativePath.startsWith('shared/')).length;
+    const metaCount = result.filter((r) => r.vaultRelativePath.startsWith('meta/')).length;
+    assert.equal(sharedCount, 0);
+    assert.equal(metaCount, 0);
+  });
+
+  it('ignores non-.md files (D-19)', async () => {
+    writeWalkFile('projects/p1/sessions/2026-01-01-s.md');
+    writeWalkFile('projects/p1/sessions/notes.txt', 'plain text');
+    writeWalkFile('projects/p1/sessions/image.png', 'fake png');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    const sessionEntries = result.filter((r) => r.category === 'session');
+    assert.equal(sessionEntries.length, 1);
+    assert.equal(sessionEntries[0].basename, '2026-01-01-s.md');
+  });
+
+  it('skips ADRs that do not match NNNN- regex (D-02, T4-01-02 for NBLM-08)', async () => {
+    writeWalkFile('projects/p1/decisions/0001-valid.md');
+    writeWalkFile('projects/p1/decisions/README.md');
+    writeWalkFile('projects/p1/decisions/notes.md');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    const adrEntries = result.filter((r) => r.category === 'adr');
+    assert.equal(adrEntries.length, 1);
+    assert.equal(adrEntries[0].basename, '0001-valid.md');
+    assert.equal(adrEntries[0].title, 'p1__ADR-0001-valid.md');
+  });
+
+  it('excludes _template directory (D-17)', async () => {
+    writeWalkFile('projects/real-proj/context.md');
+    writeWalkFile('projects/_template/context.md');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].projectSlug, 'real-proj');
+  });
+
+  it('silently skips missing category directories (D-18 optional)', async () => {
+    writeWalkFile('projects/p1/context.md');
+    // No decisions/, docs/, or sessions/ directories
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    assert.equal(result.length, 1);
+    assert.equal(result[0].category, 'context');
+  });
+
+  it('emits POSIX-slashed vaultRelativePath on all platforms (research Option B)', async () => {
+    writeWalkFile('projects/p1/decisions/0001-first.md');
+    writeWalkFile('projects/p1/docs/some-doc.md');
+
+    const result = await _walkProjectFiles(walkVaultRoot);
+    for (const entry of result) {
+      assert.ok(entry.vaultRelativePath.includes('/'));
+      assert.ok(!entry.vaultRelativePath.includes('\\'), `backslash found in ${entry.vaultRelativePath}`);
+    }
   });
 });
 
