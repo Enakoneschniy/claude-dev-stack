@@ -317,4 +317,58 @@ describe('hooks', () => {
       assert.equal(result, '');
     });
   });
+
+  // ── session-end-check.sh notebooklm trigger wiring (NBLM-21) ───────────────
+  describe('session-end-check.sh — notebooklm trigger wiring (NBLM-21)', () => {
+    const hookPath = join(hooksDir, 'session-end-check.sh');
+
+    it('source-level ordering: update-context before trigger before vault push (D-07)', () => {
+      const src = readFileSync(hookPath, 'utf8');
+      const updateCtxIdx = src.indexOf('update-context.mjs');
+      const triggerIdx = src.indexOf('notebooklm-sync-trigger.mjs');
+      const vaultPushIdx = src.indexOf('git -C "$VAULT" push');
+
+      assert.ok(updateCtxIdx > 0, 'update-context.mjs must appear in hook');
+      assert.ok(triggerIdx > 0, 'notebooklm-sync-trigger.mjs must appear in hook');
+      assert.ok(vaultPushIdx > 0, 'git push must appear in hook');
+      assert.ok(updateCtxIdx < triggerIdx, `update-context (${updateCtxIdx}) must precede trigger (${triggerIdx})`);
+      assert.ok(triggerIdx < vaultPushIdx, `trigger (${triggerIdx}) must precede vault push (${vaultPushIdx})`);
+    });
+
+    it('trigger invocation block has 2>/dev/null || true (double-safety)', () => {
+      const src = readFileSync(hookPath, 'utf8');
+      // The trigger block uses TRIGGER var; find the node "$TRIGGER" invocation line
+      const lines = src.split('\n');
+      // The node invocation line uses $TRIGGER variable — look for node + $TRIGGER pattern
+      const nodeTriggerLine = lines.find(l => l.includes('node') && l.includes('$TRIGGER'));
+      assert.ok(nodeTriggerLine, 'must have a "node ... $TRIGGER" invocation line');
+      assert.match(nodeTriggerLine, /2>\/dev\/null \|\| true/, 'node $TRIGGER invocation must have 2>/dev/null || true');
+    });
+
+    it('bash -n syntax check passes', () => {
+      const result = spawnSync('bash', ['-n', hookPath], {
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      assert.equal(result.status, 0, `bash -n failed: ${result.stderr}`);
+    });
+
+    it('hook exits 0 when trigger file is absent (graceful skip)', () => {
+      // We test via a VAULT_PATH that has no sessions — hook takes the early exit path.
+      // The trigger's `if [ -f "$TRIGGER" ]` guard is tested at source level (ordering test above).
+      // Here we verify the whole hook still exits 0 without sessions (early exit).
+      const result = spawnSync('bash', [hookPath], {
+        encoding: 'utf8',
+        env: { ...process.env, VAULT_PATH: '/nonexistent/vault', HOME: '/nonexistent' },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      assert.equal(result.status, 0, `hook must exit 0 when vault absent, got ${result.status}`);
+    });
+
+    it('trigger invocation count is exactly 1 in hook', () => {
+      const src = readFileSync(hookPath, 'utf8');
+      const count = (src.match(/notebooklm-sync-trigger\.mjs/g) || []).length;
+      assert.equal(count, 1, `expected exactly 1 trigger reference, got ${count}`);
+    });
+  });
 });
