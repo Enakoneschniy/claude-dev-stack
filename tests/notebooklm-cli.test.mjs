@@ -7,7 +7,7 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -204,14 +204,16 @@ describe('notebooklm-cli: runStatus — populated vault with manifest', () => {
   });
 
   it('manifest with old generated_at (7 days ago) → prints "days ago"', async () => {
+    // Write manifest JSON directly (bypassing writeManifest which overwrites generated_at to NOW).
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-    writeManifest(vaultRoot, {
+    const manifestData = {
       version: 1,
       generated_at: sevenDaysAgo,
       files: {
         'projects/x/context.md': { hash: 'abc123', notebook_source_id: 'src1', uploaded_at: sevenDaysAgo },
       },
-    });
+    };
+    writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify(manifestData, null, 2), 'utf8');
     await main(['status']);
     const joined = cap.lines.join('\n');
     assert.ok(joined.includes('day'), `Expected "day" age label in:\n${joined}`);
