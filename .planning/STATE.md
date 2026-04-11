@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
 status: shipped
-last_updated: "2026-04-11T19:50:00.000Z"
+last_updated: "2026-04-11T20:50:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -14,9 +14,9 @@ progress:
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-11 (after quick task 260411-u3g — output-style hijack defense, 264 tests passing)
+**Last updated:** 2026-04-11 (after quick task 260411-vjl — GSD branching_strategy → none + chore/{slug} quick branches, 264 tests passing)
 
-**Last activity:** 2026-04-11 - Completed quick task 260411-u3g: doctor check + CLAUDE.md template override defending against learning/explanatory output-style plugin SessionStart hijack
+**Last activity:** 2026-04-11 - Switched GSD branching_strategy to none (260411-vjl): disables `cmdCommit` branch-hijack bug that fired 3+ times during v0.8, enables per-task `chore/{slug}` quick branches
 
 ---
 
@@ -125,6 +125,7 @@ None currently. Ready to start planning.
 | 260411-tgg | Bump GitHub Actions to v5 (actions/checkout, actions/setup-node) — closes backlog P2-#1, addresses Node 20 deprecation deadline June 2026 | 2026-04-11 | a30045b | [260411-tgg-update-github-actions-workflows-from-v4-](./quick/260411-tgg-update-github-actions-workflows-from-v4-/) |
 | 260411-trq | Add `_rotateLogIfNeeded` for `~/vault/.notebooklm-sync.log` (last 100 lines retained) — closes backlog P2-#5 | 2026-04-11 | d992957 | [260411-trq-add-log-rotation-to-vault-notebooklm-syn](./quick/260411-trq-add-log-rotation-to-vault-notebooklm-syn/) |
 | 260411-u3g | Defend against `learning-output-style`/`explanatory-output-style` SessionStart hijack: doctor check + CLAUDE.md template override section | 2026-04-11 | e4c2798 | [260411-u3g-doctor-check-claude-md-template-override](./quick/260411-u3g-doctor-check-claude-md-template-override/) |
+| 260411-vjl | Switch GSD `branching_strategy` from `milestone` to `none` + enable `chore/{slug}` quick branches — workaround for `cmdCommit` branch-hijack bug (commands.cjs:281-313) that fired 3+ times during v0.8 | 2026-04-11 | a95e5ee | [260411-vjl-switch-planning-config-json-from-branchi](./quick/260411-vjl-switch-planning-config-json-from-branchi/) |
 
 ---
 
