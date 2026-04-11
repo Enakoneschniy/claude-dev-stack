@@ -229,3 +229,135 @@ describe('doctor — NotebookLM section (NBLM-27 + ADR-0012)', () => {
     assert.equal(result.status, 0, `Expected exit 0, got ${result.status}`);
   });
 });
+
+// ── 260411-u3g: output-style plugin conflict detection ─────────────────────
+
+/**
+ * Build a temp HOME with a controlled .claude/settings.json. The doctor
+ * subprocess inherits HOME and reads CLAUDE_DIR/settings.json via shared.mjs,
+ * which resolves homedir() at module load.
+ */
+function makeTempHomeWithSettings(enabledPlugins) {
+  const tmpHome = mkdtempSync(join(tmpdir(), 'doctor-test-home-'));
+  mkdirSync(join(tmpHome, '.claude'), { recursive: true });
+  writeFileSync(
+    join(tmpHome, '.claude', 'settings.json'),
+    JSON.stringify({ enabledPlugins }, null, 2),
+    'utf8',
+  );
+  return tmpHome;
+}
+
+describe('doctor — output-style plugin conflict detection (260411-u3g)', () => {
+  let tmpHome = null;
+  let tmpVault = null;
+
+  afterEach(() => {
+    if (tmpHome && existsSync(tmpHome)) rmSync(tmpHome, { recursive: true, force: true });
+    if (tmpVault && existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
+    tmpHome = null;
+    tmpVault = null;
+  });
+
+  it('warns when learning-output-style is enabled', () => {
+    tmpHome = makeTempHomeWithSettings({
+      'learning-output-style@claude-plugins-official': true,
+    });
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({
+      excludeNblm: true,
+      vaultPath: tmpVault,
+      extraEnv: { HOME: tmpHome },
+    });
+
+    assert.ok(
+      result.stdout.includes('Output-style plugins active'),
+      `Expected output-style warning. Got:\n${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('learning-output-style@claude-plugins-official'),
+      `Expected plugin name in warning. Got:\n${result.stdout}`,
+    );
+  });
+
+  it('warns when explanatory-output-style is enabled', () => {
+    tmpHome = makeTempHomeWithSettings({
+      'explanatory-output-style@claude-plugins-official': true,
+    });
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({
+      excludeNblm: true,
+      vaultPath: tmpVault,
+      extraEnv: { HOME: tmpHome },
+    });
+
+    assert.ok(
+      result.stdout.includes('Output-style plugins active'),
+      `Expected output-style warning. Got:\n${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('explanatory-output-style@claude-plugins-official'),
+      `Expected plugin name in warning. Got:\n${result.stdout}`,
+    );
+  });
+
+  it('lists both plugins when both are enabled', () => {
+    tmpHome = makeTempHomeWithSettings({
+      'learning-output-style@claude-plugins-official': true,
+      'explanatory-output-style@claude-plugins-official': true,
+    });
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({
+      excludeNblm: true,
+      vaultPath: tmpVault,
+      extraEnv: { HOME: tmpHome },
+    });
+
+    assert.ok(result.stdout.includes('learning-output-style@claude-plugins-official'));
+    assert.ok(result.stdout.includes('explanatory-output-style@claude-plugins-official'));
+  });
+
+  it('does NOT warn when both plugins are disabled (false)', () => {
+    tmpHome = makeTempHomeWithSettings({
+      'learning-output-style@claude-plugins-official': false,
+      'explanatory-output-style@claude-plugins-official': false,
+      'some-other-plugin@marketplace': true,
+    });
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({
+      excludeNblm: true,
+      vaultPath: tmpVault,
+      extraEnv: { HOME: tmpHome },
+    });
+
+    assert.equal(
+      result.stdout.includes('Output-style plugins active'),
+      false,
+      `Did not expect output-style warning. Got:\n${result.stdout}`,
+    );
+  });
+
+  it('does NOT warn when neither plugin is in settings', () => {
+    tmpHome = makeTempHomeWithSettings({
+      'session-report@claude-plugins-official': true,
+      'sentry@claude-plugins-official': true,
+    });
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({
+      excludeNblm: true,
+      vaultPath: tmpVault,
+      extraEnv: { HOME: tmpHome },
+    });
+
+    assert.equal(
+      result.stdout.includes('Output-style plugins active'),
+      false,
+      `Did not expect output-style warning. Got:\n${result.stdout}`,
+    );
+  });
+});
