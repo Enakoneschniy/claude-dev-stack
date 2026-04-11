@@ -327,3 +327,66 @@ describe('lib/notebooklm.mjs — static invariants', () => {
     assert.equal(src.match(/notebooklm login/g), null, 'must not reference notebooklm login');
   });
 });
+
+describe('lib/notebooklm.mjs — listNotebooks (D-10, NBLM-12)', () => {
+  it('listNotebooks() returns normalized array with id, title, createdAt (happy path)', async () => {
+    stub({
+      stdout: '{"notebooks":[{"index":1,"id":"nb-1","title":"claude-dev-stack-vault","is_owner":true,"created_at":"2026-04-11T14:05:40"}],"count":1}',
+      exit: 0,
+    });
+    const result = await nblm.listNotebooks();
+    assert.ok(Array.isArray(result), 'result must be an array');
+    assert.equal(result.length, 1);
+    assert.deepEqual(result[0], { id: 'nb-1', title: 'claude-dev-stack-vault', createdAt: '2026-04-11T14:05:40' });
+    // index and is_owner must be stripped
+    assert.equal(result[0].index, undefined);
+    assert.equal(result[0].is_owner, undefined);
+  });
+
+  it('listNotebooks() returns empty array for empty vault', async () => {
+    stub({ stdout: '{"notebooks":[],"count":0}', exit: 0 });
+    const result = await nblm.listNotebooks();
+    assert.ok(Array.isArray(result));
+    assert.equal(result.length, 0);
+  });
+
+  it('listNotebooks() tolerates null created_at (create-output shape)', async () => {
+    stub({ stdout: '{"notebooks":[{"id":"nb-x","title":"x","created_at":null}]}', exit: 0 });
+    const result = await nblm.listNotebooks();
+    assert.deepEqual(result[0], { id: 'nb-x', title: 'x', createdAt: null });
+  });
+
+  it('listNotebooks() throws NotebooklmCliError when notebooks key is missing', async () => {
+    stub({ stdout: '{"error":"oops"}', exit: 0 });
+    await assert.rejects(
+      () => nblm.listNotebooks(),
+      (err) => err instanceof nblm.NotebooklmCliError &&
+               /expected \{ notebooks/.test(err.message)
+    );
+  });
+
+  it('listNotebooks() throws NotebooklmCliError when entry is missing id or title', async () => {
+    stub({ stdout: '{"notebooks":[{"title":"only-title"}]}', exit: 0 });
+    await assert.rejects(
+      () => nblm.listNotebooks(),
+      (err) => err instanceof nblm.NotebooklmCliError &&
+               /notebook entry missing required id\/title/.test(err.message)
+    );
+  });
+
+  it('listNotebooks() throws NotebooklmNotInstalledError when binary is absent from PATH', async () => {
+    const savedPath = process.env.PATH;
+    try {
+      process.env.PATH = '/nonexistent-path-for-test';
+      nblm._resetBinaryCache();
+      await assert.rejects(
+        () => nblm.listNotebooks(),
+        (err) => err instanceof nblm.NotebooklmNotInstalledError &&
+                 err.functionName === 'listNotebooks'
+      );
+    } finally {
+      process.env.PATH = savedPath;
+      nblm._resetBinaryCache();
+    }
+  });
+});
