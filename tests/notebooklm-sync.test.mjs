@@ -530,3 +530,232 @@ describe('lib/notebooklm-sync.mjs — syncOneFile (D-07, D-08, D-12, D-13, D-14)
     assert.equal(manifest.files[entry.vaultRelativePath], undefined);
   });
 });
+
+describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMAP SC1-5)', () => {
+  const integrationVaultRoot = join(tmpBase, 'integration-vault');
+  const integrationStubDir = join(tmpBase, 'integration-stub-dir');
+  const integrationStubInstall = join(integrationStubDir, 'notebooklm');
+  let integrationOriginalPath;
+
+  function resetIntegrationVault() {
+    if (existsSync(integrationVaultRoot)) rmSync(integrationVaultRoot, { recursive: true, force: true });
+    mkdirSync(join(integrationVaultRoot, 'projects'), { recursive: true });
+    mkdirSync(join(integrationVaultRoot, 'meta'), { recursive: true });
+  }
+
+  function writeIntegrationFile(relPath, content) {
+    const abs = join(integrationVaultRoot, relPath);
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, content !== undefined ? content : `# ${relPath}\n`);
+    return abs;
+  }
+
+  function seedStubsWithExistingNotebook(notebookId = 'nb-integration', notebookName = 'claude-dev-stack-vault') {
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
+      notebooks: [{ id: notebookId, title: notebookName, created_at: '2026-04-11T00:00:00' }],
+      count: 1,
+    });
+  }
+
+  before(() => {
+    if (existsSync(integrationStubDir)) rmSync(integrationStubDir, { recursive: true, force: true });
+    mkdirSync(integrationStubDir, { recursive: true });
+    copyFileSync(syncStubSource, integrationStubInstall);
+    chmodSync(integrationStubInstall, 0o755);
+    integrationOriginalPath = process.env.PATH;
+    process.env.PATH = `${integrationStubDir}${delimiter}${integrationOriginalPath}`;
+  });
+
+  beforeEach(() => {
+    resetIntegrationVault();
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith('NOTEBOOKLM_SYNC_STUB_') || key === 'NOTEBOOKLM_NOTEBOOK_NAME') {
+        delete process.env[key];
+      }
+    }
+    _resetNotebooklmBinary();
+  });
+
+  after(() => {
+    process.env.PATH = integrationOriginalPath;
+    if (existsSync(integrationStubDir)) rmSync(integrationStubDir, { recursive: true, force: true });
+  });
+
+  it('first run uploads all 6 files across 2 projects (NBLM-07..10, ROADMAP SC1)', async () => {
+    writeIntegrationFile('projects/alpha/context.md', 'alpha context');
+    writeIntegrationFile('projects/alpha/decisions/0001-a.md', 'adr 1');
+    writeIntegrationFile('projects/alpha/docs/setup.md', 'doc 1');
+    writeIntegrationFile('projects/alpha/sessions/2026-01-01-s.md', 'session 1');
+    writeIntegrationFile('projects/beta/context.md', 'beta context');
+    writeIntegrationFile('projects/beta/sessions/2026-01-02-s.md', 'session 2');
+    seedStubsWithExistingNotebook();
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+
+    assert.equal(stats.uploaded, 6);
+    assert.equal(stats.skipped, 0);
+    assert.equal(stats.failed, 0);
+    assert.equal(stats.notebookId, 'nb-integration');
+    assert.equal(stats.rateLimited, false);
+    assert.equal(stats.errors.length, 0);
+
+    const manifest = readManifest(integrationVaultRoot);
+    assert.equal(Object.keys(manifest.files).length, 6);
+    assert.ok(manifest.files['projects/alpha/context.md']);
+    assert.ok(manifest.files['projects/alpha/decisions/0001-a.md']);
+    assert.ok(manifest.files['projects/alpha/docs/setup.md']);
+    assert.ok(manifest.files['projects/alpha/sessions/2026-01-01-s.md']);
+    assert.ok(manifest.files['projects/beta/context.md']);
+    assert.ok(manifest.files['projects/beta/sessions/2026-01-02-s.md']);
+  });
+
+  it('second run skips all files (D-12 session presence + hash skip, ROADMAP SC1)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    writeIntegrationFile('projects/p1/sessions/2026-01-01-s.md', 's');
+    seedStubsWithExistingNotebook();
+
+    const firstRun = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(firstRun.uploaded, 2);
+
+    const secondRun = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(secondRun.uploaded, 0);
+    assert.equal(secondRun.skipped, 2);
+  });
+
+  it('edited ADR → replace-by-filename on second run (ROADMAP SC2)', async () => {
+    const adrPath = writeIntegrationFile('projects/p1/decisions/0001-a.md', 'original');
+    seedStubsWithExistingNotebook();
+
+    const firstRun = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(firstRun.uploaded, 1);
+    const manifest1 = readManifest(integrationVaultRoot);
+    const oldHash = manifest1.files['projects/p1/decisions/0001-a.md'].hash;
+
+    writeFileSync(adrPath, 'updated content');
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-new-after-edit","title":"p1__ADR-0001-a.md"}}';
+    process.env.NOTEBOOKLM_SYNC_STUB_DELETE_STDOUT = 'Deleted source: stub-src-1';
+
+    const secondRun = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(secondRun.uploaded, 1);
+    assert.equal(secondRun.skipped, 0);
+
+    const manifest2 = readManifest(integrationVaultRoot);
+    const newHash = manifest2.files['projects/p1/decisions/0001-a.md'].hash;
+    assert.notEqual(newHash, oldHash);
+    assert.equal(manifest2.files['projects/p1/decisions/0001-a.md'].notebook_source_id, 'src-new-after-edit');
+  });
+
+  it('shared/ and meta/ files are never uploaded (NBLM-11, ROADMAP SC3)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    writeIntegrationFile('shared/patterns.md', 'shared');
+    writeIntegrationFile('meta/project-registry.md', 'meta');
+    seedStubsWithExistingNotebook();
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(stats.uploaded, 1);
+
+    const manifest = readManifest(integrationVaultRoot);
+    const manifestKeys = Object.keys(manifest.files);
+    assert.equal(manifestKeys.length, 1);
+    assert.equal(manifestKeys.filter((k) => k.startsWith('shared/')).length, 0);
+    assert.equal(manifestKeys.filter((k) => k.startsWith('meta/')).length, 0);
+  });
+
+  it('notebook auto-created on first run when absent (NBLM-12, ROADMAP SC4)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
+    process.env.NOTEBOOKLM_SYNC_STUB_CREATE_STDOUT = '{"notebook":{"id":"nb-freshly-created","title":"claude-dev-stack-vault","created_at":null}}';
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(stats.notebookId, 'nb-freshly-created');
+    assert.equal(stats.uploaded, 1);
+  });
+
+  it('second run reuses existing notebook — no create call (NBLM-12 steady state, ROADMAP SC4)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    seedStubsWithExistingNotebook('nb-reused');
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(stats.notebookId, 'nb-reused');
+    // If create was called, stub default id is 'stub-nb-1'; 'nb-reused' proves create was skipped.
+  });
+
+  it('NOTEBOOKLM_NOTEBOOK_NAME env var override (NBLM-13)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    process.env.NOTEBOOKLM_NOTEBOOK_NAME = 'my-custom-vault';
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
+      notebooks: [{ id: 'nb-custom', title: 'my-custom-vault', created_at: null }],
+      count: 1,
+    });
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(stats.notebookId, 'nb-custom');
+  });
+
+  it('rate-limit aborts sync and returns partial stats (D-08)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_EXIT = '1';
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDERR = 'Error: Rate limited.';
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(stats.rateLimited, true);
+    assert.equal(stats.uploaded, 0);
+    const manifest = readManifest(integrationVaultRoot);
+    assert.equal(Object.keys(manifest.files).length, 0);
+  });
+
+  it('dryRun mode: no API calls, planned array populated, no manifest writes (D-20)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    writeIntegrationFile('projects/p1/sessions/2026-01-01-s.md', 's');
+    writeIntegrationFile('projects/p1/decisions/0001-a.md', 'adr');
+    // Intentionally NOT seeding stubs — dryRun must not call listNotebooks
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot, dryRun: true });
+    assert.equal(stats.uploaded, 0);
+    assert.equal(stats.notebookId, null);
+    assert.ok(Array.isArray(stats.planned));
+    assert.equal(stats.planned.length, 3);
+    for (const entry of stats.planned) {
+      assert.ok(['upload', 'replace', 'skip'].includes(entry.action));
+      assert.ok(typeof entry.file === 'string');
+      assert.ok(typeof entry.title === 'string');
+    }
+    // Manifest was never written
+    const { join: pathJoin } = await import('node:path');
+    assert.equal(existsSync(pathJoin(integrationVaultRoot, '.notebooklm-sync.json')), false);
+  });
+
+  it('vault not found → throws Error with message "Vault not found"', async () => {
+    await assert.rejects(
+      () => syncVault({ vaultRoot: '/definitely/not/a/real/path/phase4' }),
+      (err) => err.message.includes('Vault not found'),
+    );
+  });
+
+  it('stats shape matches D-16 contract', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    seedStubsWithExistingNotebook();
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(typeof stats.uploaded, 'number');
+    assert.equal(typeof stats.skipped, 'number');
+    assert.equal(typeof stats.failed, 'number');
+    assert.ok(Array.isArray(stats.errors));
+    assert.equal(typeof stats.durationMs, 'number');
+    assert.ok(stats.durationMs >= 0);
+    assert.equal(typeof stats.notebookId, 'string');
+    assert.equal(typeof stats.rateLimited, 'boolean');
+    // non-dryRun: planned is absent from return value
+    assert.equal(stats.planned, undefined);
+  });
+
+  it('durationMs is a non-negative number', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    seedStubsWithExistingNotebook();
+
+    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(typeof stats.durationMs, 'number');
+    assert.ok(stats.durationMs >= 0);
+  });
+});
