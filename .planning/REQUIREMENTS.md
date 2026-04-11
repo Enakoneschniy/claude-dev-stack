@@ -96,42 +96,42 @@
 
 ## Traceability
 
-(Filled by `gsd-roadmapper` in Step 10 — every requirement above MUST map to exactly one phase.)
+(Filled by `gsd-roadmapper` in Step 10. Every requirement maps to exactly one owning phase. 32/32 coverage, 0 orphaned.)
 
 | REQ-ID | Phase | Status |
 |---|---|---|
-| INFRA-01 | TBD | pending |
-| INFRA-02 | TBD | pending |
-| GIT-01 | TBD | pending |
-| GIT-02 | TBD | pending |
-| GIT-03 | TBD | pending |
-| GIT-04 | TBD | pending |
-| GIT-05 | TBD | pending |
-| GIT-06 | TBD | pending |
-| GIT-07 | TBD | pending |
-| GIT-08 | TBD | pending |
-| GIT-09 | TBD | pending |
-| GIT-10 | TBD | pending |
-| NBLM-V2-01 | TBD | pending |
-| NBLM-V2-02 | TBD | pending |
-| NBLM-V2-03 | TBD | pending |
-| NBLM-V2-04 | TBD | pending |
-| NBLM-V2-05 | TBD | pending |
-| NBLM-V2-06 | TBD | pending |
-| NBLM-V2-07 | TBD | pending |
-| NBLM-V2-08 | TBD | pending |
-| NBLM-V2-09 | TBD | pending |
-| NOTION-01 | TBD | pending |
-| NOTION-02 | TBD | pending |
-| NOTION-03 | TBD | pending |
-| NOTION-04 | TBD | pending |
-| NOTION-05 | TBD | pending |
-| NOTION-06 | TBD | pending |
-| NOTION-07 | TBD | pending |
+| INFRA-01 | 6 | pending |
+| INFRA-02 | 6 | pending |
+| GIT-01 | 6 | pending |
+| GIT-02 | 6 | pending |
+| GIT-03 | 6 | pending |
+| GIT-04 | 6 | pending |
+| GIT-05 | 6 | pending |
+| GIT-06 | 6 | pending |
+| GIT-07 | 6 | pending |
+| GIT-08 | 6 | pending |
+| GIT-09 | 6 | pending |
+| GIT-10 | 6 | pending |
+| NBLM-V2-01 | 7 (first commit gate) | pending |
+| NBLM-V2-02 | 7 | pending |
+| NBLM-V2-03 | 7 | pending |
+| NBLM-V2-04 | 7 | pending |
+| NBLM-V2-05 | 8 | pending |
+| NBLM-V2-06 | 8 | pending |
+| NBLM-V2-07 | 8 | pending |
+| NBLM-V2-08 | 7 | pending |
+| NBLM-V2-09 | 7 | pending |
+| NOTION-01 | 9 | pending |
+| NOTION-02 | 9 | pending |
+| NOTION-03 | 9 | pending |
+| NOTION-04 | 9 | pending |
+| NOTION-05 | 9 | pending |
+| NOTION-06 | 9 | pending |
+| NOTION-07 | 9 | pending |
 | TEST-01 | continuous | pending |
 | TEST-02 | continuous | pending |
-| TEST-03 | TBD | pending |
-| TEST-04 | TBD (Phase 7 first commit) | pending |
+| TEST-03 | 8 | pending |
+| TEST-04 | 7 (first commit gate, alongside NBLM-V2-01) | pending |
 
 ---
 
