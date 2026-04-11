@@ -14,7 +14,9 @@ progress:
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-11 (after Phase 5 executed to completion — all 3 plans shipped, Task 4 human-verified, 243 tests passing, milestone v0.8 READY FOR RELEASE)
+**Last updated:** 2026-04-11 (after quick task 260411-sg2 — v0.8.1 hotfix: uploadSource title via cp-to-tmp, 247 tests passing)
+
+**Last activity:** 2026-04-11 - Completed quick task 260411-sg2: v0.8.1 hotfix (uploadSource respects custom title via cp-to-tmp workaround)
 
 ---
 
@@ -114,6 +116,12 @@ None currently. Ready to start planning.
 - **JavaScript single-dep constraint** under pressure — any plan that tries to add `playwright` or similar must be rejected at code-review. Wrapper-over-CLI approach eliminates the temptation.
 - **context.md regressions** — Phase 1 must not break existing session-manager behavior for users who don't use NotebookLM sync at all.
 - **Parallel agent safety** in `notebooklm-py` — upstream's shared `~/.notebooklm/context.json` is unsafe across concurrent processes. Mitigated by always passing explicit `-n <notebookId>` in Phase 2 wrapper (D-09 in 02-CONTEXT.md).
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260411-sg2 | v0.8.1 hotfix: uploadSource must respect custom title via cp-to-tmp workaround | 2026-04-11 | 5d3a1fa | [260411-sg2-v0-8-1-hotfix-uploadsource-must-respect-](./quick/260411-sg2-v0-8-1-hotfix-uploadsource-must-respect-/) |
 
 ---
 
