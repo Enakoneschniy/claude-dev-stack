@@ -306,12 +306,44 @@ describe('lib/notebooklm-manifest.mjs', () => {
       assert.equal(count, 1);
     });
 
-    it('managed block contains all three entries (T3-07 — D-22)', () => {
+    it('managed block contains all four entries (T3-07 — D-22, extended for .notebooklm-sync.log)', () => {
       ensureManifestGitignored(vaultRoot);
       const content = readFileSync(join(vaultRoot, '.gitignore'), 'utf8');
       assert.ok(content.includes('.notebooklm-sync.json\n'));
       assert.ok(content.includes('.notebooklm-sync.json.tmp\n'));
       assert.ok(content.includes('.notebooklm-sync.corrupt-*'));
+      assert.ok(content.includes('.notebooklm-sync.log'));
+    });
+
+    it('existing 3-entry block gets .notebooklm-sync.log appended on re-run (migration)', () => {
+      const gitignorePath = join(vaultRoot, '.gitignore');
+      // Pre-populate the vault .gitignore with the OLD 3-entry block (Phase 3 shipped state).
+      const oldBlock =
+        '# Claude Dev Stack \u2014 NotebookLM sync state (do not commit)\n' +
+        '.notebooklm-sync.json\n' +
+        '.notebooklm-sync.json.tmp\n' +
+        '.notebooklm-sync.corrupt-*\n';
+      writeFileSync(gitignorePath, 'node_modules\n' + oldBlock, 'utf8');
+
+      // Run ensureManifestGitignored — should append the missing 4th entry.
+      ensureManifestGitignored(vaultRoot);
+
+      const after = readFileSync(gitignorePath, 'utf8');
+      assert.ok(after.includes('.notebooklm-sync.log'));
+      // All 3 original entries still present exactly once.
+      const afterLines = after.split(/\r?\n/);
+      assert.equal(afterLines.filter(l => l.trim() === '.notebooklm-sync.json').length, 1);
+      assert.equal(afterLines.filter(l => l.trim() === '.notebooklm-sync.json.tmp').length, 1);
+      assert.equal(afterLines.filter(l => l.trim() === '.notebooklm-sync.corrupt-*').length, 1);
+      assert.equal(afterLines.filter(l => l.trim() === '.notebooklm-sync.log').length, 1);
+    });
+
+    it('fully populated 4-entry block on second call is idempotent no-op', () => {
+      ensureManifestGitignored(vaultRoot);
+      const afterFirst = readFileSync(join(vaultRoot, '.gitignore'), 'utf8');
+      ensureManifestGitignored(vaultRoot);
+      const afterSecond = readFileSync(join(vaultRoot, '.gitignore'), 'utf8');
+      assert.equal(afterFirst, afterSecond);
     });
 
     it('throws Error("Vault not found at: ...") for null vaultRoot (T3-08)', () => {
