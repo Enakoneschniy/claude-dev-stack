@@ -112,6 +112,128 @@ describe('hooks', () => {
     });
   });
 
+  // ── notebooklm-sync-runner.mjs tests ───────────────────────────────────────
+  describe('notebooklm-sync-runner', () => {
+    const runnerPath = join(hooksDir, 'notebooklm-sync-runner.mjs');
+    const stubSrc = join(fixturesDir, 'notebooklm-sync-stub.sh');
+    let tmpVault;
+    let stubBinDir;
+
+    before(() => {
+      tmpVault = join(tmpdir(), `cds-runner-vault-${process.pid}`);
+      stubBinDir = join(tmpdir(), `cds-runner-stub-bin-${process.pid}`);
+      // Set up minimal vault structure
+      mkdirSync(join(tmpVault, 'projects', 'test-proj', 'sessions'), { recursive: true });
+      mkdirSync(stubBinDir, { recursive: true });
+      // Install stub as `notebooklm` binary
+      const stubDest = join(stubBinDir, 'notebooklm');
+      const stubContent = readFileSync(stubSrc, 'utf8');
+      writeFileSync(stubDest, stubContent);
+      chmodSync(stubDest, 0o755);
+    });
+
+    after(() => {
+      if (existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
+      if (existsSync(stubBinDir)) rmSync(stubBinDir, { recursive: true, force: true });
+    });
+
+    function runRunner(env = {}) {
+      return spawnSync(process.execPath, [runnerPath], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${stubBinDir}:${process.env.PATH}`,
+          VAULT_PATH: tmpVault,
+          NOTEBOOKLM_NOTEBOOK_NAME: 'test-vault',
+          ...env,
+        },
+        timeout: 15000,
+      });
+    }
+
+    function readLog() {
+      const logPath = join(tmpVault, '.notebooklm-sync.log');
+      return existsSync(logPath) ? readFileSync(logPath, 'utf8') : '';
+    }
+
+    function writeLogReset() {
+      const logPath = join(tmpVault, '.notebooklm-sync.log');
+      writeFileSync(logPath, '');
+    }
+
+    it('runner file exists', () => {
+      assert.ok(existsSync(runnerPath), 'hooks/notebooklm-sync-runner.mjs must exist');
+    });
+
+    it('exits 0 on successful auth + sync (sync done log entry)', () => {
+      writeLogReset();
+      const result = runRunner({
+        NOTEBOOKLM_SYNC_STUB_AUTH_EXIT: '0',
+        NOTEBOOKLM_SYNC_STUB_LIST_STDOUT: '{"notebooks":[{"id":"nb1","title":"test-vault"}]}',
+      });
+      assert.equal(result.status, 0, `exit code must be 0, stderr: ${result.stderr}`);
+      const log = readLog();
+      assert.ok(log.includes('sync start'), `log must contain "sync start", got: ${log}`);
+      assert.ok(
+        log.includes('sync done') || log.includes('sync failed') || log.includes('sync skipped'),
+        `log must contain result line, got: ${log}`
+      );
+    });
+
+    it('exits 0 and logs auth-check-failed when auth stub exits 1', () => {
+      writeLogReset();
+      const result = runRunner({ NOTEBOOKLM_SYNC_STUB_AUTH_EXIT: '1' });
+      assert.equal(result.status, 0, `exit code must be 0, stderr: ${result.stderr}`);
+      const log = readLog();
+      assert.ok(log.includes('auth-check-failed'), `log must contain "auth-check-failed", got: ${log}`);
+      assert.ok(!log.includes('sync done'), 'sync done must NOT appear after auth failure');
+    });
+
+    it('exits 0 when vault does not exist', () => {
+      const result = spawnSync(process.execPath, [runnerPath], {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${stubBinDir}:${process.env.PATH}`,
+          VAULT_PATH: '/nonexistent/vault/does-not-exist',
+        },
+        timeout: 10000,
+      });
+      assert.equal(result.status, 0, `exit code must be 0, got ${result.status}`);
+    });
+
+    it('multiple invocations append (no truncation)', () => {
+      const logPath = join(tmpVault, '.notebooklm-sync.log');
+      // Get initial line count
+      const before = readLog().split('\n').filter(Boolean).length;
+
+      runRunner({ NOTEBOOKLM_SYNC_STUB_AUTH_EXIT: '0' });
+      runRunner({ NOTEBOOKLM_SYNC_STUB_AUTH_EXIT: '1' });
+
+      const after = readLog().split('\n').filter(Boolean).length;
+      assert.ok(after > before, `log must grow: before=${before} after=${after}`);
+    });
+
+    it('log lines match D-14 format: ISO timestamp + [level] prefix', () => {
+      runRunner({ NOTEBOOKLM_SYNC_STUB_AUTH_EXIT: '0' });
+      const log = readLog();
+      const lines = log.split('\n').filter(Boolean);
+      assert.ok(lines.length > 0, 'log must have at least one line');
+      for (const line of lines) {
+        assert.match(
+          line,
+          /^\d{4}-\d{2}-\d{2}T[\d:.]+Z \[(info|warn|error)\] /,
+          `line does not match D-14 format: "${line}"`
+        );
+      }
+    });
+
+    it('exit code is always 0 regardless of sync outcome (forced auth fail)', () => {
+      const result = runRunner({ NOTEBOOKLM_SYNC_STUB_AUTH_EXIT: '2' });
+      assert.equal(result.status, 0);
+    });
+  });
+
   describe('session-end-check.sh integration (updates context.md)', () => {
     const tmpBase = join(tmpdir(), `claude-test-hook-integration-${process.pid}`);
     const vaultPath = join(tmpBase, 'vault');
