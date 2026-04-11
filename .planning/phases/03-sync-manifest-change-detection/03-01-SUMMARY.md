@@ -138,6 +138,11 @@ None. This module is pure filesystem + crypto — no new network endpoints, auth
 
 ---
 
-## Self-Check
+## Self-Check: PASSED
 
-Pending — run below.
+- FOUND: lib/notebooklm-manifest.mjs
+- FOUND: tests/notebooklm-manifest.test.mjs
+- FOUND: commit 363cba9 (feat scaffold)
+- FOUND: commit fa5402c (test additions)
+- FOUND: commit 83f6dcc (docs SUMMARY)
+- npm test: 128/128 passing, 0 failures
