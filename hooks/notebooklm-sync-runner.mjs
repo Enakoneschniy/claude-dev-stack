@@ -24,7 +24,7 @@ import { appendFileSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, basename } from 'node:path';
 
-import { syncVault } from '../lib/notebooklm-sync.mjs';
+import { syncVault, _rotateLogIfNeeded } from '../lib/notebooklm-sync.mjs';
 import {
   NotebooklmNotInstalledError,
   NotebooklmRateLimitError,
@@ -79,6 +79,10 @@ process.on('unhandledRejection', (reason) => {
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
+  // P2-#5: trim log to last MAX_LOG_LINES entries before writing the next run.
+  // Best-effort, single-writer; never throws.
+  _rotateLogIfNeeded(LOG_PATH);
+
   // a. Log sync start.
   appendLogLine('info', 'sync start', { project: basename(VAULT_ROOT) });
 

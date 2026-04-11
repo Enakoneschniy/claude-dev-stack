@@ -1,12 +1,18 @@
 import { describe, it, before, beforeEach, after, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, chmodSync, copyFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, chmodSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, dirname, relative, sep, delimiter } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 
-import { syncVault, buildTitle, _walkProjectFiles } from '../lib/notebooklm-sync.mjs';
+import {
+  syncVault,
+  buildTitle,
+  _walkProjectFiles,
+  _rotateLogIfNeeded,
+  MAX_LOG_LINES,
+} from '../lib/notebooklm-sync.mjs';
 import { _resetBinaryCache as _resetNotebooklmBinary } from '../lib/notebooklm.mjs';
 import { hashFile, readManifest } from '../lib/notebooklm-manifest.mjs';
 
@@ -757,5 +763,109 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
     assert.equal(typeof stats.durationMs, 'number');
     assert.ok(stats.durationMs >= 0);
+  });
+});
+
+// ── _rotateLogIfNeeded (P2-#5 backlog) ───────────────────────────────────────
+
+describe('lib/notebooklm-sync.mjs — _rotateLogIfNeeded (P2-#5)', () => {
+  let rotateTmpDir;
+  let logPath;
+
+  beforeEach(() => {
+    rotateTmpDir = join(tmpBase, `rotate-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    mkdirSync(rotateTmpDir, { recursive: true });
+    logPath = join(rotateTmpDir, '.notebooklm-sync.log');
+  });
+
+  afterEach(() => {
+    if (existsSync(rotateTmpDir)) {
+      try {
+        chmodSync(rotateTmpDir, 0o755);
+      } catch {
+        // best-effort
+      }
+      rmSync(rotateTmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('exports MAX_LOG_LINES = 100', () => {
+    assert.equal(MAX_LOG_LINES, 100);
+  });
+
+  it('returns {rotated:false} when file does not exist', () => {
+    const result = _rotateLogIfNeeded(logPath);
+    assert.deepEqual(result, { rotated: false });
+    assert.equal(existsSync(logPath), false);
+  });
+
+  it('returns {rotated:false} when file has fewer lines than maxLines', () => {
+    const lines = ['a', 'b', 'c'].join('\n') + '\n';
+    writeFileSync(logPath, lines, 'utf8');
+    const result = _rotateLogIfNeeded(logPath, 10);
+    assert.deepEqual(result, { rotated: false });
+    assert.equal(readFileSync(logPath, 'utf8'), lines);
+  });
+
+  it('returns {rotated:false} when file has exactly maxLines lines', () => {
+    const lines = ['a', 'b', 'c'].join('\n') + '\n';
+    writeFileSync(logPath, lines, 'utf8');
+    const result = _rotateLogIfNeeded(logPath, 3);
+    assert.deepEqual(result, { rotated: false });
+    assert.equal(readFileSync(logPath, 'utf8'), lines);
+  });
+
+  it('trims to last maxLines when file exceeds threshold (with trailing newline)', () => {
+    const input = ['1', '2', '3', '4', '5'].join('\n') + '\n';
+    writeFileSync(logPath, input, 'utf8');
+    const result = _rotateLogIfNeeded(logPath, 2);
+    assert.deepEqual(result, { rotated: true, before: 5, after: 2 });
+    assert.equal(readFileSync(logPath, 'utf8'), '4\n5\n');
+  });
+
+  it('trims to last maxLines when file exceeds threshold (no trailing newline)', () => {
+    const input = ['1', '2', '3', '4', '5'].join('\n');
+    writeFileSync(logPath, input, 'utf8');
+    const result = _rotateLogIfNeeded(logPath, 3);
+    assert.deepEqual(result, { rotated: true, before: 5, after: 3 });
+    assert.equal(readFileSync(logPath, 'utf8'), '3\n4\n5');
+  });
+
+  it('preserves trailing newline character after rotation', () => {
+    const lines = [];
+    for (let i = 1; i <= 150; i++) lines.push(`line ${i}`);
+    writeFileSync(logPath, lines.join('\n') + '\n', 'utf8');
+    const result = _rotateLogIfNeeded(logPath);
+    assert.equal(result.rotated, true);
+    assert.equal(result.before, 150);
+    assert.equal(result.after, MAX_LOG_LINES);
+    const out = readFileSync(logPath, 'utf8');
+    assert.ok(out.endsWith('\n'));
+    const outLines = out.slice(0, -1).split('\n');
+    assert.equal(outLines.length, MAX_LOG_LINES);
+    assert.equal(outLines[0], 'line 51');
+    assert.equal(outLines[outLines.length - 1], 'line 150');
+  });
+
+  it('uses default MAX_LOG_LINES when maxLines arg omitted', () => {
+    const lines = [];
+    for (let i = 1; i <= 101; i++) lines.push(`L${i}`);
+    writeFileSync(logPath, lines.join('\n') + '\n', 'utf8');
+    const result = _rotateLogIfNeeded(logPath);
+    assert.deepEqual(result, { rotated: true, before: 101, after: 100 });
+  });
+
+  it('never throws on read error (returns {rotated:false})', () => {
+    // Create a directory at logPath so readFileSync throws EISDIR.
+    mkdirSync(logPath);
+    const result = _rotateLogIfNeeded(logPath);
+    assert.deepEqual(result, { rotated: false });
+  });
+
+  it('treats empty file as zero lines (no rotation)', () => {
+    writeFileSync(logPath, '', 'utf8');
+    const result = _rotateLogIfNeeded(logPath, 5);
+    assert.deepEqual(result, { rotated: false });
+    assert.equal(readFileSync(logPath, 'utf8'), '');
   });
 });
