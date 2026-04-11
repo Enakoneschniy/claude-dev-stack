@@ -1,6 +1,6 @@
 import { describe, it, before, beforeEach, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, copyFileSync, chmodSync, existsSync, readFileSync } from 'fs';
+import { mkdirSync, rmSync, copyFileSync, chmodSync, existsSync, readFileSync, mkdtempSync, writeFileSync } from 'fs';
 import { join, dirname, delimiter } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
@@ -41,6 +41,7 @@ beforeEach(() => {
   delete process.env.NOTEBOOKLM_STUB_STDOUT;
   delete process.env.NOTEBOOKLM_STUB_STDERR;
   delete process.env.NOTEBOOKLM_STUB_EXIT;
+  delete process.env.NOTEBOOKLM_STUB_ARGV_LOG;
   // Reset lazy detection cache so tests can mutate PATH between scenarios.
   nblm._resetBinaryCache();
 });
@@ -216,6 +217,98 @@ describe('uploadSource', () => {
     await assert.rejects(
       () => nblm.uploadSource('nb-1', ''),
       (err) => err instanceof TypeError
+    );
+  });
+
+  it('passes title via temp file when { title } option is provided (cp-to-tmp workaround)', async () => {
+    // Setup: create source file in a dedicated workDir + argv log in a
+    // separate tmp dir. The log file MUST live outside the upload tmpDir
+    // because uploadSource's finally block removes the upload tmpDir.
+    const workDir = mkdtempSync(join(tmpdir(), 'cds-uploadsource-test-'));
+    const sourceFile = join(workDir, 'original.md');
+    writeFileSync(sourceFile, '# original content');
+    const argvLogDir = mkdtempSync(join(tmpdir(), 'cds-test-argvlog-'));
+    const argvLog = join(argvLogDir, 'argv.log');
+    process.env.NOTEBOOKLM_STUB_ARGV_LOG = argvLog;
+
+    try {
+      stub({
+        stdout: '{"source":{"id":"src-99","title":"claude-dev-stack__test-ADR-0042.md","type":"SourceType.UNKNOWN","url":null}}',
+        exit: 0,
+      });
+
+      const result = await nblm.uploadSource('nb-1', sourceFile, {
+        title: 'claude-dev-stack__test-ADR-0042.md',
+      });
+
+      // The notebooklm CLI returned the parsed shape correctly.
+      assert.equal(result.sourceId, 'src-99');
+      assert.equal(result.title, 'claude-dev-stack__test-ADR-0042.md');
+
+      // Verify the stub received the temp path, not the original path.
+      assert.ok(existsSync(argvLog), 'argv log file must exist');
+      const logLines = readFileSync(argvLog, 'utf8').trim().split('\n');
+      assert.equal(logLines.length, 1, 'exactly one stub invocation expected');
+      const passedPath = logLines[0];
+
+      // Basename matches the title verbatim.
+      const passedBasename = passedPath.split('/').pop();
+      assert.equal(passedBasename, 'claude-dev-stack__test-ADR-0042.md',
+        'temp file basename must equal options.title');
+
+      // Parent dir matches the cp-to-tmp prefix.
+      const passedDir = passedPath.substring(0, passedPath.lastIndexOf('/'));
+      assert.match(passedDir, /cds-nblm-/, 'parent dir must use cds-nblm- prefix');
+
+      // Cleanup happened — the upload tmpDir no longer exists after uploadSource resolved.
+      assert.equal(existsSync(passedDir), false,
+        'temp dir must be removed after upload');
+    } finally {
+      rmSync(workDir, { recursive: true, force: true });
+      rmSync(argvLogDir, { recursive: true, force: true });
+    }
+  });
+
+  it('passes raw filepath when no { title } option is provided (backward compat)', async () => {
+    const workDir = mkdtempSync(join(tmpdir(), 'cds-uploadsource-test-'));
+    const sourceFile = join(workDir, 'original.md');
+    writeFileSync(sourceFile, '# original content');
+    const argvLogDir = mkdtempSync(join(tmpdir(), 'cds-test-argvlog-'));
+    const argvLog = join(argvLogDir, 'argv.log');
+    process.env.NOTEBOOKLM_STUB_ARGV_LOG = argvLog;
+
+    try {
+      stub({
+        stdout: '{"source":{"id":"src-100","title":"original.md"}}',
+        exit: 0,
+      });
+
+      await nblm.uploadSource('nb-1', sourceFile);
+
+      const logLines = readFileSync(argvLog, 'utf8').trim().split('\n');
+      assert.equal(logLines.length, 1);
+      // No temp dir involved — passed path equals the resolved source file.
+      assert.equal(logLines[0], sourceFile,
+        'without title, the original absolute path must be passed verbatim');
+      assert.ok(!logLines[0].includes('cds-nblm-'),
+        'no temp dir prefix expected when title option absent');
+    } finally {
+      rmSync(workDir, { recursive: true, force: true });
+      rmSync(argvLogDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws TypeError when { title } is empty string', async () => {
+    await assert.rejects(
+      () => nblm.uploadSource('nb-1', '/tmp/x.md', { title: '' }),
+      (err) => err instanceof TypeError && /options\.title/.test(err.message)
+    );
+  });
+
+  it('throws TypeError when { title } is non-string', async () => {
+    await assert.rejects(
+      () => nblm.uploadSource('nb-1', '/tmp/x.md', { title: 42 }),
+      (err) => err instanceof TypeError && /options\.title/.test(err.message)
     );
   });
 });
