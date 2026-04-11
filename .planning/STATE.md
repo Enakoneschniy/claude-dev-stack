@@ -3,18 +3,18 @@ gsd_state_version: 1.0
 milestone: v0.8
 milestone_name: milestone
 status: executing
-last_updated: "2026-04-10T20:12:09.704Z"
+last_updated: "2026-04-11T13:30:00.000Z"
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
   percent: 100
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-10 (after Phase 2 executed to completion — both plans shipped, 96 tests passing)
+**Last updated:** 2026-04-11 (after Phase 3 executed to completion — 03-01 plan shipped, 128 tests passing)
 
 ---
 
@@ -29,24 +29,22 @@ progress:
 **Roadmap:** `.planning/ROADMAP.md` (5 phases)
 
 **Current milestone:** v0.8 — NotebookLM Auto-Sync MVP
-**Current focus:** Phase 2 — NotebookLM CLI Wrapper
+**Current focus:** Phases 1–3 shipped. Next: discuss/plan/execute Phase 4 (vault → NotebookLM sync pipeline).
 
 ---
 
 ## Current Position
 
-Phase: 2 (NotebookLM CLI Wrapper) — COMPLETE
-Plan: 2 of 2
-**Phase:** 1 complete; Phase 2 complete; Phase 3 parallel-ready with locked CONTEXT.md
-**Plan:** Phase 2 — 02-01 (scaffold: error classes, runNotebooklm helper, test fixture) + 02-02 (public API: 6 functions, 22 new tests, PROJECT.md docs) both shipped
-**Status:** Phase 2 complete — ready to execute Phase 3 (sync manifest)
-**Progress:** [██████████] 100% (Phase 1: 2/2 plans, Phase 2: 2/2 plans)
+**Phase:** 1, 2, 3 complete (5/5 planned plans shipped). Phase 4 + Phase 5 not yet discussed.
+**Plan:** 03-01 (notebooklm-manifest.mjs: MANIFEST_VERSION, hashFile, readManifest, writeManifest, ensureManifestGitignored) shipped in single wave with 32 new tests.
+**Status:** Milestone v0.8 — 60% phases complete (3/5); 5/5 currently-planned plans complete; Phases 4+5 remain to be discussed/planned/executed.
+**Progress:** [████████▱▱] Phase 1: 2/2 ✓ · Phase 2: 2/2 ✓ · Phase 3: 1/1 ✓ · Phase 4: 0/TBD · Phase 5: 0/TBD
 
 **Next step options:**
 
-- `/gsd-execute-phase 3` — execute Phase 3 (sync manifest; 03-CONTEXT.md locked)
-- `/gsd-plan-phase 3` — re-plan Phase 3 if context has changed
-- `/gsd-autonomous` — chain remaining phases (3 → 4 → 5)
+- `/gsd-discuss-phase 4` — Vault → NotebookLM sync pipeline (depends on Phase 2 + 3, both now shipped)
+- `/gsd-discuss-phase 5` — CLI integration + session-end trigger + install wizard + doctor (depends on 1+2+3+4)
+- `/gsd-autonomous` — chain discuss+plan+execute for Phases 4 and 5 (long-running)
 
 **Recent milestone-level change:** Phase 2 scope was pivoted from "HTTP client with API key" to "thin wrapper over `notebooklm-py` CLI" after discuss-phase investigation revealed Google NotebookLM has no public REST API. Full rationale in `~/vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md`. REQUIREMENTS.md NBLM-01..06 and ROADMAP.md Phase 2 + Phase 5 were rewritten accordingly. PROJECT.md Constraints now include a system dependency on `notebooklm-py >= 0.3.4` (NotebookLM feature only).
 
@@ -65,7 +63,7 @@ Plan: 2 of 2
 
 **Project-wide:**
 
-- Tests currently passing: 68 (baseline 54 → 66 after Plan 01-01 → 68 after Plan 01-02; TEST-04 continuous gate still green)
+- Tests currently passing: 128 (baseline 54 → 68 after Phase 1 → 96 after Phase 2 → 128 after Phase 3; TEST-04 continuous gate still green)
 - Runtime dependencies: 1 (`prompts`) — must stay at 1 after v0.8 ships
 - Supported Node.js: 18+
 - Last shipped release: v0.7.8
@@ -96,8 +94,9 @@ Plan: 2 of 2
 - [x] Plan + execute Phase 1 — DONE (plans 01-01 + 01-02 both shipped; SKILL-01..05 + TEST-03 fulfilled; 68 tests passing)
 - [x] Plan 02-01 executed — `lib/notebooklm.mjs` (error classes + runNotebooklm helper + _resetBinaryCache), `tests/fixtures/notebooklm-stub.sh`, `tests/notebooklm.test.mjs` (6 invariant tests). 74 tests passing. NBLM-02/03/04/05 scaffold + TEST-01 scaffold fulfilled.
 - [x] Plan 02-02 executed — 6 public async functions (`createNotebook`, `listSources`, `uploadSource`, `deleteSource`, `deleteSourceByTitle`, `updateSource`) + 22 new tests. 96 tests passing. NBLM-01/06 + TEST-01 fully fulfilled. Phase 2 COMPLETE.
-- [ ] Execute Phase 3 via `/gsd-execute-phase 3` (CONTEXT.md at `.planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md`)
-- [ ] Plan Phase 3 via `/gsd-plan-phase 3` (CONTEXT.md at `.planning/phases/03-sync-manifest-change-detection/03-CONTEXT.md`)
+- [x] Plan 03-01 executed — `lib/notebooklm-manifest.mjs` (MANIFEST_VERSION, hashFile, readManifest, writeManifest, ensureManifestGitignored) + `tests/notebooklm-manifest.test.mjs` (32 tests). 128 tests passing. NBLM-14/15/16/17/18 fulfilled. Phase 3 COMPLETE.
+- [ ] Discuss + plan + execute Phase 4 (vault → NotebookLM sync pipeline) — `/gsd-discuss-phase 4`. Depends on Phase 2 + 3 (both shipped).
+- [ ] Discuss + plan + execute Phase 5 (CLI integration, trigger, install wizard, doctor) — `/gsd-discuss-phase 5`. Depends on 1+2+3+4.
 - [ ] (Backlog, next stage) Reconcile `~/vault/projects/{name}/decisions/` ADR folder with GSD `.planning/phases/*/CONTEXT.md` — two parallel decision-capture systems exist; user flagged during Phase 1 discuss. ADR-0001 bootstrapped the decisions folder usage. Not scheduled yet. See `memory/project_vault_decisions_vs_gsd_planning.md`.
 - [ ] (Phase 5 planning task) Cross-platform install strategy for `notebooklm-py` during wizard: `pipx` vs `pip --user` vs `uv pip install` — validate on macOS/Linux/Windows
 - [ ] (Phase 5 research task) `notebooklm login` UX inside `install.mjs` wizard — subprocess inheritance of stdin for browser OAuth flow may be tricky in some terminals

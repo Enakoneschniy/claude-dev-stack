@@ -47,11 +47,11 @@ Actual logic that walks vault content and pushes it to NotebookLM.
 
 Prevent unnecessary re-uploads.
 
-- [ ] **NBLM-14**: Local manifest file at `~/vault/.notebooklm-sync.json` tracks which vault files have been uploaded and their SHA-256 content hash
-- [ ] **NBLM-15**: On sync, each file's current hash is compared to the manifest — unchanged files are skipped entirely (no API call)
-- [ ] **NBLM-16**: Manifest stores `{filepath: {hash, notebook_source_id, uploaded_at}}` so we can delete the right source on replace-by-filename updates
-- [ ] **NBLM-17**: Manifest is updated atomically (write to `.notebooklm-sync.json.tmp` then rename) to prevent corruption on crash mid-sync
-- [ ] **NBLM-18**: `~/vault/.notebooklm-sync.json` is added to vault's `.gitignore` (it's local state, not shared)
+- [x] **NBLM-14**: Local manifest file at `~/vault/.notebooklm-sync.json` tracks which vault files have been uploaded and their SHA-256 content hash
+- [x] **NBLM-15**: On sync, each file's current hash is compared to the manifest — unchanged files are skipped entirely (no API call)
+- [x] **NBLM-16**: Manifest stores `{filepath: {hash, notebook_source_id, uploaded_at}}` so we can delete the right source on replace-by-filename updates
+- [x] **NBLM-17**: Manifest is updated atomically (write to `.notebooklm-sync.json.tmp` then rename) to prevent corruption on crash mid-sync
+- [x] **NBLM-18**: `~/vault/.notebooklm-sync.json` is added to vault's `.gitignore` (it's local state, not shared)
 
 ### Sync Trigger (Integration)
 
@@ -138,11 +138,11 @@ Prevent unnecessary re-uploads.
 | NBLM-04 | Phase 2 | Complete |
 | NBLM-05 | Phase 2 | Complete |
 | NBLM-06 | Phase 2 | Complete |
-| NBLM-14 | Phase 3 | Pending |
-| NBLM-15 | Phase 3 | Pending |
-| NBLM-16 | Phase 3 | Pending |
-| NBLM-17 | Phase 3 | Pending |
-| NBLM-18 | Phase 3 | Pending |
+| NBLM-14 | Phase 3 | Complete |
+| NBLM-15 | Phase 3 | Complete |
+| NBLM-16 | Phase 3 | Complete |
+| NBLM-17 | Phase 3 | Complete |
+| NBLM-18 | Phase 3 | Complete |
 | NBLM-07 | Phase 4 | Pending |
 | NBLM-08 | Phase 4 | Pending |
 | NBLM-09 | Phase 4 | Pending |
