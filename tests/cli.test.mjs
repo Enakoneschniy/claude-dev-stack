@@ -79,3 +79,94 @@ describe('CLI', () => {
     });
   });
 });
+
+// ── notebooklm routing tests (Plan 05-01 Task 2, NBLM-24 + NBLM-25) ─────────
+// Validation rows: 5-01-02 (NBLM-24 routing + collision guard + NBLM-25 help text)
+
+/**
+ * Run CLI and return { stdout, stderr, exitCode }.
+ * Never throws — captures both success and failure paths.
+ */
+function runRaw(args = []) {
+  try {
+    const stdout = execFileSync('node', [CLI, ...args], {
+      encoding: 'utf8',
+      timeout: 15000,
+      env: { ...process.env, NO_COLOR: '1' },
+      stdio: 'pipe',
+    });
+    return { stdout, stderr: '', exitCode: 0 };
+  } catch (err) {
+    return {
+      stdout: err.stdout || '',
+      stderr: err.stderr || '',
+      exitCode: err.status ?? 1,
+    };
+  }
+}
+
+describe('CLI: notebooklm routing (NBLM-24)', () => {
+  it('notebooklm (no args) → exit 0, stdout contains help text', () => {
+    const { stdout, exitCode } = runRaw(['notebooklm']);
+    assert.equal(exitCode, 0, `Expected exit 0, got ${exitCode}`);
+    assert.ok(stdout.includes('notebooklm sync'), `Expected "notebooklm sync" in stdout:\n${stdout}`);
+    assert.ok(stdout.includes('notebooklm status'), `Expected "notebooklm status" in stdout:\n${stdout}`);
+  });
+
+  it('notebooklm help → exit 0, stdout contains help text', () => {
+    const { stdout, exitCode } = runRaw(['notebooklm', 'help']);
+    assert.equal(exitCode, 0, `Expected exit 0, got ${exitCode}`);
+    assert.ok(stdout.includes('NotebookLM Sync'), `Expected "NotebookLM Sync" in stdout:\n${stdout}`);
+  });
+
+  it('notebooklm --help → exit 0, stdout contains help text', () => {
+    const { stdout, exitCode } = runRaw(['notebooklm', '--help']);
+    assert.equal(exitCode, 0, `Expected exit 0, got ${exitCode}`);
+    assert.ok(stdout.includes('notebooklm sync'));
+  });
+
+  it('notebooklm bogus → exit non-zero, output contains "Unknown notebooklm subcommand"', () => {
+    const { stdout, stderr, exitCode } = runRaw(['notebooklm', 'bogus']);
+    assert.notEqual(exitCode, 0, `Expected non-zero exit for unknown subcommand`);
+    const combined = stdout + stderr;
+    assert.ok(
+      combined.includes('Unknown notebooklm subcommand') || combined.includes('Error'),
+      `Expected error message in output:\n${combined}`
+    );
+  });
+
+  // Research finding #6: COLLISION GUARD — `claude-dev-stack status` must still route
+  // to lib/analytics.mjs, NOT to lib/notebooklm-cli.mjs. The `case 'status':` at
+  // bin/cli.mjs line 158 must remain untouched.
+  it('top-level "status" still routes to analytics (collision guard — research finding #6)', () => {
+    const { stdout, stderr } = runRaw(['status']);
+    const combined = stdout + stderr;
+    // analytics output should NOT contain NotebookLM-specific markers
+    assert.ok(
+      !combined.includes('NotebookLM Sync Status'),
+      `"status" should route to analytics, not notebooklm. Got:\n${combined}`
+    );
+    // analytics output should NOT reference notebooklm-cli.mjs in any error
+    assert.ok(
+      !combined.includes('notebooklm-cli.mjs'),
+      `"status" should not invoke notebooklm-cli. Got:\n${combined}`
+    );
+  });
+});
+
+describe('CLI: help includes NotebookLM section (NBLM-25)', () => {
+  it('claude-dev-stack help → stdout includes "NotebookLM Sync" section header', () => {
+    const { stdout } = runRaw(['help']);
+    assert.ok(stdout.includes('NotebookLM Sync'), `Expected "NotebookLM Sync" section in help:\n${stdout}`);
+  });
+
+  it('claude-dev-stack help → stdout includes "notebooklm sync" entry', () => {
+    const { stdout } = runRaw(['help']);
+    assert.ok(stdout.includes('notebooklm sync'), `Expected "notebooklm sync" in help:\n${stdout}`);
+  });
+
+  it('claude-dev-stack help → stdout includes "notebooklm status" entry', () => {
+    const { stdout } = runRaw(['help']);
+    assert.ok(stdout.includes('notebooklm status'), `Expected "notebooklm status" in help:\n${stdout}`);
+  });
+});
