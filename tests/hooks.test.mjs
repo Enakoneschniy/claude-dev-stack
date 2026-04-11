@@ -1,13 +1,14 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, mkdirSync, rmSync, writeFileSync } from 'fs';
-import { execFileSync } from 'child_process';
+import { existsSync, readFileSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'fs';
+import { execFileSync, spawnSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { tmpdir } from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const hooksDir = join(__dirname, '..', 'hooks');
+const fixturesDir = join(__dirname, 'fixtures');
 
 describe('hooks', () => {
   const hookFiles = ['session-start-context.sh', 'session-end-check.sh'];
@@ -52,6 +53,62 @@ describe('hooks', () => {
         cwd: '/tmp',
       });
       assert.equal(result, '');
+    });
+  });
+
+  // ── notebooklm-sync-trigger.mjs tests ──────────────────────────────────────
+  describe('notebooklm-sync-trigger', () => {
+    const triggerPath = join(hooksDir, 'notebooklm-sync-trigger.mjs');
+    const stubDir = join(tmpdir(), `cds-trigger-stub-${process.pid}`);
+    const stubBinPath = join(stubDir, 'notebooklm');
+    let tmpVault;
+
+    before(() => {
+      tmpVault = join(tmpdir(), `cds-trigger-vault-${process.pid}`);
+      mkdirSync(tmpVault, { recursive: true });
+      mkdirSync(stubDir, { recursive: true });
+      // Create a stub notebooklm binary
+      writeFileSync(stubBinPath, '#!/bin/bash\nsleep 10\n');
+      chmodSync(stubBinPath, 0o755);
+    });
+
+    after(() => {
+      if (existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
+      if (existsSync(stubDir)) rmSync(stubDir, { recursive: true, force: true });
+    });
+
+    it('trigger file exists', () => {
+      assert.ok(existsSync(triggerPath), 'hooks/notebooklm-sync-trigger.mjs must exist');
+    });
+
+    it('exits 0 with notebooklm NOT in PATH (binary absent)', () => {
+      const start = Date.now();
+      const result = spawnSync(process.execPath, [triggerPath], {
+        encoding: 'utf8',
+        env: { ...process.env, PATH: '/nonexistent', VAULT_PATH: tmpVault },
+      });
+      const elapsed = Date.now() - start;
+      assert.equal(result.status, 0, `exit code must be 0, got ${result.status}`);
+      assert.ok(elapsed < 1000, `must exit within 1000ms, took ${elapsed}ms`);
+    });
+
+    it('exits 0 with stub notebooklm in PATH, wall-clock < 1000ms (non-blocking)', () => {
+      const start = Date.now();
+      const result = spawnSync(process.execPath, [triggerPath], {
+        encoding: 'utf8',
+        env: { ...process.env, PATH: `${stubDir}:${process.env.PATH}`, VAULT_PATH: tmpVault },
+      });
+      const elapsed = Date.now() - start;
+      assert.equal(result.status, 0, `exit code must be 0, got ${result.status}`);
+      assert.ok(elapsed < 1000, `must exit within 1000ms even with slow stub runner, took ${elapsed}ms`);
+    });
+
+    it('exits 0 when VAULT_PATH does not exist (graceful skip)', () => {
+      const result = spawnSync(process.execPath, [triggerPath], {
+        encoding: 'utf8',
+        env: { ...process.env, VAULT_PATH: '/nonexistent/vault/path/that/does/not/exist' },
+      });
+      assert.equal(result.status, 0, `exit code must be 0, got ${result.status}`);
     });
   });
 

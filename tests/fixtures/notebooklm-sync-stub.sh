@@ -38,6 +38,19 @@ STDOUT=""
 STDERR=""
 EXIT=0
 
+# auth check mode — must appear before wildcard to prevent fall-through.
+# Controlled by NOTEBOOKLM_SYNC_STUB_AUTH_EXIT (default 0 = authenticated).
+if [ "$CMD" = "auth" ] && [ "$SUB" = "check" ]; then
+  AUTH_EXIT="${NOTEBOOKLM_SYNC_STUB_AUTH_EXIT:-0}"
+  if [ "$AUTH_EXIT" = "0" ]; then
+    printf '%s\n' '{"status":"ok","checks":{}}'
+    exit 0
+  else
+    printf '%s\n' "Authentication failed" >&2
+    exit "$AUTH_EXIT"
+  fi
+fi
+
 case "$CMD" in
   list)
     if [ -z "${NOTEBOOKLM_SYNC_STUB_LIST_STDOUT+x}" ]; then
