@@ -275,3 +275,258 @@ describe('tests/fixtures/notebooklm-sync-stub.sh — argv-aware modes', () => {
     assert.match(res.stderr, /Rate limited/);
   });
 });
+
+describe('lib/notebooklm-sync.mjs — ensureNotebook (D-09)', () => {
+  const ensureStubDir = join(tmpBase, 'ensure-notebook-stub-dir');
+  const ensureStubInstall = join(ensureStubDir, 'notebooklm');
+  let ensureOriginalPath;
+
+  before(() => {
+    if (existsSync(ensureStubDir)) rmSync(ensureStubDir, { recursive: true, force: true });
+    mkdirSync(ensureStubDir, { recursive: true });
+    copyFileSync(syncStubSource, ensureStubInstall);
+    chmodSync(ensureStubInstall, 0o755);
+    ensureOriginalPath = process.env.PATH;
+    process.env.PATH = `${ensureStubDir}${delimiter}${ensureOriginalPath}`;
+  });
+
+  beforeEach(() => {
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith('NOTEBOOKLM_SYNC_STUB_')) delete process.env[key];
+    }
+    _resetNotebooklmBinary();
+  });
+
+  after(() => {
+    process.env.PATH = ensureOriginalPath;
+    if (existsSync(ensureStubDir)) rmSync(ensureStubDir, { recursive: true, force: true });
+  });
+
+  it('returns existing notebook id when one match found (D-09)', async () => {
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT =
+      '{"notebooks":[{"id":"nb-existing","title":"claude-dev-stack-vault","created_at":"2026-04-11T00:00:00"}],"count":1}';
+    const { _ensureNotebook } = await import('../lib/notebooklm-sync.mjs');
+    const id = await _ensureNotebook('claude-dev-stack-vault');
+    assert.equal(id, 'nb-existing');
+  });
+
+  it('creates a new notebook when zero matches found (D-09 + NBLM-12)', async () => {
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
+    process.env.NOTEBOOKLM_SYNC_STUB_CREATE_STDOUT =
+      '{"notebook":{"id":"nb-created","title":"new-vault","created_at":null}}';
+    const { _ensureNotebook } = await import('../lib/notebooklm-sync.mjs');
+    const id = await _ensureNotebook('new-vault');
+    assert.equal(id, 'nb-created');
+  });
+
+  it('throws NotebooklmCliError when multiple notebooks share the same title (research finding #3)', async () => {
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
+      notebooks: [
+        { id: 'nb-1', title: 'dup', created_at: null },
+        { id: 'nb-2', title: 'dup', created_at: null },
+      ],
+      count: 2,
+    });
+    const { _ensureNotebook } = await import('../lib/notebooklm-sync.mjs');
+    const { NotebooklmCliError } = await import('../lib/notebooklm.mjs');
+    await assert.rejects(
+      () => _ensureNotebook('dup'),
+      (err) => err instanceof NotebooklmCliError && err.message.includes('multiple notebooks found') && err.message.includes('dup'),
+    );
+  });
+
+  it('uses strict title equality — not prefix match (D-09)', async () => {
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
+      notebooks: [{ id: 'nb-close', title: 'claude-dev-stack-vault-2', created_at: null }],
+      count: 1,
+    });
+    process.env.NOTEBOOKLM_SYNC_STUB_CREATE_STDOUT =
+      '{"notebook":{"id":"nb-created","title":"claude-dev-stack-vault","created_at":null}}';
+    const { _ensureNotebook } = await import('../lib/notebooklm-sync.mjs');
+    const id = await _ensureNotebook('claude-dev-stack-vault');
+    // Strict equality: the -2 variant is NOT a match -> create path taken
+    assert.equal(id, 'nb-created');
+  });
+});
+
+describe('lib/notebooklm-sync.mjs — syncOneFile (D-07, D-08, D-12, D-13, D-14)', () => {
+  const syncOneVaultRoot = join(tmpBase, 'syncOneFile-vault');
+  const syncOneStubDir = join(tmpBase, 'syncOneFile-stub-dir');
+  const syncOneStubInstall = join(syncOneStubDir, 'notebooklm');
+  let syncOneOriginalPath;
+
+  function resetSyncOneVault() {
+    if (existsSync(syncOneVaultRoot)) rmSync(syncOneVaultRoot, { recursive: true, force: true });
+    mkdirSync(join(syncOneVaultRoot, 'projects'), { recursive: true });
+    mkdirSync(join(syncOneVaultRoot, 'meta'), { recursive: true });
+  }
+
+  function makeFileEntry({ category, projectSlug, basename, content = 'hello world\n' }) {
+    const subdir = { session: 'sessions', adr: 'decisions', doc: 'docs', context: '' }[category];
+    const projectDir = join(syncOneVaultRoot, 'projects', projectSlug);
+    const categoryDir = subdir ? join(projectDir, subdir) : projectDir;
+    mkdirSync(categoryDir, { recursive: true });
+    const absPath = join(categoryDir, basename);
+    writeFileSync(absPath, content);
+    const vaultRelativePath = relative(syncOneVaultRoot, absPath).split(sep).join('/');
+    return { absPath, vaultRelativePath, category, projectSlug, basename, title: buildTitle(category, projectSlug, basename) };
+  }
+
+  function freshManifest() {
+    return { version: 1, generated_at: new Date().toISOString(), files: {} };
+  }
+
+  function freshStats() {
+    return { uploaded: 0, skipped: 0, failed: 0, errors: [], planned: [] };
+  }
+
+  before(() => {
+    if (existsSync(syncOneStubDir)) rmSync(syncOneStubDir, { recursive: true, force: true });
+    mkdirSync(syncOneStubDir, { recursive: true });
+    copyFileSync(syncStubSource, syncOneStubInstall);
+    chmodSync(syncOneStubInstall, 0o755);
+    syncOneOriginalPath = process.env.PATH;
+    process.env.PATH = `${syncOneStubDir}${delimiter}${syncOneOriginalPath}`;
+  });
+
+  beforeEach(() => {
+    resetSyncOneVault();
+    for (const key of Object.keys(process.env)) {
+      if (key.startsWith('NOTEBOOKLM_SYNC_STUB_')) delete process.env[key];
+    }
+    _resetNotebooklmBinary();
+  });
+
+  after(() => {
+    process.env.PATH = syncOneOriginalPath;
+    if (existsSync(syncOneStubDir)) rmSync(syncOneStubDir, { recursive: true, force: true });
+  });
+
+  it('session not in manifest → upload and record (D-12 first-time path)', async () => {
+    const entry = makeFileEntry({ category: 'session', projectSlug: 'p1', basename: '2026-04-10-a.md' });
+    const manifest = freshManifest();
+    const stats = freshStats();
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-session-1","title":"p1__2026-04-10-a.md"}}';
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'uploaded');
+    assert.equal(stats.uploaded, 1);
+    assert.ok(manifest.files[entry.vaultRelativePath]);
+    assert.equal(manifest.files[entry.vaultRelativePath].notebook_source_id, 'src-session-1');
+  });
+
+  it('session already in manifest → skip regardless of hash (D-12 append-only)', async () => {
+    const entry = makeFileEntry({ category: 'session', projectSlug: 'p1', basename: '2026-04-10-b.md', content: 'original' });
+    const manifest = freshManifest();
+    manifest.files[entry.vaultRelativePath] = { hash: 'stale-hash-that-does-not-match', notebook_source_id: 'src-old', uploaded_at: '2026-01-01T00:00:00.000Z' };
+    writeFileSync(entry.absPath, 'modified content');
+    const stats = freshStats();
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'skipped');
+    assert.equal(stats.skipped, 1);
+    assert.equal(manifest.files[entry.vaultRelativePath].notebook_source_id, 'src-old');
+  });
+
+  it('non-session unchanged hash → skip (D-13 step 3)', async () => {
+    const entry = makeFileEntry({ category: 'context', projectSlug: 'p1', basename: 'context.md', content: 'fixed-content' });
+    const currentHash = hashFile(entry.absPath);
+    const manifest = freshManifest();
+    manifest.files[entry.vaultRelativePath] = { hash: currentHash, notebook_source_id: 'src-ctx', uploaded_at: '2026-01-01T00:00:00.000Z' };
+    const stats = freshStats();
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'skipped');
+    assert.equal(stats.skipped, 1);
+  });
+
+  it('non-session changed hash → delete + upload + update manifest (D-13 steps 4-6)', async () => {
+    const entry = makeFileEntry({ category: 'adr', projectSlug: 'p1', basename: '0001-a.md', content: 'new' });
+    const manifest = freshManifest();
+    manifest.files[entry.vaultRelativePath] = { hash: 'old-hash', notebook_source_id: 'src-old', uploaded_at: '2026-01-01T00:00:00.000Z' };
+    const stats = freshStats();
+    process.env.NOTEBOOKLM_SYNC_STUB_DELETE_STDOUT = 'Deleted source: src-old';
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-new","title":"p1__ADR-0001-a.md"}}';
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'uploaded');
+    assert.equal(stats.uploaded, 1);
+    assert.equal(manifest.files[entry.vaultRelativePath].notebook_source_id, 'src-new');
+    assert.notEqual(manifest.files[entry.vaultRelativePath].hash, 'old-hash');
+  });
+
+  it('non-session new file (no manifest entry) → upload only, no delete (D-13 absent-path)', async () => {
+    const entry = makeFileEntry({ category: 'doc', projectSlug: 'p1', basename: 'fresh.md' });
+    const manifest = freshManifest();
+    const stats = freshStats();
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-fresh","title":"p1__doc-fresh.md"}}';
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'uploaded');
+    assert.equal(stats.uploaded, 1);
+    assert.equal(manifest.files[entry.vaultRelativePath].notebook_source_id, 'src-fresh');
+  });
+
+  it('deleteSourceByTitle throws generic CliError → swallow, upload proceeds (research finding #2)', async () => {
+    const entry = makeFileEntry({ category: 'adr', projectSlug: 'p1', basename: '0002-b.md' });
+    const manifest = freshManifest();
+    manifest.files[entry.vaultRelativePath] = { hash: 'old-hash-differs', notebook_source_id: 'src-old', uploaded_at: '2026-01-01T00:00:00.000Z' };
+    const stats = freshStats();
+    process.env.NOTEBOOKLM_SYNC_STUB_DELETE_EXIT = '1';
+    process.env.NOTEBOOKLM_SYNC_STUB_DELETE_STDERR = 'WARNING [notebooklm._sources] Sources data is NoneType';
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-after-swallow","title":"p1__ADR-0002-b.md"}}';
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'uploaded');
+    assert.equal(stats.failed, 0);
+    assert.equal(manifest.files[entry.vaultRelativePath].notebook_source_id, 'src-after-swallow');
+  });
+
+  it('deleteSourceByTitle throws rate-limit → propagate (D-08)', async () => {
+    const entry = makeFileEntry({ category: 'doc', projectSlug: 'p1', basename: 'x.md' });
+    const manifest = freshManifest();
+    manifest.files[entry.vaultRelativePath] = { hash: 'stale', notebook_source_id: 'src-old', uploaded_at: '2026-01-01T00:00:00.000Z' };
+    const stats = freshStats();
+    process.env.NOTEBOOKLM_SYNC_STUB_DELETE_EXIT = '1';
+    process.env.NOTEBOOKLM_SYNC_STUB_DELETE_STDERR = 'Error: Rate limited.';
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+    const { NotebooklmRateLimitError } = await import('../lib/notebooklm.mjs');
+
+    await assert.rejects(
+      () => _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false }),
+      NotebooklmRateLimitError,
+    );
+  });
+
+  it('uploadSource throws generic CliError → stats.failed, stats.errors, no manifest write (D-07)', async () => {
+    const entry = makeFileEntry({ category: 'context', projectSlug: 'p1', basename: 'context.md' });
+    const manifest = freshManifest();
+    const stats = freshStats();
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_EXIT = '1';
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDERR = 'Error: Upload failed for some reason';
+    const { _syncOneFile } = await import('../lib/notebooklm-sync.mjs');
+
+    const result = await _syncOneFile({ fileEntry: entry, vaultRoot: syncOneVaultRoot, notebookId: 'nb-1', manifest, stats, dryRun: false });
+
+    assert.equal(result, 'failed');
+    assert.equal(stats.failed, 1);
+    assert.equal(stats.errors.length, 1);
+    assert.equal(stats.errors[0].file, entry.vaultRelativePath);
+    assert.equal(stats.errors[0].title, 'p1__context.md');
+    assert.ok(stats.errors[0].reason.length > 0);
+    assert.ok(stats.errors[0].error);
+    assert.equal(manifest.files[entry.vaultRelativePath], undefined);
+  });
+});
