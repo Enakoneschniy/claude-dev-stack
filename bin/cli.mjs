@@ -64,6 +64,10 @@ function printHelp() {
   console.log(`  ${c.cyan}${c.bold}Analytics${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack stats${c.reset}                 ${c.dim}Dashboard: sessions, context quality, recommendations${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}NotebookLM Sync${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack notebooklm status${c.reset}   ${c.dim}Show last sync, file count, stale files${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -122,6 +126,13 @@ async function run() {
     // ── MCP ──
     case 'mcp': {
       const { main } = await import('../lib/mcp.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── NotebookLM ──
+    case 'notebooklm': {
+      const { main } = await import('../lib/notebooklm-cli.mjs');
       await main(args.slice(1));
       break;
     }
