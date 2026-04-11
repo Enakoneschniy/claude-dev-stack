@@ -6,7 +6,7 @@ import { join, dirname } from 'path';
 import { tmpdir } from 'os';
 import { fileURLToPath } from 'url';
 
-import { setupAllProjects } from '../lib/project-setup.mjs';
+import { setupAllProjects, updateProjectClaudeMd } from '../lib/project-setup.mjs';
 
 describe('setupAllProjects', () => {
   const tmpBase = join(tmpdir(), `claude-test-setup-${process.pid}`);
@@ -100,5 +100,43 @@ describe('TEST-02: notebooklm status on fresh vault (smoke)', () => {
   it('notebooklm status on fresh vault does not create manifest file (read-only)', () => {
     const manifestPath = join(freshVault, '.notebooklm-sync.json');
     assert.equal(existsSync(manifestPath), false, 'runStatus must not create a manifest file');
+  });
+});
+
+// ── 260411-u3g: CLAUDE.md template Output Style Override section ───────────
+
+describe('updateProjectClaudeMd — Output Style Override section (260411-u3g)', () => {
+  const tmpProj = join(tmpdir(), `claude-test-csmd-${process.pid}-${Date.now()}`);
+
+  before(() => {
+    if (existsSync(tmpProj)) rmSync(tmpProj, { recursive: true, force: true });
+    mkdirSync(tmpProj, { recursive: true });
+  });
+
+  after(() => {
+    if (existsSync(tmpProj)) rmSync(tmpProj, { recursive: true, force: true });
+  });
+
+  it('emits the Output Style Override section into a fresh CLAUDE.md', () => {
+    const status = updateProjectClaudeMd(tmpProj);
+    assert.equal(status, 'created');
+
+    const content = readFileSync(join(tmpProj, 'CLAUDE.md'), 'utf8');
+    assert.match(content, /## Output Style Override/);
+    assert.match(content, /IGNORE THEM/);
+    assert.match(content, /TODO\(human\)/);
+    assert.match(content, /learning-output-style@claude-plugins-official/);
+    assert.match(content, /explanatory-output-style@claude-plugins-official/);
+  });
+
+  it('keeps the Output Style Override section after idempotent re-update', () => {
+    const status = updateProjectClaudeMd(tmpProj);
+    assert.equal(status, 'unchanged');
+
+    const content = readFileSync(join(tmpProj, 'CLAUDE.md'), 'utf8');
+    assert.match(content, /## Output Style Override/);
+    // Section must appear exactly once, not duplicated by re-runs.
+    const matches = content.match(/## Output Style Override/g) ?? [];
+    assert.equal(matches.length, 1);
   });
 });
