@@ -83,8 +83,9 @@ describe('detectStack', () => {
     try {
       const result = detectStack(dir);
       assert.equal(result.source, 'pnpm-workspace');
-      assert.ok(result.scopes.includes('ca'), `expected 'ca' in scopes: ${result.scopes}`);
-      assert.ok(result.scopes.includes('nmp'), `expected 'nmp' in scopes: ${result.scopes}`);
+      assert.ok(result.scopes.includes('web'), `expected 'web' in scopes: ${result.scopes}`);
+      assert.ok(result.scopes.includes('api'), `expected 'api' in scopes: ${result.scopes}`);
+      assert.ok(result.scopes.includes('ui'), `expected 'ui' in scopes: ${result.scopes}`);
     } finally {
       cleanup();
     }
@@ -141,7 +142,7 @@ describe('detectStack', () => {
     try {
       const result = detectStack(dir);
       assert.equal(result.source, 'python-uv');
-      assert.ok(result.scopes.includes('lib'), `expected 'lib' in scopes: ${result.scopes}`);
+      assert.ok(result.scopes.includes('core'), `expected 'core' in scopes: ${result.scopes}`);
     } finally {
       cleanup();
     }
