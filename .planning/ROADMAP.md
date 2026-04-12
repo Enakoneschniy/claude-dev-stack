@@ -103,7 +103,7 @@ Plans:
 ---
 
 ### Phase 9: Notion Auto-Import via MCP (Skill-First)
-**Status**: pending
+**Status**: planned
 **Goal**: User can declare which Notion pages to auto-import per project via `.claude/notion_pages.json`, and trigger imports via the `notion-importer` skill inside a live Claude session (skill-first, not subprocess). Imported markdown lands in `vault/projects/{slug}/docs/notion/` with a frontmatter provenance stamp that prevents silent overwrites of local edits — shipped in the FIRST version, never retrofitted. Existing NotebookLM sync picks up the new files automatically.
 **Risk**: LOW-MEDIUM
 **UI hint**: no
@@ -120,7 +120,11 @@ Plans:
 - [ ] 6. `lib/notebooklm.mjs` diff across Phase 9 is ZERO lines, and the imported markdown files flow into each project's `cds__{slug}` NotebookLM notebook on the next `notebooklm sync` run without any Phase 9 code touching NotebookLM sync paths directly.
 
 **Estimated tests added**: ~20 (~349 → ~369)
-**Estimated plans**: 2 (config/import core + skill/doctor/CLI wiring)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Config + import core: notion-config.mjs (schema, URL parsing), notion-import.mjs (frontmatter stamps, 3-way hash), cleanNotionFilename extract
+- [ ] 09-02-PLAN.md — CLI wiring (notion list/add/import) + notion-importer skill + doctor MCP hard ERROR
 
 ---
 
@@ -242,7 +246,7 @@ Phase 9 — Notion auto-import via MCP (LOW-MEDIUM risk)
 | 6. Git-Conventions Skill Ecosystem | 0/3 | Not started | ~40 (264 → ~304) | — |
 | 7. NotebookLM Manifest v2 + Per-Project Sync | 0/3 | Planned | ~25 (~304 → ~329) | — |
 | 8. NotebookLM Migration Script | 0/2 | Planned | ~20 (~329 → ~349) | — |
-| 9. Notion Auto-Import via MCP | 0/2 | Not started | ~20 (~349 → ~369) | — |
+| 9. Notion Auto-Import via MCP | 0/2 | Planned | ~20 (~349 → ~369) | — |
 
 **Total plans (estimated)**: 10
 **Total tests added (estimated)**: ~105 (264 → ~369, exceeds ~350+ target)

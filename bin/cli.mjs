@@ -68,6 +68,9 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm status${c.reset}   ${c.dim}Show last sync, file count, stale files${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Notion Import${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack notion${c.reset}                 ${c.dim}Notion page import (list/add/import)${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Git Conventions${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack scopes init${c.reset}            ${c.dim}Initialize git-scopes.json for project${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack scopes list${c.reset}            ${c.dim}Show current scopes and config${c.reset}`);
@@ -140,6 +143,13 @@ async function run() {
     // ── NotebookLM ──
     case 'notebooklm': {
       const { main } = await import('../lib/notebooklm-cli.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Notion Import ──
+    case 'notion': {
+      const { main } = await import('../lib/notion-cli.mjs');
       await main(args.slice(1));
       break;
     }
