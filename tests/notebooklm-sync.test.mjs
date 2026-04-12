@@ -177,7 +177,7 @@ describe('lib/notebooklm-sync.mjs — walkProjectFiles (D-11, D-17, D-18, D-19)'
     const adrEntries = result.filter((r) => r.category === 'adr');
     assert.equal(adrEntries.length, 1);
     assert.equal(adrEntries[0].basename, '0001-valid.md');
-    assert.equal(adrEntries[0].title, 'p1__ADR-0001-valid.md');
+    assert.equal(adrEntries[0].title, 'ADR-0001-valid.md'); // projectScoped: true — no slug prefix
   });
 
   it('excludes _template directory (D-17)', async () => {
@@ -594,16 +594,17 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     writeIntegrationFile('projects/alpha/sessions/2026-01-01-s.md', 'session 1');
     writeIntegrationFile('projects/beta/context.md', 'beta context');
     writeIntegrationFile('projects/beta/sessions/2026-01-02-s.md', 'session 2');
-    seedStubsWithExistingNotebook();
+    // No existing cds__ notebooks — stub creates them fresh
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
 
-    assert.equal(stats.uploaded, 6);
-    assert.equal(stats.skipped, 0);
-    assert.equal(stats.failed, 0);
-    assert.equal(stats.notebookId, 'nb-integration');
+    // Per-project mode returns { perProject, total, ... }
+    assert.equal(stats.total.uploaded, 6);
+    assert.equal(stats.total.skipped, 0);
+    assert.equal(stats.total.failed, 0);
     assert.equal(stats.rateLimited, false);
-    assert.equal(stats.errors.length, 0);
+    assert.equal(stats.total.errors.length, 0);
 
     const manifest = readManifest(integrationVaultRoot);
     const allFiles = Object.values(manifest.projects ?? {}).reduce((acc, p) => Object.assign(acc, p.files ?? {}), {});
@@ -619,32 +620,43 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
   it('second run skips all files (D-12 session presence + hash skip, ROADMAP SC1)', async () => {
     writeIntegrationFile('projects/p1/context.md', 'c');
     writeIntegrationFile('projects/p1/sessions/2026-01-01-s.md', 's');
-    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
 
     const firstRun = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(firstRun.uploaded, 2);
+    assert.equal(firstRun.total.uploaded, 2);
+
+    // Second run: cds__p1 now exists in manifest — seed list with it
+    const manifest1 = readManifest(integrationVaultRoot);
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
+      notebooks: [{ id: manifest1.projects.p1.notebook_id, title: 'cds__p1', created_at: null }],
+      count: 1,
+    });
 
     const secondRun = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(secondRun.uploaded, 0);
-    assert.equal(secondRun.skipped, 2);
+    assert.equal(secondRun.total.uploaded, 0);
+    assert.equal(secondRun.total.skipped, 2);
   });
 
   it('edited ADR → replace-by-filename on second run (ROADMAP SC2)', async () => {
     const adrPath = writeIntegrationFile('projects/p1/decisions/0001-a.md', 'original');
-    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
 
     const firstRun = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(firstRun.uploaded, 1);
+    assert.equal(firstRun.total.uploaded, 1);
     const manifest1 = readManifest(integrationVaultRoot);
     const oldHash = manifest1.projects.p1.files['projects/p1/decisions/0001-a.md'].hash;
 
     writeFileSync(adrPath, 'updated content');
-    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-new-after-edit","title":"p1__ADR-0001-a.md"}}';
+    process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-new-after-edit","title":"ADR-0001-a.md"}}';
     process.env.NOTEBOOKLM_SYNC_STUB_DELETE_STDOUT = 'Deleted source: stub-src-1';
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
+      notebooks: [{ id: manifest1.projects.p1.notebook_id, title: 'cds__p1', created_at: null }],
+      count: 1,
+    });
 
     const secondRun = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(secondRun.uploaded, 1);
-    assert.equal(secondRun.skipped, 0);
+    assert.equal(secondRun.total.uploaded, 1);
+    assert.equal(secondRun.total.skipped, 0);
 
     const manifest2 = readManifest(integrationVaultRoot);
     const newHash = manifest2.projects.p1.files['projects/p1/decisions/0001-a.md'].hash;
@@ -656,10 +668,10 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     writeIntegrationFile('projects/p1/context.md', 'c');
     writeIntegrationFile('shared/patterns.md', 'shared');
     writeIntegrationFile('meta/project-registry.md', 'meta');
-    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(stats.uploaded, 1);
+    assert.equal(stats.total.uploaded, 1);
 
     const manifest = readManifest(integrationVaultRoot);
     const allFiles = Object.values(manifest.projects ?? {}).reduce((acc, p) => Object.assign(acc, p.files ?? {}), {});
@@ -669,46 +681,60 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     assert.equal(manifestKeys.filter((k) => k.startsWith('meta/')).length, 0);
   });
 
-  it('notebook auto-created on first run when absent (NBLM-12, ROADMAP SC4)', async () => {
+  it('cds__{slug} notebook auto-created on first run when absent (NBLM-12, ROADMAP SC4)', async () => {
     writeIntegrationFile('projects/p1/context.md', 'c');
     process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
-    process.env.NOTEBOOKLM_SYNC_STUB_CREATE_STDOUT = '{"notebook":{"id":"nb-freshly-created","title":"claude-dev-stack-vault","created_at":null}}';
+    process.env.NOTEBOOKLM_SYNC_STUB_CREATE_STDOUT = '{"notebook":{"id":"nb-freshly-created","title":"cds__p1","created_at":null}}';
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(stats.notebookId, 'nb-freshly-created');
-    assert.equal(stats.uploaded, 1);
+    assert.equal(stats.total.uploaded, 1);
+    // notebookId is per-project now — check manifest instead
+    const manifest = readManifest(integrationVaultRoot);
+    assert.equal(manifest.projects.p1.notebook_id, 'nb-freshly-created');
   });
 
-  it('second run reuses existing notebook — no create call (NBLM-12 steady state, ROADMAP SC4)', async () => {
+  it('second run reuses existing cds__{slug} notebook — no create call (NBLM-12 steady state, ROADMAP SC4)', async () => {
     writeIntegrationFile('projects/p1/context.md', 'c');
-    seedStubsWithExistingNotebook('nb-reused');
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
+    process.env.NOTEBOOKLM_SYNC_STUB_CREATE_STDOUT = '{"notebook":{"id":"nb-reused","title":"cds__p1","created_at":null}}';
 
-    const stats = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(stats.notebookId, 'nb-reused');
-    // If create was called, stub default id is 'stub-nb-1'; 'nb-reused' proves create was skipped.
-  });
+    const firstRun = await syncVault({ vaultRoot: integrationVaultRoot });
+    assert.equal(firstRun.total.uploaded, 1);
 
-  it('NOTEBOOKLM_NOTEBOOK_NAME env var override (NBLM-13)', async () => {
-    writeIntegrationFile('projects/p1/context.md', 'c');
-    process.env.NOTEBOOKLM_NOTEBOOK_NAME = 'my-custom-vault';
+    // Second run: seed cds__p1 as existing so ensureNotebook returns it without create
     process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = JSON.stringify({
-      notebooks: [{ id: 'nb-custom', title: 'my-custom-vault', created_at: null }],
+      notebooks: [{ id: 'nb-reused', title: 'cds__p1', created_at: null }],
       count: 1,
     });
+    const secondRun = await syncVault({ vaultRoot: integrationVaultRoot });
+    // No upload (context.md unchanged), no create needed
+    assert.equal(secondRun.total.uploaded, 0);
+    assert.equal(secondRun.total.skipped, 1);
+    assert.equal(secondRun.total.failed, 0);
+  });
 
+  it('NOTEBOOKLM_NOTEBOOK_NAME env var set — per-project mode ignores it (NBLM-13 deprecated)', async () => {
+    writeIntegrationFile('projects/p1/context.md', 'c');
+    process.env.NOTEBOOKLM_NOTEBOOK_NAME = 'my-custom-vault';
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
+
+    // Per-project mode creates cds__p1, not 'my-custom-vault'
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(stats.notebookId, 'nb-custom');
+    assert.equal(stats.total.uploaded, 1);
+    const manifest = readManifest(integrationVaultRoot);
+    // cds__p1 must be created (not the custom vault name)
+    assert.ok(manifest.projects.p1.notebook_id, 'cds__p1 notebook must be created');
   });
 
   it('rate-limit aborts sync and returns partial stats (D-08)', async () => {
     writeIntegrationFile('projects/p1/context.md', 'c');
-    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
     process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_EXIT = '1';
     process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDERR = 'Error: Rate limited.';
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
     assert.equal(stats.rateLimited, true);
-    assert.equal(stats.uploaded, 0);
+    assert.equal(stats.total.uploaded, 0);
     const manifest = readManifest(integrationVaultRoot);
     const allFiles = Object.values(manifest.projects ?? {}).reduce((acc, p) => Object.assign(acc, p.files ?? {}), {});
     assert.equal(Object.keys(allFiles).length, 0);
@@ -721,7 +747,7 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     // Intentionally NOT seeding stubs — dryRun must not call listNotebooks
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot, dryRun: true });
-    assert.equal(stats.uploaded, 0);
+    assert.equal(stats.total.uploaded, 0);
     assert.equal(stats.notebookId, null);
     assert.ok(Array.isArray(stats.planned));
     assert.equal(stats.planned.length, 3);
@@ -742,26 +768,27 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     );
   });
 
-  it('stats shape matches D-16 contract', async () => {
+  it('stats shape matches D-16 contract (per-project mode)', async () => {
     writeIntegrationFile('projects/p1/context.md', 'c');
-    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
-    assert.equal(typeof stats.uploaded, 'number');
-    assert.equal(typeof stats.skipped, 'number');
-    assert.equal(typeof stats.failed, 'number');
-    assert.ok(Array.isArray(stats.errors));
+    // Per-project mode: { perProject, total, durationMs, rateLimited, notebookId }
+    assert.ok(stats.perProject, 'must have perProject field');
+    assert.ok(stats.total, 'must have total field');
+    assert.equal(typeof stats.total.uploaded, 'number');
+    assert.equal(typeof stats.total.skipped, 'number');
+    assert.equal(typeof stats.total.failed, 'number');
+    assert.ok(Array.isArray(stats.total.errors));
     assert.equal(typeof stats.durationMs, 'number');
     assert.ok(stats.durationMs >= 0);
-    assert.equal(typeof stats.notebookId, 'string');
+    assert.equal(stats.notebookId, null); // per-project mode — no single notebook
     assert.equal(typeof stats.rateLimited, 'boolean');
-    // non-dryRun: planned is absent from return value
-    assert.equal(stats.planned, undefined);
   });
 
   it('durationMs is a non-negative number', async () => {
     writeIntegrationFile('projects/p1/context.md', 'c');
-    seedStubsWithExistingNotebook();
+    process.env.NOTEBOOKLM_SYNC_STUB_LIST_STDOUT = '{"notebooks":[],"count":0}';
 
     const stats = await syncVault({ vaultRoot: integrationVaultRoot });
     assert.equal(typeof stats.durationMs, 'number');
