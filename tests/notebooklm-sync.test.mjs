@@ -606,13 +606,14 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     assert.equal(stats.errors.length, 0);
 
     const manifest = readManifest(integrationVaultRoot);
-    assert.equal(Object.keys(manifest.files).length, 6);
-    assert.ok(manifest.files['projects/alpha/context.md']);
-    assert.ok(manifest.files['projects/alpha/decisions/0001-a.md']);
-    assert.ok(manifest.files['projects/alpha/docs/setup.md']);
-    assert.ok(manifest.files['projects/alpha/sessions/2026-01-01-s.md']);
-    assert.ok(manifest.files['projects/beta/context.md']);
-    assert.ok(manifest.files['projects/beta/sessions/2026-01-02-s.md']);
+    const allFiles = Object.values(manifest.projects ?? {}).reduce((acc, p) => Object.assign(acc, p.files ?? {}), {});
+    assert.equal(Object.keys(allFiles).length, 6);
+    assert.ok(allFiles['projects/alpha/context.md']);
+    assert.ok(allFiles['projects/alpha/decisions/0001-a.md']);
+    assert.ok(allFiles['projects/alpha/docs/setup.md']);
+    assert.ok(allFiles['projects/alpha/sessions/2026-01-01-s.md']);
+    assert.ok(allFiles['projects/beta/context.md']);
+    assert.ok(allFiles['projects/beta/sessions/2026-01-02-s.md']);
   });
 
   it('second run skips all files (D-12 session presence + hash skip, ROADMAP SC1)', async () => {
@@ -635,7 +636,7 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     const firstRun = await syncVault({ vaultRoot: integrationVaultRoot });
     assert.equal(firstRun.uploaded, 1);
     const manifest1 = readManifest(integrationVaultRoot);
-    const oldHash = manifest1.files['projects/p1/decisions/0001-a.md'].hash;
+    const oldHash = manifest1.projects.p1.files['projects/p1/decisions/0001-a.md'].hash;
 
     writeFileSync(adrPath, 'updated content');
     process.env.NOTEBOOKLM_SYNC_STUB_UPLOAD_STDOUT = '{"source":{"id":"src-new-after-edit","title":"p1__ADR-0001-a.md"}}';
@@ -646,9 +647,9 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     assert.equal(secondRun.skipped, 0);
 
     const manifest2 = readManifest(integrationVaultRoot);
-    const newHash = manifest2.files['projects/p1/decisions/0001-a.md'].hash;
+    const newHash = manifest2.projects.p1.files['projects/p1/decisions/0001-a.md'].hash;
     assert.notEqual(newHash, oldHash);
-    assert.equal(manifest2.files['projects/p1/decisions/0001-a.md'].notebook_source_id, 'src-new-after-edit');
+    assert.equal(manifest2.projects.p1.files['projects/p1/decisions/0001-a.md'].notebook_source_id, 'src-new-after-edit');
   });
 
   it('shared/ and meta/ files are never uploaded (NBLM-11, ROADMAP SC3)', async () => {
@@ -661,7 +662,8 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     assert.equal(stats.uploaded, 1);
 
     const manifest = readManifest(integrationVaultRoot);
-    const manifestKeys = Object.keys(manifest.files);
+    const allFiles = Object.values(manifest.projects ?? {}).reduce((acc, p) => Object.assign(acc, p.files ?? {}), {});
+    const manifestKeys = Object.keys(allFiles);
     assert.equal(manifestKeys.length, 1);
     assert.equal(manifestKeys.filter((k) => k.startsWith('shared/')).length, 0);
     assert.equal(manifestKeys.filter((k) => k.startsWith('meta/')).length, 0);
@@ -708,7 +710,8 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     assert.equal(stats.rateLimited, true);
     assert.equal(stats.uploaded, 0);
     const manifest = readManifest(integrationVaultRoot);
-    assert.equal(Object.keys(manifest.files).length, 0);
+    const allFiles = Object.values(manifest.projects ?? {}).reduce((acc, p) => Object.assign(acc, p.files ?? {}), {});
+    assert.equal(Object.keys(allFiles).length, 0);
   });
 
   it('dryRun mode: no API calls, planned array populated, no manifest writes (D-20)', async () => {

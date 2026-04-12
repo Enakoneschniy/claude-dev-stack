@@ -51,8 +51,8 @@ describe('lib/notebooklm-manifest.mjs — migration', () => {
   // ── Tests 1-4: _isValidManifestShape returns structured {valid, reason} ─────
 
   describe('_isValidManifestShape', () => {
-    it('returns {valid:true, reason:"ok"} for a valid v1 manifest shape (Test 1)', () => {
-      const result = _isValidManifestShape({ version: 1, generated_at: '2026-04-01T00:00:00.000Z', files: {} });
+    it('returns {valid:true, reason:"ok"} for a valid v2 manifest shape (Test 1)', () => {
+      const result = _isValidManifestShape({ version: 2, generated_at: '2026-04-01T00:00:00.000Z', projects: {} });
       assert.deepEqual(result, { valid: true, reason: 'ok' });
     });
 
@@ -62,12 +62,17 @@ describe('lib/notebooklm-manifest.mjs — migration', () => {
     });
 
     it('returns {valid:false, reason:"unknown-version"} for version:99 (Test 3)', () => {
-      const result = _isValidManifestShape({ version: 99, files: {} });
+      const result = _isValidManifestShape({ version: 99, projects: {} });
       assert.deepEqual(result, { valid: false, reason: 'unknown-version' });
     });
 
-    it('returns {valid:false, reason:"malformed"} for v1 object without files field (Test 4)', () => {
-      const result = _isValidManifestShape({ version: 1 });
+    it('returns {valid:false, reason:"unknown-version"} for v1 manifest (Test 3b — v1 is now unknown-version)', () => {
+      const result = _isValidManifestShape({ version: 1, files: {} });
+      assert.deepEqual(result, { valid: false, reason: 'unknown-version' });
+    });
+
+    it('returns {valid:false, reason:"malformed"} for v2 object without projects field (Test 4)', () => {
+      const result = _isValidManifestShape({ version: 2 });
       assert.deepEqual(result, { valid: false, reason: 'malformed' });
     });
 
@@ -175,12 +180,12 @@ describe('lib/notebooklm-manifest.mjs — migration', () => {
 
   describe('readManifest corrupt recovery for unknown versions', () => {
     it('readManifest on version:99 manifest triggers corrupt recovery (Test 8)', () => {
-      writeManifestFile({ version: 99, files: {} });
+      writeManifestFile({ version: 99, projects: {} });
       const result = readManifest(vaultRoot);
 
-      // Returns empty manifest (v1 shape from emptyManifest)
-      assert.equal(result.version, 1, 'corrupt recovery returns empty v1 manifest');
-      assert.deepEqual(result.files, {});
+      // Returns empty manifest (v2 shape from emptyManifest)
+      assert.equal(result.version, 2, 'corrupt recovery returns empty v2 manifest');
+      assert.deepEqual(result.projects, {});
 
       // .json file should be gone (renamed to .corrupt-*)
       assert.ok(!existsSync(join(vaultRoot, '.notebooklm-sync.json')), 'corrupt file must be renamed away');

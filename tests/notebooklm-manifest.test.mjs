@@ -42,8 +42,8 @@ describe('lib/notebooklm-manifest.mjs', () => {
   // ── Task 1: MANIFEST_VERSION + hashFile ──────────────────────────────────────
 
   describe('MANIFEST_VERSION constant', () => {
-    it('is the integer 1', () => {
-      assert.equal(MANIFEST_VERSION, 1);
+    it('is the integer 2', () => {
+      assert.equal(MANIFEST_VERSION, 2);
       assert.equal(typeof MANIFEST_VERSION, 'number');
     });
   });
@@ -86,38 +86,38 @@ describe('lib/notebooklm-manifest.mjs', () => {
   // ── Task 2: writeManifest + readManifest ────────────────────────────────────
 
   describe('writeManifest', () => {
-    it('writes .notebooklm-sync.json to vaultRoot with version, generated_at, files (T2-01)', () => {
-      writeManifest(vaultRoot, { files: {} });
+    it('writes .notebooklm-sync.json to vaultRoot with version, generated_at, projects (T2-01)', () => {
+      writeManifest(vaultRoot, { projects: {} });
       const manifestFile = join(vaultRoot, '.notebooklm-sync.json');
       assert.ok(existsSync(manifestFile));
       const parsed = JSON.parse(readFileSync(manifestFile, 'utf8'));
-      assert.equal(parsed.version, 1);
+      assert.equal(parsed.version, 2);
       assert.ok(typeof parsed.generated_at === 'string' && parsed.generated_at.length > 0);
-      assert.deepEqual(parsed.files, {});
+      assert.deepEqual(parsed.projects, {});
     });
 
     it('leaves no .tmp sibling after success (T2-02 — atomic rename consumed it)', () => {
-      writeManifest(vaultRoot, { files: {} });
+      writeManifest(vaultRoot, { projects: {} });
       const tmpFile = join(vaultRoot, '.notebooklm-sync.json.tmp');
       assert.ok(!existsSync(tmpFile));
     });
 
     it('serializes with 2-space indentation (T2-03 — D-12 pretty-print)', () => {
-      writeManifest(vaultRoot, { files: { 'projects/a.md': { hash: 'abc', notebook_source_id: null, uploaded_at: new Date().toISOString() } } });
+      writeManifest(vaultRoot, { projects: { alpha: { notebook_id: null, files: { 'projects/a.md': { hash: 'abc', notebook_source_id: null, uploaded_at: new Date().toISOString() } } } } });
       const raw = readFileSync(join(vaultRoot, '.notebooklm-sync.json'), 'utf8');
       assert.ok(raw.includes('  "version"'), 'expected 2-space indented version field');
     });
 
     it('throws Error("Vault not found at: ...") for null vaultRoot (T2-04)', () => {
       assert.throws(
-        () => writeManifest(null, { files: {} }),
+        () => writeManifest(null, { projects: {} }),
         (err) => err instanceof Error && /Vault not found at:/.test(err.message)
       );
     });
 
     it('throws Error("Vault not found at: ...") for non-existent vaultRoot (T2-04)', () => {
       assert.throws(
-        () => writeManifest('/nonexistent/path/does-not-exist', { files: {} }),
+        () => writeManifest('/nonexistent/path/does-not-exist', { projects: {} }),
         (err) => err instanceof Error && /Vault not found at:/.test(err.message)
       );
     });
@@ -129,41 +129,41 @@ describe('lib/notebooklm-manifest.mjs', () => {
       );
     });
 
-    it('throws when manifest.files is missing (T2-05)', () => {
+    it('throws when manifest.projects is missing (T2-05)', () => {
       assert.throws(
         () => writeManifest(vaultRoot, {}),
         (err) => err instanceof Error
       );
     });
 
-    it('throws when manifest.files is an array (T2-05)', () => {
+    it('throws when manifest.projects is an array (T2-05)', () => {
       assert.throws(
-        () => writeManifest(vaultRoot, { files: [] }),
+        () => writeManifest(vaultRoot, { projects: [] }),
         (err) => err instanceof Error
       );
     });
   });
 
   describe('readManifest', () => {
-    it('returns { version:1, generated_at, files:{} } on fresh vault with no side effects (T2-06 — D-17)', () => {
+    it('returns { version:2, generated_at, projects:{} } on fresh vault with no side effects (T2-06 — D-17)', () => {
       const result = readManifest(vaultRoot);
-      assert.equal(result.version, 1);
+      assert.equal(result.version, 2);
       assert.ok(typeof result.generated_at === 'string' && result.generated_at.length > 0);
-      assert.deepEqual(result.files, {});
+      assert.deepEqual(result.projects, {});
       // No .corrupt-* sibling should exist
       const siblings = readdirSync(vaultRoot).filter(f => f.startsWith('.notebooklm-sync.corrupt-'));
       assert.equal(siblings.length, 0);
     });
 
-    it('round-trips files entries exactly via write then read (T2-07)', () => {
-      const files = {
-        'projects/foo/context.md': { hash: 'a'.repeat(64), notebook_source_id: 'src-1', uploaded_at: new Date().toISOString() },
-        'projects/bar/context.md': { hash: 'b'.repeat(64), notebook_source_id: 'src-2', uploaded_at: new Date().toISOString() },
+    it('round-trips projects entries exactly via write then read (T2-07)', () => {
+      const projects = {
+        foo: { notebook_id: 'nb-1', files: { 'projects/foo/context.md': { hash: 'a'.repeat(64), notebook_source_id: 'src-1', uploaded_at: new Date().toISOString() } } },
+        bar: { notebook_id: 'nb-2', files: { 'projects/bar/context.md': { hash: 'b'.repeat(64), notebook_source_id: 'src-2', uploaded_at: new Date().toISOString() } } },
       };
-      writeManifest(vaultRoot, { files });
+      writeManifest(vaultRoot, { projects });
       const result = readManifest(vaultRoot);
-      assert.equal(result.version, 1);
-      assert.deepEqual(result.files, files);
+      assert.equal(result.version, 2);
+      assert.deepEqual(result.projects, projects);
     });
 
     it('corrupt recovery: invalid JSON renames to .corrupt-*, returns empty manifest, no .json file remains (T2-08 — D-14)', () => {
@@ -171,8 +171,8 @@ describe('lib/notebooklm-manifest.mjs', () => {
       writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), 'not json at all', 'utf8');
       const result = readManifest(vaultRoot);
       // Returns empty manifest
-      assert.equal(result.version, 1);
-      assert.deepEqual(result.files, {});
+      assert.equal(result.version, 2);
+      assert.deepEqual(result.projects, {});
       // Original .json file no longer exists
       assert.ok(!existsSync(join(vaultRoot, '.notebooklm-sync.json')));
       // A .corrupt-* sibling now exists
@@ -181,31 +181,39 @@ describe('lib/notebooklm-manifest.mjs', () => {
       assert.match(siblings[0], /^\.notebooklm-sync\.corrupt-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/);
     });
 
-    it('version:2 manifest is treated as corrupt (T2-09 — D-11 magic-number)', () => {
-      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 2, files: {} }), 'utf8');
+    it('version:99 manifest is treated as corrupt (T2-09 — D-11 magic-number)', () => {
+      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 99, projects: {} }), 'utf8');
       const result = readManifest(vaultRoot);
-      assert.equal(result.version, 1);
-      assert.deepEqual(result.files, {});
+      assert.equal(result.version, 2);
+      assert.deepEqual(result.projects, {});
       assert.ok(!existsSync(join(vaultRoot, '.notebooklm-sync.json')));
     });
 
-    it('missing files field is treated as corrupt (T2-10)', () => {
-      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 1 }), 'utf8');
+    it('v1 manifest (version:1, files field) is auto-migrated to v2 (T2-09b)', () => {
+      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 1, generated_at: new Date().toISOString(), files: { 'projects/alpha/context.md': { hash: 'a'.repeat(64), notebook_source_id: 'src-1', uploaded_at: new Date().toISOString() } } }), 'utf8');
       const result = readManifest(vaultRoot);
-      assert.deepEqual(result.files, {});
+      assert.equal(result.version, 2);
+      assert.ok(result.projects, 'migrated manifest must have projects field');
+      assert.ok(result.projects.alpha, 'alpha project must exist after migration');
+    });
+
+    it('missing projects field is treated as corrupt (T2-10)', () => {
+      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 2 }), 'utf8');
+      const result = readManifest(vaultRoot);
+      assert.deepEqual(result.projects, {});
       assert.ok(!existsSync(join(vaultRoot, '.notebooklm-sync.json')));
     });
 
-    it('files being an array is treated as corrupt (T2-11)', () => {
-      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 1, files: [] }), 'utf8');
+    it('projects being an array is treated as corrupt (T2-11)', () => {
+      writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify({ version: 2, projects: [] }), 'utf8');
       const result = readManifest(vaultRoot);
-      assert.deepEqual(result.files, {});
+      assert.deepEqual(result.projects, {});
       assert.ok(!existsSync(join(vaultRoot, '.notebooklm-sync.json')));
     });
 
     it('crash simulation: .tmp written and deleted without rename leaves target unchanged (T2-12 — SC4)', () => {
       // First write a valid manifest
-      writeManifest(vaultRoot, { files: { 'a.md': { hash: 'c'.repeat(64), notebook_source_id: null, uploaded_at: '' } } });
+      writeManifest(vaultRoot, { projects: { alpha: { notebook_id: null, files: { 'a.md': { hash: 'c'.repeat(64), notebook_source_id: null, uploaded_at: '' } } } } });
       const manifestFilePath = join(vaultRoot, '.notebooklm-sync.json');
       const originalContent = readFileSync(manifestFilePath, 'utf8');
 
