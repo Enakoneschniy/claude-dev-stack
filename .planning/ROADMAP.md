@@ -72,7 +72,7 @@ Plans:
 Plans:
 - [x] 07-01-PLAN.md — Manifest v2 foundation: isValidManifestShape split + migrateV1ToV2 + migration tests (FIRST COMMIT GATE)
 - [x] 07-02-PLAN.md — MANIFEST_VERSION bump to 2 + per-project syncVault loop + buildTitle projectScoped + conflict scan
-- [ ] 07-03-PLAN.md — Doctor per-project NotebookLM stats + NOTEBOOKLM_NOTEBOOK_NAME deprecation warning
+- [x] 07-03-PLAN.md — Doctor per-project NotebookLM stats + NOTEBOOKLM_NOTEBOOK_NAME deprecation warning
 
 ---
 
