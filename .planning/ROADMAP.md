@@ -24,7 +24,7 @@
 ## Phase Details
 
 ### Phase 6: Git-Conventions Skill Ecosystem
-**Status**: pending
+**Status**: planned
 **Goal**: Every mapped project gets a `git-conventions` skill wired to a validated `.claude/git-scopes.json` config, auto-detected from the project's stack, with a `scopes` CLI for post-install maintenance. Also ships the cross-cutting `tests/helpers/fixtures.mjs` and `lib/shared.mjs::atomicWriteJson()` infrastructure that later phases depend on.
 **Risk**: LOW
 **UI hint**: no
@@ -41,7 +41,12 @@
 - [ ] 6. Any new `tests/*.test.mjs` file needing a temp vault, temp git repo, temp monorepo, or a stub CLI binary can call `makeTempVault`, `makeTempGitRepo`, `makeTempMonorepo(stackType)`, or `withStubBinary` from `tests/helpers/fixtures.mjs` — no new test file duplicates setup boilerplate; all `/tmp/cds-*` temp dirs are cleaned up at test end.
 
 **Estimated tests added**: ~40 (264 → ~304)
-**Estimated plans**: 3 (cross-cutting infra + schema/detection + CLI/wizard/skill/doctor)
+**Plans:** 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Cross-cutting infra: atomicWriteJson + test fixtures (makeTempVault, makeTempGitRepo, makeTempMonorepo, withStubBinary)
+- [ ] 06-02-PLAN.md — Core git-scopes module: schema validation, 7-stack detection, SKILL.md template, CLI dispatch
+- [ ] 06-03-PLAN.md — Wizard integration (installGitConventions) + doctor section + commitlint print-only
 
 ---
 

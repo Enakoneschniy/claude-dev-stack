@@ -68,6 +68,13 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm status${c.reset}   ${c.dim}Show last sync, file count, stale files${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Git Conventions${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack scopes init${c.reset}            ${c.dim}Initialize git-scopes.json for project${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack scopes list${c.reset}            ${c.dim}Show current scopes and config${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack scopes add <name>${c.reset}      ${c.dim}Add a scope${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack scopes remove <name>${c.reset}   ${c.dim}Remove a scope${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack scopes refresh${c.reset}         ${c.dim}Re-detect scopes from project structure${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -133,6 +140,14 @@ async function run() {
     // ── NotebookLM ──
     case 'notebooklm': {
       const { main } = await import('../lib/notebooklm-cli.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Git Conventions ──
+    case 'scopes':
+    case 'scope': {
+      const { main } = await import('../lib/git-conventions.mjs');
       await main(args.slice(1));
       break;
     }

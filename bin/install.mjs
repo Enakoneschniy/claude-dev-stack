@@ -15,6 +15,10 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, cpSync, readdirSync
 import { join, dirname, basename, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import { homedir } from 'os';
+import {
+  detectStack, detectMainBranch, writeScopes, installSkill,
+  createDefaultConfig, printCommitlintInstructions,
+} from '../lib/git-scopes.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -927,6 +931,87 @@ async function installNotebookLM(pipCmd, stepNum, totalSteps) {
 // Export for testing (allows tests to import and unit-test wizard flow).
 export { installNotebookLM };
 
+// ── Install: Git Conventions ────────────────────────────────────
+async function installGitConventions(projectsData, stepNum, totalSteps) {
+  step(stepNum, totalSteps, '🔧 Git Conventions');
+
+  const projects = (projectsData.projects || []).filter(p => p.path && existsSync(p.path));
+
+  if (projects.length === 0) {
+    info('No projects mapped — skipping git conventions setup');
+    return true;
+  }
+
+  for (const project of projects) {
+    const { name: projectName, path: dirPath } = project;
+
+    console.log(`\n    ${c.bold}${projectName}${c.reset} (${dirPath})\n`);
+
+    // 1. Detect stack
+    const detected = detectStack(dirPath);
+    ok(`Detected: ${detected.source} (${detected.scopes.length} scopes, confidence: ${detected.confidence})`);
+
+    // 2. Detect main branch
+    const mainBranch = detectMainBranch(dirPath);
+
+    // 3. Build default config (co_authored_by defaults to false per GIT-08)
+    const config = createDefaultConfig(projectName, detected);
+    if (mainBranch) config.main_branch = mainBranch;
+
+    // 4. Confirm scopes
+    const { acceptScopes } = await prompt([{
+      type: 'confirm',
+      name: 'acceptScopes',
+      message: `Scopes: [${config.scopes.join(', ')}]. Accept?`,
+      initial: true,
+    }]);
+    // If user rejects scopes, they can run `claude-dev-stack scopes init` later
+    if (acceptScopes === false) {
+      info(`Skipped — run 'claude-dev-stack scopes init' in ${dirPath} to configure manually`);
+      continue;
+    }
+
+    // 5. Confirm main branch
+    const { acceptBranch } = await prompt([{
+      type: 'confirm',
+      name: 'acceptBranch',
+      message: `Main branch: ${config.main_branch}. Correct?`,
+      initial: true,
+    }]);
+    if (acceptBranch === false) {
+      const { customBranch } = await prompt([{
+        type: 'text',
+        name: 'customBranch',
+        message: 'Enter main branch name:',
+        initial: 'main',
+      }]);
+      if (customBranch) config.main_branch = customBranch;
+    }
+
+    // 6. Commitlint (only if package.json exists; print-only per GIT-10 / T-06-11)
+    if (existsSync(join(dirPath, 'package.json'))) {
+      const { wantCommitlint } = await prompt([{
+        type: 'confirm',
+        name: 'wantCommitlint',
+        message: 'Install commitlint enforcement? (print instructions only)',
+        initial: false,
+      }]);
+      if (wantCommitlint) {
+        config.commitlint_enforced = true;
+        printCommitlintInstructions(config);
+      }
+    }
+
+    // 7. Write config + install skill
+    writeScopes(dirPath, config);
+    ok(`Wrote .claude/git-scopes.json`);
+    installSkill(dirPath, config);
+    ok(`Installed git-conventions skill`);
+  }
+
+  return true;
+}
+
 // ── Generate CLAUDE.md ──────────────────────────────────────────
 async function generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps) {
   step(stepNum, totalSteps, '📝 Generating CLAUDE.md');
@@ -1266,7 +1351,7 @@ async function main() {
     components.deepResearch,
     components.notebooklm,
   ].filter(Boolean).length;
-  const totalSteps = setupSteps + installCount + 1; // +1 for CLAUDE.md
+  const totalSteps = setupSteps + installCount + 2; // +1 for CLAUDE.md, +1 for git-conventions
 
   // Step 5: Plugins
   const pluginResults = await selectAndInstallPlugins(5, totalSteps);
@@ -1309,6 +1394,8 @@ async function main() {
     (await installNotebookLM(pipCmd, stepNum++, totalSteps))
       ? installed.push('NotebookLM') : failed.push('NotebookLM');
   }
+
+  await installGitConventions(projectsData, stepNum++, totalSteps);
 
   await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps);
 

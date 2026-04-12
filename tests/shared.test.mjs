@@ -1,9 +1,10 @@
-import { describe, it } from 'node:test';
+import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync } from 'fs';
+import { existsSync, mkdtempSync, rmSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { tmpdir } from 'os';
 
-import { c, ok, fail, warn, info, runCmd, hasCommand, mkdirp, listDirs, SKILLS_DIR, AGENTS_DIR, CLAUDE_DIR } from '../lib/shared.mjs';
+import { c, ok, fail, warn, info, runCmd, hasCommand, mkdirp, listDirs, SKILLS_DIR, AGENTS_DIR, CLAUDE_DIR, atomicWriteJson } from '../lib/shared.mjs';
 
 describe('shared utilities', () => {
   describe('colors', () => {
@@ -102,6 +103,59 @@ describe('shared utilities', () => {
 
     it('CLAUDE_DIR ends with .claude', () => {
       assert.ok(CLAUDE_DIR.endsWith('.claude'));
+    });
+  });
+
+  describe('atomicWriteJson', () => {
+    let tmpDir;
+
+    after(() => {
+      if (tmpDir && existsSync(tmpDir)) {
+        rmSync(tmpDir, { recursive: true, force: true });
+      }
+    });
+
+    it('writes valid JSON with 2-space indent and trailing newline', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'cds-atomic-'));
+      const filePath = join(tmpDir, 'test.json');
+      const obj = { foo: 'bar', num: 42 };
+      atomicWriteJson(filePath, obj);
+      const content = readFileSync(filePath, 'utf8');
+      assert.ok(content.endsWith('\n'), 'should end with newline');
+      assert.ok(content.includes('  '), 'should use 2-space indent');
+      assert.deepEqual(JSON.parse(content), obj);
+    });
+
+    it('creates parent directories if they do not exist', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'cds-atomic-'));
+      const filePath = join(tmpDir, 'nested', 'deep', 'test.json');
+      atomicWriteJson(filePath, { nested: true });
+      assert.ok(existsSync(filePath));
+    });
+
+    it('leaves no .tmp file after successful write', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'cds-atomic-'));
+      const filePath = join(tmpDir, 'clean.json');
+      atomicWriteJson(filePath, { clean: true });
+      assert.ok(!existsSync(filePath + '.tmp'), 'should not leave .tmp file');
+    });
+
+    it('result can be parsed back with JSON.parse and equals input object', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'cds-atomic-'));
+      const filePath = join(tmpDir, 'roundtrip.json');
+      const original = { a: 1, b: 'hello', c: [1, 2, 3] };
+      atomicWriteJson(filePath, original);
+      const parsed = JSON.parse(readFileSync(filePath, 'utf8'));
+      assert.deepEqual(parsed, original);
+    });
+
+    it('preserves structure of nested objects', () => {
+      tmpDir = mkdtempSync(join(tmpdir(), 'cds-atomic-'));
+      const filePath = join(tmpDir, 'nested.json');
+      const obj = { top: { middle: { bottom: 'value' } }, arr: [{ x: 1 }] };
+      atomicWriteJson(filePath, obj);
+      const parsed = JSON.parse(readFileSync(filePath, 'utf8'));
+      assert.deepEqual(parsed, obj);
     });
   });
 });
