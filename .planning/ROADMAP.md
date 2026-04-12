@@ -97,8 +97,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — Migration core: lib/notebooklm-migrate.mjs two-phase-commit orchestrator + CLI dispatch in notebooklm-cli.mjs
-- [ ] 08-02-PLAN.md — Test fixture matrix (9 scenarios) + real-notebook smoke test checkpoint
+- [x] 08-01-PLAN.md — Migration core: lib/notebooklm-migrate.mjs two-phase-commit orchestrator + CLI dispatch in notebooklm-cli.mjs
+- [x] 08-02-PLAN.md — Test fixture matrix (9 scenarios) + real-notebook smoke test checkpoint
 
 ---
 
