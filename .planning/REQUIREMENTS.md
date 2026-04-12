@@ -56,14 +56,14 @@
 ## Traceability
 
 | Requirement | Phase | Status |
-|---|---|---|
-| QUERY-01 | TBD | pending |
-| QUERY-02 | TBD | pending |
-| QUERY-03 | TBD | pending |
-| SYNC-01 | TBD | pending |
-| FIX-01 | TBD | pending |
-| FIX-02 | TBD | pending |
-| FIX-03 | TBD | pending |
-| REFACTOR-01 | TBD | pending |
-| INFRA-03 | TBD | pending |
-| INFRA-04 | TBD | pending |
+|-------------|-------|--------|
+| FIX-01 | Phase 10 | pending |
+| FIX-02 | Phase 10 | pending |
+| FIX-03 | Phase 10 | pending |
+| QUERY-01 | Phase 11 | pending |
+| QUERY-02 | Phase 11 | pending |
+| QUERY-03 | Phase 11 | pending |
+| SYNC-01 | Phase 12 | pending |
+| REFACTOR-01 | Phase 12 | pending |
+| INFRA-03 | Phase 13 | pending |
+| INFRA-04 | Phase 13 | pending |
