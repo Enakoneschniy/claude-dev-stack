@@ -77,7 +77,7 @@ Plans:
 ---
 
 ### Phase 8: NotebookLM Migration Script (`notebooklm migrate`)
-**Status**: pending
+**Status**: planned
 **Goal**: User can run `claude-dev-stack notebooklm migrate` once to relocate all existing 27 sources from the shared `claude-dev-stack-vault` notebook into per-project `cds__{slug}` notebooks, under a two-phase-commit protocol that never deletes from the shared notebook until every source has been round-trip verified in its target. The migration is idempotent, resumable, and dry-run by default.
 **Risk**: MEDIUM-HIGH
 **UI hint**: no
@@ -94,7 +94,11 @@ Plans:
 - [ ] 6. `lib/notebooklm-migrate.mjs` ONLY orchestrates existing `lib/notebooklm.mjs` primitives — it adds zero new primitives, and `lib/notebooklm.mjs` file diff across the entire phase is zero lines (D-03 boundary preserved).
 
 **Estimated tests added**: ~20 (~329 → ~349)
-**Estimated plans**: 2 (migrate core + test matrix/smoke test/CLI dispatch)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Migration core: lib/notebooklm-migrate.mjs two-phase-commit orchestrator + CLI dispatch in notebooklm-cli.mjs
+- [ ] 08-02-PLAN.md — Test fixture matrix (9 scenarios) + real-notebook smoke test checkpoint
 
 ---
 
@@ -237,7 +241,7 @@ Phase 9 — Notion auto-import via MCP (LOW-MEDIUM risk)
 |-------|---------------|--------|-------------------|-----------|
 | 6. Git-Conventions Skill Ecosystem | 0/3 | Not started | ~40 (264 → ~304) | — |
 | 7. NotebookLM Manifest v2 + Per-Project Sync | 0/3 | Planned | ~25 (~304 → ~329) | — |
-| 8. NotebookLM Migration Script | 0/2 | Not started | ~20 (~329 → ~349) | — |
+| 8. NotebookLM Migration Script | 0/2 | Planned | ~20 (~329 → ~349) | — |
 | 9. Notion Auto-Import via MCP | 0/2 | Not started | ~20 (~349 → ~369) | — |
 
 **Total plans (estimated)**: 10
