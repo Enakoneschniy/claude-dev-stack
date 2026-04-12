@@ -190,10 +190,8 @@ describe('notebooklm-cli: runStatus — populated vault with manifest', () => {
   it('manifest with 1 file and recent generated_at → prints file count and last sync', async () => {
     const now = new Date().toISOString();
     writeManifest(vaultRoot, {
-      version: 1,
-      generated_at: now,
-      files: {
-        'projects/x/context.md': { hash: 'abc123', notebook_source_id: 'src1', uploaded_at: now },
+      projects: {
+        x: { notebook_id: null, files: { 'projects/x/context.md': { hash: 'abc123', notebook_source_id: 'src1', uploaded_at: now } } },
       },
     });
     await main(['status']);
@@ -207,10 +205,10 @@ describe('notebooklm-cli: runStatus — populated vault with manifest', () => {
     // Write manifest JSON directly (bypassing writeManifest which overwrites generated_at to NOW).
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const manifestData = {
-      version: 1,
+      version: 2,
       generated_at: sevenDaysAgo,
-      files: {
-        'projects/x/context.md': { hash: 'abc123', notebook_source_id: 'src1', uploaded_at: sevenDaysAgo },
+      projects: {
+        x: { notebook_id: null, files: { 'projects/x/context.md': { hash: 'abc123', notebook_source_id: 'src1', uploaded_at: sevenDaysAgo } } },
       },
     };
     writeFileSync(join(vaultRoot, '.notebooklm-sync.json'), JSON.stringify(manifestData, null, 2), 'utf8');
@@ -222,11 +220,9 @@ describe('notebooklm-cli: runStatus — populated vault with manifest', () => {
   it('manifest with 2 files → displays "Files tracked: 2"', async () => {
     const now = new Date().toISOString();
     writeManifest(vaultRoot, {
-      version: 1,
-      generated_at: now,
-      files: {
-        'projects/a/context.md': { hash: 'aaa', notebook_source_id: 'sa', uploaded_at: now },
-        'projects/b/context.md': { hash: 'bbb', notebook_source_id: 'sb', uploaded_at: now },
+      projects: {
+        a: { notebook_id: null, files: { 'projects/a/context.md': { hash: 'aaa', notebook_source_id: 'sa', uploaded_at: now } } },
+        b: { notebook_id: null, files: { 'projects/b/context.md': { hash: 'bbb', notebook_source_id: 'sb', uploaded_at: now } } },
       },
     });
     await main(['status']);

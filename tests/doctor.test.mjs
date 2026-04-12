@@ -469,3 +469,186 @@ describe('doctor — Git Conventions section (GIT-08/GIT-09/GIT-10)', () => {
     assert.equal(result.status, 0, `Expected exit 0, got ${result.status}`);
   });
 });
+
+// ── NotebookLM per-project stats + deprecation warning (NBLM-V2-08/D-09) ─────
+
+/**
+ * Create a temp bin dir with a notebooklm stub that returns per-project notebooks.
+ * The stub handles:
+ *   list --json         → { notebooks: [cds__alpha, cds__beta, user-personal] }
+ *   source list -n nb-1 → { sources: [5 items] }
+ *   source list -n nb-2 → { sources: [3 items] }
+ *   auth check          → exit 0
+ */
+function makePerProjectStubBinDir() {
+  const binDir = mkdtempSync(join(tmpdir(), 'doctor-perproject-bin-'));
+  const wrapperPath = join(binDir, 'notebooklm');
+
+  const script = `#!/bin/bash
+CMD="$1"
+SUB="$2"
+
+if [ "$CMD" = "auth" ] && [ "$SUB" = "check" ]; then
+  printf '%s\\n' '{"status":"ok","checks":{}}'
+  exit 0
+fi
+
+if [ "$CMD" = "--version" ] || [ "$CMD" = "version" ]; then
+  printf '%s\\n' "NotebookLM CLI, version 0.3.4"
+  exit 0
+fi
+
+if [ "$CMD" = "list" ]; then
+  printf '%s\\n' '{"notebooks":[{"id":"nb-1","title":"cds__alpha","created_at":null},{"id":"nb-2","title":"cds__beta","created_at":null},{"id":"nb-3","title":"user-personal","created_at":null}]}'
+  exit 0
+fi
+
+if [ "$CMD" = "source" ] && [ "$SUB" = "list" ]; then
+  NB_ID="$4"
+  if [ "$NB_ID" = "nb-1" ]; then
+    printf '%s\\n' '{"sources":[{"id":"s1","title":"t1"},{"id":"s2","title":"t2"},{"id":"s3","title":"t3"},{"id":"s4","title":"t4"},{"id":"s5","title":"t5"}]}'
+  elif [ "$NB_ID" = "nb-2" ]; then
+    printf '%s\\n' '{"sources":[{"id":"s6","title":"t6"},{"id":"s7","title":"t7"},{"id":"s8","title":"t8"}]}'
+  else
+    printf '%s\\n' '{"sources":[]}'
+  fi
+  exit 0
+fi
+
+exit 0
+`;
+
+  writeFileSync(wrapperPath, script, 'utf8');
+  chmodSync(wrapperPath, 0o755);
+  return binDir;
+}
+
+describe('doctor — per-project NotebookLM stats + NOTEBOOKLM_NOTEBOOK_NAME deprecation (NBLM-V2-08/D-09)', () => {
+  let tmpVault = null;
+  let tmpBinDir = null;
+
+  afterEach(() => {
+    if (tmpVault && existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
+    if (tmpBinDir && existsSync(tmpBinDir)) rmSync(tmpBinDir, { recursive: true, force: true });
+    // Clean up env var in case a test failed before clearing it
+    delete process.env.NOTEBOOKLM_NOTEBOOK_NAME;
+    tmpVault = null;
+    tmpBinDir = null;
+  });
+
+  it('shows "2 notebooks, 8 sources total" when 2 cds__ notebooks have 5 and 3 sources', () => {
+    tmpBinDir = makePerProjectStubBinDir();
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({ stubBinDir: tmpBinDir, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('2 notebooks') && result.stdout.includes('8 sources total'),
+      `Expected "2 notebooks, 8 sources total" in stdout.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('shows per-project breakdown lines: "alpha: 5 sources" and "beta: 3 sources"', () => {
+    tmpBinDir = makePerProjectStubBinDir();
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({ stubBinDir: tmpBinDir, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('alpha: 5'),
+      `Expected "alpha: 5" in stdout.\nGot: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('beta: 3'),
+      `Expected "beta: 3" in stdout.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('emits D-09 deprecation warning when NOTEBOOKLM_NOTEBOOK_NAME is set', () => {
+    tmpBinDir = makePerProjectStubBinDir();
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({
+      stubBinDir: tmpBinDir,
+      vaultPath: tmpVault,
+      extraEnv: { NOTEBOOKLM_NOTEBOOK_NAME: 'old-name' },
+    });
+
+    assert.ok(
+      result.stdout.includes('NOTEBOOKLM_NOTEBOOK_NAME is deprecated'),
+      `Expected deprecation warning.\nGot: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('Per-project notebooks (cds__{slug}) are now used'),
+      `Expected per-project guidance in deprecation warning.\nGot: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('Will be removed in v1.0'),
+      `Expected "Will be removed in v1.0" in deprecation warning.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('does NOT emit deprecation warning when NOTEBOOKLM_NOTEBOOK_NAME is not set', () => {
+    tmpBinDir = makePerProjectStubBinDir();
+    tmpVault = makeTempVault();
+
+    // Ensure env var is absent
+    const extraEnv = {};
+    // Do NOT set NOTEBOOKLM_NOTEBOOK_NAME
+
+    const result = runDoctor({ stubBinDir: tmpBinDir, vaultPath: tmpVault, extraEnv });
+
+    assert.equal(
+      result.stdout.includes('NOTEBOOKLM_NOTEBOOK_NAME is deprecated'),
+      false,
+      `Did not expect deprecation warning.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('skips per-project stats section when notebooklm binary is missing', () => {
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({ excludeNblm: true, vaultPath: tmpVault });
+
+    // Should not see stats output (neither "notebooks" count nor "sources total")
+    assert.equal(
+      result.stdout.includes('sources total'),
+      false,
+      `Did not expect "sources total" when notebooklm is absent.\nGot: ${result.stdout}`,
+    );
+    // Should still see the "not installed (optional)" info line
+    assert.ok(
+      result.stdout.includes('not installed (optional'),
+      `Expected "not installed (optional" in stdout.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('shows "0 notebooks" when listNotebooks returns no cds__ notebooks', () => {
+    const binDir = mkdtempSync(join(tmpdir(), 'doctor-zero-nb-bin-'));
+    const wrapperPath = join(binDir, 'notebooklm');
+    const zeroScript = `#!/bin/bash
+CMD="$1"
+SUB="$2"
+if [ "$CMD" = "auth" ] && [ "$SUB" = "check" ]; then
+  printf '%s\\n' '{"status":"ok","checks":{}}'
+  exit 0
+fi
+if [ "$CMD" = "list" ]; then
+  printf '%s\\n' '{"notebooks":[{"id":"nb-x","title":"user-personal","created_at":null}]}'
+  exit 0
+fi
+exit 0
+`;
+    writeFileSync(wrapperPath, zeroScript, 'utf8');
+    chmodSync(wrapperPath, 0o755);
+    tmpBinDir = binDir;
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({ stubBinDir: tmpBinDir, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('notebooks: 0') || result.stdout.includes('0 notebook'),
+      `Expected "notebooks: 0" or "0 notebook" in stdout.\nGot: ${result.stdout}`,
+    );
+  });
+});
