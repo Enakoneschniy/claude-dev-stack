@@ -15,7 +15,7 @@
 ## Phases
 
 - [x] **Phase 10: Bugfixes** — Fix v0.9 migration ADR path resolution, sync stats `undefined` display, and 5 Phase 6 code-review warnings (completed 2026-04-12)
-- [ ] **Phase 11: NotebookLM Query API** — `askNotebook()` + `generateArtifact()` in `lib/notebooklm.mjs`, `notebooklm ask` CLI command with optional `--save` to vault
+- [x] **Phase 11: NotebookLM Query API** — `askNotebook()` + `generateArtifact()` in `lib/notebooklm.mjs`, `notebooklm ask` CLI command with optional `--save` to vault (completed 2026-04-12)
 - [ ] **Phase 12: Sync Automation + install.mjs Refactor** — Session-end hook triggers background sync; `bin/install.mjs` split from 1287-line monolith into focused modules
 - [ ] **Phase 13: GSD Infrastructure** — ADR bridge (decisions auto-populated from `.planning/CONTEXT.md`) + parallel phase execution via TeamCreate
 
@@ -137,7 +137,7 @@ Phase 13 — GSD Infrastructure (LOW risk)
 | Phase | Plans Complete | Status | Tests Added (est) | Completed |
 |-------|---------------|--------|-------------------|-----------|
 | 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
-| 11. NotebookLM Query API | 0/? | Not started | ~20 (~416 → ~436) | — |
+| 11. NotebookLM Query API | 0/? | 2/2 | Complete    | 2026-04-12 |
 | 12. Sync Automation + install.mjs Refactor | 0/? | Not started | ~15 (~436 → ~451) | — |
 | 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
 
