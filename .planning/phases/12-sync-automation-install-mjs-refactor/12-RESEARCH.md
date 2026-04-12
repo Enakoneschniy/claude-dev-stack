@@ -408,7 +408,7 @@ All other claims were verified by reading source files directly.
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **`onCancel` message difference**
    - What we know: install.mjs says "Aborted. No changes made." / shared.mjs says "Aborted."
