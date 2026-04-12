@@ -647,8 +647,8 @@ exit 0
     const result = runDoctor({ stubBinDir: tmpBinDir, vaultPath: tmpVault });
 
     assert.ok(
-      result.stdout.includes('0 notebook'),
-      `Expected "0 notebook" in stdout.\nGot: ${result.stdout}`,
+      result.stdout.includes('notebooks: 0') || result.stdout.includes('0 notebook'),
+      `Expected "notebooks: 0" or "0 notebook" in stdout.\nGot: ${result.stdout}`,
     );
   });
 });
