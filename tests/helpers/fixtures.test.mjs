@@ -85,30 +85,40 @@ describe('makeTempMonorepo', () => {
 });
 
 describe('withStubBinary', () => {
-  it('makes which mycmd resolve inside fn', () => {
-    withStubBinary('mycmd', 'echo hello', (_stubDir) => {
+  it('makes which mycmd resolve inside fn', async () => {
+    await withStubBinary('mycmd', 'echo hello', (_stubDir) => {
       const result = execSync('which mycmd', { stdio: 'pipe', encoding: 'utf8' }).trim();
       assert.ok(result.includes('mycmd'), 'mycmd should be on PATH');
     });
   });
 
-  it('restores original PATH after fn completes', () => {
+  it('restores original PATH after fn completes', async () => {
     const before = process.env.PATH;
-    withStubBinary('testcmd', 'echo test', () => {});
+    await withStubBinary('testcmd', 'echo test', () => {});
     assert.equal(process.env.PATH, before, 'PATH should be restored');
   });
 
-  it('restores PATH even if fn throws', () => {
+  it('restores PATH even if fn throws', async () => {
     const before = process.env.PATH;
     try {
-      withStubBinary('failcmd', 'echo fail', () => { throw new Error('intentional'); });
+      await withStubBinary('failcmd', 'echo fail', () => { throw new Error('intentional'); });
     } catch { /* expected */ }
     assert.equal(process.env.PATH, before, 'PATH should be restored after throw');
   });
 
-  it('cleans up stub directory in /tmp', () => {
+  it('cleans up stub directory in /tmp', async () => {
     let capturedStubDir;
-    withStubBinary('cleancmd', 'echo clean', (d) => { capturedStubDir = d; });
+    await withStubBinary('cleancmd', 'echo clean', (d) => { capturedStubDir = d; });
     assert.ok(!existsSync(capturedStubDir), 'stub dir should be removed after withStubBinary');
+  });
+
+  it('awaits async fn before cleanup (stub dir exists during async fn)', async () => {
+    let stubDirDuringFn;
+    await withStubBinary('asynccmd', 'echo async', async (d) => {
+      stubDirDuringFn = d;
+      await new Promise(resolve => setTimeout(resolve, 5));
+      assert.ok(existsSync(d), 'stub dir should still exist during async fn execution');
+    });
+    assert.ok(!existsSync(stubDirDuringFn), 'stub dir should be removed after async fn completes');
   });
 });
