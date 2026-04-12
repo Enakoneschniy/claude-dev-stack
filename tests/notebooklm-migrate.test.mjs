@@ -593,6 +593,94 @@ esac
     assert.equal(deletedEntries.length, 2, 'both sources should be deleted after resume');
   });
 
+  // ── Test 10: ADR path resolution — slug__ADR-NNNN-slug.md resolves to disk ──
+
+  it('Test 10: ADR-prefixed source title resolves to disk path without file_not_found', async () => {
+    // Create vault project dir with a decisions/ file (ADR format: NNNN-slug.md)
+    mkdirSync(join(vault.dir, 'projects', 'myproject', 'decisions'), { recursive: true });
+    writeFileSync(
+      join(vault.dir, 'projects', 'myproject', 'decisions', '0001-auth.md'),
+      '# ADR 0001: Auth'
+    );
+
+    // Shared notebook has source with ADR-prefixed title (as buildTitle generates).
+    // title: 'myproject__ADR-0001-auth.md' — parseSourceTitle yields localTitle='ADR-0001-auth.md'
+    // buildFilePathMap must resolve 'myproject/ADR-0001-auth.md' to the disk file.
+    //
+    // Counter file technique: target notebook returns empty on first list call (duplicate
+    // check), then returns the uploaded source on the second call (verify). This forces the
+    // code to reach the disk-path lookup (line 307), where FIX-01 is needed.
+    const counterFile = join(vault.dir, '.stub-counter');
+    writeFileSync(counterFile, '0');
+
+    stubDir = makeStub(`
+COUNTER_FILE="${counterFile}"
+case "$1" in
+  list)
+    echo '{"notebooks":[{"id":"${SHARED_NB_ID}","title":"${SHARED_NB_NAME}","created_at":null}]}'
+    ;;
+  source)
+    case "$2" in
+      list)
+        NB="$4"
+        case "$NB" in
+          ${SHARED_NB_ID})
+            echo '{"sources":[{"id":"src-adr1","title":"myproject__ADR-0001-auth.md","status":"active"}]}'
+            ;;
+          *)
+            # First list call on target = duplicate check (returns empty so disk lookup runs).
+            # Second list call on target = verify after upload (returns the uploaded source).
+            COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo 0)
+            COUNT=$((COUNT + 1))
+            echo "$COUNT" > "$COUNTER_FILE"
+            if [ "$COUNT" -le 1 ]; then
+              echo '{"sources":[]}'
+            else
+              echo '{"sources":[{"id":"uploaded-adr1","title":"ADR-0001-auth.md","status":"active"}]}'
+            fi
+            ;;
+        esac
+        ;;
+      add)
+        echo '{"source":{"id":"new-adr","title":"ADR-0001-auth.md"}}'
+        ;;
+      delete-by-title)
+        echo "Deleted source: src-adr1"
+        ;;
+      *)
+        echo '{}'
+        ;;
+    esac
+    ;;
+  create)
+    echo '{"notebook":{"id":"nb-'"$2"'","title":"'"$2"'","created_at":null}}'
+    ;;
+  *)
+    echo '{}'
+    ;;
+esac
+`);
+    process.env.PATH = `${stubDir}${delimiter}${originalPath}`;
+
+    const result = await migrateVault({
+      vaultRoot: vault.dir,
+      sharedNotebookName: SHARED_NB_NAME,
+      dryRun: false,
+      delayMs: 0,
+    });
+
+    // ADR source must NOT fail with file_not_found — it should resolve and be verified/deleted
+    assert.equal(result.phaseAFailures, 0, 'ADR source must resolve to disk path without file_not_found failure');
+    assert.equal(result.phaseBSkipped, false, 'Phase B should run after successful Phase A');
+
+    const logPath = join(vault.dir, '.notebooklm-migration.json');
+    const log = JSON.parse(readFileSync(logPath, 'utf8'));
+    const adrEntry = log.sources.find((s) => s.source_id === 'src-adr1');
+    assert.ok(adrEntry, 'ADR source entry must be in migration log');
+    assert.notEqual(adrEntry.status, 'failed', `ADR entry must not fail; got status: ${adrEntry.status}`);
+    assert.equal(adrEntry.status, 'deleted', `ADR entry must be deleted; got: ${adrEntry.status}`);
+  });
+
   // ── Test 9: Phase B swallows CliError on already-deleted ─────────────────
 
   it('Test 9: Phase B swallows NotebooklmCliError on delete and marks entry deleted', async () => {
