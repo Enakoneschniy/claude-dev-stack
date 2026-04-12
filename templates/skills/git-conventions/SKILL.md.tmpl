@@ -1,0 +1,72 @@
+---
+name: git-conventions
+description: >
+  Enforce project git conventions for commits, branches, and PRs.
+  Auto-triggers on: "commit", "branch", "merge", "PR", "pull request",
+  "коммит", "ветка", "мерж", "пулл реквест".
+---
+
+# Git Conventions
+
+**Config file:** .claude/git-scopes.json -- read this file for current scopes and config before every git operation.
+
+## Commit Format
+
+```
+type(scope): subject{{TICKET_FORMAT}}
+```
+
+### Allowed Types
+
+- feat
+- fix
+- refactor
+- test
+- docs
+- ci
+- chore
+
+### Allowed Scopes
+
+{{SCOPES_LIST}}
+
+## Branch Format
+
+Use branch format from .claude/git-scopes.json `branch_format` field.
+Main branch: `{{MAIN_BRANCH}}`
+
+## Checklist
+
+Before committing:
+- [ ] Commit message follows type(scope): subject format
+- [ ] Scope is from the allowed scopes list above or from .claude/git-scopes.json
+- [ ] No secrets or credentials in the commit
+{{CO_AUTHORED_BY_SECTION}}
+
+## Rules
+
+1. ALWAYS read .claude/git-scopes.json before generating commit messages
+2. Use conventional commit format
+3. Scope must match one of the defined project scopes
+4. Subject line max 72 characters
+5. No period at end of subject
+6. Use imperative mood in subject line ("add" not "added")
+
+## Examples
+
+```
+feat(core): add user authentication
+fix(api): handle null response from external service
+docs(core): update README with setup instructions
+chore(ci): update Node.js version in workflow
+```
+
+## Config Reference
+
+The .claude/git-scopes.json file contains:
+- `scopes`: array of allowed scope names
+- `main_branch`: the main/default branch name
+- `branch_format`: template for branch names
+- `ticket_prefix`: optional ticket prefix (e.g. "PROJ-")
+- `co_authored_by`: whether to include co-authorship attribution in commits
+- `types`: allowed commit types
