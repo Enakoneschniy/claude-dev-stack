@@ -12,14 +12,18 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v0.9 — Git Conventions & NotebookLM Per-Project
+## Current Milestone: v0.10 — Query, Sync Automation & Quality
 
-**Goal:** Make per-project workflow first-class — every claude-dev-stack project gets its own git policy enforcement (commits/branches/scopes) and its own dedicated NotebookLM notebook, with automated Notion imports for selected pages.
+**Goal:** Make NotebookLM a two-way tool (upload + query), auto-sync vault on session end, fix v0.9 bugs, and prepare infrastructure for parallel phase execution.
 
 **Target features:**
-- **git-conventions skill ecosystem (full)** — per-project skill that auto-triggers on git intents, reads `.claude/git-scopes.json`, includes auto-detection for 7+ stack types, `claude-dev-stack scopes` subcommand, optional commitlint installer, wizard prompts integration. Reference implementation: `~/Work/NMP/.claude/skills/git-conventions/`.
-- **NotebookLM per-project notebooks (with migration)** — extend `lib/notebooklm*.mjs` from single shared notebook to one notebook per project. One-time migration script moves existing 27 sources from shared `claude-dev-stack-vault` notebook into per-project notebooks.
-- **Notion auto-import via MCP** — `.claude/notion_pages.json` config + `lib/notion-import.mjs` using `claude.ai Notion` MCP server. Intent-triggered (no cron). Imports specific pages per config to `vault/projects/{project}/docs/`, then existing NotebookLM sync picks them up.
+- **NotebookLM Query API** — wrap `ask`, `generate` in `lib/notebooklm.mjs`, CLI `notebooklm ask "question"`, save answers to vault. Currently only upload/sync; query exists in notebooklm-py but not in our wrapper.
+- **Auto-sync on session end** — session-end hook triggers `notebooklm sync` silently in background after session log creation. Currently sync is manual-only.
+- **Migration bugfixes** — ADR path resolution (`ADR-NNNN-` prefix → `NNNN-` filename mapping), sync stats `undefined` display fix.
+- **install.mjs refactor** — split 1287-line monolith into focused modules, remove shared.mjs utility duplication.
+- **Code review fixes** — 5 warnings from Phase 6 review (hasCommand shell injection, --full mode bug, Go detector performance, settings.json parse error, withStubBinary async).
+- **ADR bridge** — auto-populate vault/decisions from .planning/CONTEXT.md decisions during GSD workflow. Currently two parallel systems that don't sync.
+- **Parallel Phase Execution via Teams** — GSD orchestrates independent phases through TeamCreate with user consent (cost awareness). Currently phases run strictly sequential even when independent.
 
 ## Requirements
 

@@ -97,7 +97,7 @@ export function makeTempMonorepo(stackType) {
 }
 
 // ── withStubBinary ───────────────────────────────────────────────
-export function withStubBinary(name, scriptContent, fn) {
+export async function withStubBinary(name, scriptContent, fn) {
   const dir = mkdtempSync(join(tmpdir(), 'cds-stub-'));
   const stubPath = join(dir, name);
   writeFileSync(stubPath, `#!/bin/sh\n${scriptContent}`, 'utf8');
@@ -108,7 +108,7 @@ export function withStubBinary(name, scriptContent, fn) {
 
   let result;
   try {
-    result = fn(dir);
+    result = await fn(dir);
   } finally {
     process.env.PATH = originalPath;
     rmSync(dir, { recursive: true, force: true });

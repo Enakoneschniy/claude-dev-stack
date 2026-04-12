@@ -51,6 +51,18 @@ describe('shared utilities', () => {
     it('returns false for nonexistent command', () => {
       assert.equal(hasCommand('nonexistent_cmd_xyz'), false);
     });
+
+    it('returns false for name with shell metacharacters (no shell injection)', () => {
+      // Shell metacharacters must not be interpreted as shell commands
+      assert.equal(hasCommand('node; echo injected'), false);
+      assert.equal(hasCommand('$(echo node)'), false);
+      assert.equal(hasCommand('`echo node`'), false);
+    });
+
+    it('returns boolean type', () => {
+      assert.equal(typeof hasCommand('node'), 'boolean');
+      assert.equal(typeof hasCommand('nonexistent_cmd_xyz'), 'boolean');
+    });
   });
 
   describe('mkdirp', () => {

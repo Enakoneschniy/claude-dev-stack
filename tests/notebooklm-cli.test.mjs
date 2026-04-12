@@ -7,7 +7,9 @@
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
+import { delimiter } from 'node:path';
+import { _resetBinaryCache as _resetNotebooklmBinary } from '../lib/notebooklm.mjs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -286,5 +288,103 @@ describe('notebooklm-cli: runSync — NotebooklmNotInstalledError path', () => {
       `Expected install hint in output, got:\n${joined}`
     );
     rmSync(emptyDir, { recursive: true, force: true });
+  });
+});
+
+// ── runSync — stats display with per-project syncVault return shape (FIX-02) ──
+
+describe('notebooklm-cli: runSync — stats display uses stats.total (FIX-02)', () => {
+  let vaultRoot;
+  let cap;
+  let origVaultPath;
+  let origPath;
+  let stubDir;
+
+  beforeEach(() => {
+    vaultRoot = mkTempVault();
+    origVaultPath = process.env.VAULT_PATH;
+    origPath = process.env.PATH;
+    process.env.VAULT_PATH = vaultRoot;
+    cap = captureConsole();
+    _resetNotebooklmBinary();
+  });
+
+  afterEach(() => {
+    cap.restore();
+    process.env.PATH = origPath;
+    if (origVaultPath === undefined) {
+      delete process.env.VAULT_PATH;
+    } else {
+      process.env.VAULT_PATH = origVaultPath;
+    }
+    if (stubDir) {
+      rmSync(stubDir, { recursive: true, force: true });
+      stubDir = null;
+    }
+    rmSync(vaultRoot, { recursive: true, force: true });
+    _resetNotebooklmBinary();
+  });
+
+  it('sync summary line shows numeric counts not "undefined" (FIX-02)', async () => {
+    // Create a vault project with a context.md so syncVault walks at least one file.
+    mkdirSync(join(vaultRoot, 'projects', 'myapp'), { recursive: true });
+    writeFileSync(join(vaultRoot, 'projects', 'myapp', 'context.md'), '# MyApp');
+
+    // Stub notebooklm binary: list returns existing cds__myapp notebook,
+    // source list returns empty (so file will be uploaded), source add succeeds.
+    stubDir = mkdtempSync(join(tmpdir(), 'nb-cli-stats-stub-'));
+    const stubPath = join(stubDir, 'notebooklm');
+    writeFileSync(stubPath, `#!/bin/sh
+case "$1" in
+  list)
+    # Return empty list so ensureNotebook creates cds__myapp (avoids conflict scan error)
+    echo '{"notebooks":[]}'
+    ;;
+  create)
+    # CDS creates the per-project notebook
+    echo '{"notebook":{"id":"nb-myapp","title":"cds__myapp","created_at":null}}'
+    ;;
+  source)
+    case "$2" in
+      list)
+        echo '{"sources":[]}'
+        ;;
+      add)
+        echo '{"source":{"id":"new-src","title":"context.md"}}'
+        ;;
+      *)
+        echo '{}'
+        ;;
+    esac
+    ;;
+  *)
+    echo '{}'
+    ;;
+esac
+`, 'utf8');
+    chmodSync(stubPath, 0o755);
+    process.env.PATH = `${stubDir}${delimiter}${origPath}`;
+
+    await main(['sync']);
+
+    const joined = cap.lines.join('\n');
+    // FIX-02: summary must show numbers, NOT "undefined uploaded"
+    assert.ok(
+      !joined.includes('undefined'),
+      `Summary must not contain "undefined"; got:\n${joined}`
+    );
+    // The summary line pattern: "N uploaded, N skipped, N failed"
+    assert.ok(
+      /\d+ uploaded/.test(joined),
+      `Summary must contain numeric uploaded count; got:\n${joined}`
+    );
+    assert.ok(
+      /\d+ skipped/.test(joined),
+      `Summary must contain numeric skipped count; got:\n${joined}`
+    );
+    assert.ok(
+      /\d+ failed/.test(joined),
+      `Summary must contain numeric failed count; got:\n${joined}`
+    );
   });
 });

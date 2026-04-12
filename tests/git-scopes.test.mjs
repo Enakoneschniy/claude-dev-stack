@@ -319,3 +319,53 @@ describe('createDefaultConfig', () => {
     assert.equal(config.main_branch, 'main');
   });
 });
+
+// ── WR-03: Go detector directory filter ─────────────────────────────────────
+
+describe('detectStack — Go detector skips heavy directories (WR-03)', () => {
+  let tempDir;
+  after(() => {
+    if (tempDir) rmSync(tempDir, { recursive: true, force: true });
+  });
+
+  it('skips node_modules when scanning for go.mod files', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'cds-go-filter-'));
+    // Real go module in cmd/
+    mkdirSync(join(tempDir, 'cmd', 'server'), { recursive: true });
+    writeFileSync(join(tempDir, 'cmd', 'server', 'go.mod'), 'module example.com/x', 'utf8');
+    // Fake go.mod inside node_modules (should be ignored)
+    mkdirSync(join(tempDir, 'node_modules', 'fake-go'), { recursive: true });
+    writeFileSync(join(tempDir, 'node_modules', 'fake-go', 'go.mod'), 'module fake', 'utf8');
+
+    const result = detectStack(tempDir);
+    assert.equal(result.source, 'go-multi-module', `expected go-multi-module, got ${result.source}`);
+    assert.ok(!result.scopes.includes('node_modules'), 'node_modules must not appear in scopes');
+    assert.ok(!result.scopes.includes('fake-go'), 'fake-go inside node_modules must not appear in scopes');
+  });
+
+  it('skips vendor directory when scanning for go.mod files', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'cds-go-vendor-'));
+    // Real go module
+    mkdirSync(join(tempDir, 'pkg', 'core'), { recursive: true });
+    writeFileSync(join(tempDir, 'pkg', 'core', 'go.mod'), 'module example.com/y', 'utf8');
+    // Fake go.mod inside vendor (should be ignored)
+    mkdirSync(join(tempDir, 'vendor', 'github.com'), { recursive: true });
+    writeFileSync(join(tempDir, 'vendor', 'go.mod'), 'module vendor', 'utf8');
+
+    const result = detectStack(tempDir);
+    assert.ok(!result.scopes.includes('vendor'), 'vendor must not appear in scopes');
+  });
+
+  it('skips .git directory when scanning for go.mod files', () => {
+    tempDir = mkdtempSync(join(tmpdir(), 'cds-go-git-'));
+    // Real go module
+    mkdirSync(join(tempDir, 'cmd'), { recursive: true });
+    writeFileSync(join(tempDir, 'cmd', 'go.mod'), 'module example.com/z', 'utf8');
+    // Fake go.mod inside .git (should be ignored)
+    mkdirSync(join(tempDir, '.git', 'hooks'), { recursive: true });
+    writeFileSync(join(tempDir, '.git', 'go.mod'), 'module git-internal', 'utf8');
+
+    const result = detectStack(tempDir);
+    assert.ok(!result.scopes.includes('.git'), '.git must not appear in scopes');
+  });
+});

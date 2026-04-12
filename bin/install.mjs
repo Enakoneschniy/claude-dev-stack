@@ -1117,7 +1117,10 @@ function installSessionHook() {
   if (existsSync(settingsPath)) {
     try {
       settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
-    } catch {}
+    } catch {
+      warn(`settings.json is corrupt or invalid JSON — skipping hook installation`);
+      return;
+    }
   }
 
   const hooksDir = join(homedir(), '.claude', 'hooks');
