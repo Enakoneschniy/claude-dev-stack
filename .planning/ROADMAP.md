@@ -51,7 +51,7 @@ Plans:
 ---
 
 ### Phase 7: NotebookLM Manifest v2 + Per-Project Sync Loop
-**Status**: pending
+**Status**: planned
 **Goal**: `claude-dev-stack notebooklm sync` uploads each project's vault content into its own namespaced `cds__{slug}` notebook, with a safely-migrated v2 manifest that preserves every v1 hash entry. The manifest v1→v2 fix lands before the `MANIFEST_VERSION` bump, so no existing user's tracking history is ever wiped.
 **Risk**: MEDIUM
 **UI hint**: no
@@ -67,7 +67,12 @@ Plans:
 - [ ] 5. User running `npm test` sees the new `notebooklm-sync` per-project tests (driven by the `withStubBinary` stubbed `notebooklm` binary from Phase 6 fixtures) cover: happy-path multi-project loop, per-project stats aggregation (`{perProject: {[slug]: {...}}, total: {...}}`), v1→v2 in-place upgrade, pre-flight conflict abort, and `buildTitle` projectScoped branch dropping the prefix. `lib/notebooklm.mjs` diff is ZERO lines — D-03 boundary respected.
 
 **Estimated tests added**: ~25 (~304 → ~329)
-**Estimated plans**: 3 (manifest v2 + sync loop + doctor/stats/deprecation)
+**Plans:** 3 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — Manifest v2 foundation: isValidManifestShape split + migrateV1ToV2 + migration tests (FIRST COMMIT GATE)
+- [ ] 07-02-PLAN.md — MANIFEST_VERSION bump to 2 + per-project syncVault loop + buildTitle projectScoped + conflict scan
+- [ ] 07-03-PLAN.md — Doctor per-project NotebookLM stats + NOTEBOOKLM_NOTEBOOK_NAME deprecation warning
 
 ---
 
@@ -231,7 +236,7 @@ Phase 9 — Notion auto-import via MCP (LOW-MEDIUM risk)
 | Phase | Plans Complete | Status | Tests Added (est) | Completed |
 |-------|---------------|--------|-------------------|-----------|
 | 6. Git-Conventions Skill Ecosystem | 0/3 | Not started | ~40 (264 → ~304) | — |
-| 7. NotebookLM Manifest v2 + Per-Project Sync | 0/3 | Not started | ~25 (~304 → ~329) | — |
+| 7. NotebookLM Manifest v2 + Per-Project Sync | 0/3 | Planned | ~25 (~304 → ~329) | — |
 | 8. NotebookLM Migration Script | 0/2 | Not started | ~20 (~329 → ~349) | — |
 | 9. Notion Auto-Import via MCP | 0/2 | Not started | ~20 (~349 → ~369) | — |
 
