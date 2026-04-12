@@ -2,8 +2,8 @@
 phase: 11
 slug: notebooklm-query-api
 status: draft
-nyquist_compliant: false
-wave_0_complete: false
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-04-12
 ---
 
@@ -38,16 +38,18 @@ created: 2026-04-12
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | Status |
 |---------|------|------|-------------|-----------|-------------------|--------|
-| TBD | 01 | 1 | QUERY-01 | unit | `node --test tests/notebooklm.test.mjs` | ⬜ pending |
-| TBD | 01 | 1 | QUERY-02 | unit | `node --test tests/notebooklm-cli.test.mjs` | ⬜ pending |
-| TBD | 01 | 1 | QUERY-03 | unit | `node --test tests/notebooklm.test.mjs` | ⬜ pending |
+| TBD | 01 | 1 | QUERY-01 | unit | `node --test tests/notebooklm.test.mjs` | pending |
+| TBD | 01 | 1 | QUERY-03 | unit | `node --test tests/notebooklm.test.mjs` | pending |
+| TBD | 02 | 2 | QUERY-02 | unit | `node --test tests/notebooklm-cli.test.mjs` | pending |
 
-*Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+*Status: pending / green / red / flaky*
 
 ---
 
 ## Wave 0 Requirements
 
-- [ ] `tests/notebooklm.test.mjs` — add test stubs for askNotebook, generateArtifact
-- [ ] `tests/notebooklm-cli.test.mjs` — add test stubs for ask/generate CLI subcommands
-- [ ] Fake binary fixtures for ask --json and generate --wait --json responses
+All Wave 0 questions resolved during planning:
+
+- [x] `notebooklm download report --json` output shape — RESOLVED: writes to file, returns `{output_path}` in JSON. No Wave 0 verification task needed.
+- [x] Test stubs for askNotebook, generateArtifact — created inline with TDD tasks in Plan 01
+- [x] Test stubs for ask/generate CLI — created inline with TDD task in Plan 02

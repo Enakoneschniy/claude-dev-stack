@@ -57,7 +57,7 @@ None — discussion stayed within phase scope.
 |----|-------------|------------------|
 | QUERY-01 | `askNotebook(notebookId, question)` in `lib/notebooklm.mjs` — wraps `notebooklm ask --json`, returns `{answer, citations}` with error handling, JSON parsing, and retry | `ask --json` output shape verified from types.py AskResult + ChatReference; `runNotebooklm()` pattern reusable directly |
 | QUERY-02 | `claude-dev-stack notebooklm ask "question"` CLI — displays answer + citations, optional `--save` flag | CLI dispatch pattern verified in notebooklm-cli.mjs; vault/manifest ID resolution verified via `readManifest()` + `manifest.projects[slug].notebook_id` |
-| QUERY-03 | `generateArtifact(notebookId, type)` in `lib/notebooklm.mjs` — wraps `notebooklm generate {type} --wait --json`, returns `{artifactId, content, type}` | `generate --json --wait` output shape verified from generate.py `_output_generation_status()`; content extraction requires post-`--wait` `download {type} --json` call for text artifacts |
+| QUERY-03 | `generateArtifact(notebookId, type)` in `lib/notebooklm.mjs` — wraps `notebooklm generate {type} --wait --json`, returns `{artifactId, content, type}` | `generate --json --wait` output shape verified from generate.py `_output_generation_status()`; content extraction requires post-`--wait` `download {type} --json` call which writes to FILE (read via output_path) |
 </phase_requirements>
 
 ---
@@ -66,11 +66,11 @@ None — discussion stayed within phase scope.
 
 Phase 11 adds `askNotebook()` and `generateArtifact()` to `lib/notebooklm.mjs`, and `ask`/`generate` subcommands to `lib/notebooklm-cli.mjs`. All implementation uses the existing `runNotebooklm()` helper pattern — no new invocation machinery needed.
 
-The key discovery is that `notebooklm generate {type} --wait --json` returns `{task_id, status: "completed", url}` when done — it does NOT include the artifact content inline. For text artifacts (report, quiz, etc.) a second `notebooklm download {type} --json` call is required to retrieve the actual content. For binary artifacts (audio, video, etc.) `generateArtifact()` returns `content: null` per D-07, and the CLI can optionally download to vault.
+The key discovery is that `notebooklm generate {type} --wait --json` returns `{task_id, status: "completed", url}` when done — it does NOT include the artifact content inline. For text artifacts (report, quiz, etc.) a second `notebooklm download {type} --json` call is required. **IMPORTANT: the download command writes content to a FILE on disk and returns JSON with `output_path` pointing to the file — it does NOT return content inline in the JSON.** The implementation must: (1) create a temp directory, (2) run download with cwd=tmpdir, (3) read file from output_path, (4) clean up tmpdir. For binary artifacts (audio, video, etc.) `generateArtifact()` returns `content: null` per D-07, and the CLI can optionally download to vault.
 
 The `notebooklm ask --json` output is a `dataclasses.asdict(AskResult)` minus the `raw_response` field. The relevant fields are `answer` (string), `references` (array of ChatReference objects), `conversation_id`, `turn_number`, and `is_follow_up`. The planner's `citations` shape from D-01 must be mapped FROM the `references` array — `sourceId` from `reference.source_id`, `snippet` from `reference.cited_text`, `index` from `reference.citation_number`. The `sourceTitle` field is NOT present in the ask output — it needs either a `listSources()` enrichment pass or must be omitted from v1 citations (set to null).
 
-**Primary recommendation:** Implement `askNotebook` and `generateArtifact` as thin wrappers around `runNotebooklm()`. For `generateArtifact` of text types, chain a second `runNotebooklm(['download', type, '--json'])` call to fetch content. For binary types, return `content: null` immediately.
+**Primary recommendation:** Implement `askNotebook` and `generateArtifact` as thin wrappers around `runNotebooklm()`. For `generateArtifact` of text types, chain a second `runNotebooklm(['download', type, '--json'])` call, then read content from the file at `output_path`. For binary types, return `content: null` immediately.
 
 ---
 
@@ -185,12 +185,17 @@ async function askWithRetry(args, maxRetries = 2) {
 
 [ASSUMED] — backoff delay values (1s→2s) are from D-11 spec, not from an existing helper.
 
-### Pattern 3: generateArtifact — two-step for text types
+### Pattern 3: generateArtifact — two-step for text types (download via temp file)
 
 `notebooklm generate {type} --wait --json` completes and returns `{task_id, status: "completed", url}`. The `url` field is for binary streaming; text content is NOT in this response. To retrieve content, a second call `notebooklm download {type} --json` is needed.
 
+**RESOLVED (from Python source inspection):** The download command writes to a FILE on disk and returns JSON: `{operation: 'download_single', artifact: {id, title, selection_reason}, output_path: '/path/to/file.md', status: 'downloaded'}`. Content is in the FILE at `output_path`, NOT in the JSON body.
+
 ```javascript
-// Source: generate.py _output_generation_status() + download.py
+// Source: generate.py _output_generation_status() + download.py (VERIFIED)
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
 export async function generateArtifact(notebookId, type, options = {}) {
   const BINARY_TYPES = new Set(['audio', 'video', 'cinematic-video', 'slide-deck', 'infographic']);
 
@@ -207,19 +212,32 @@ export async function generateArtifact(notebookId, type, options = {}) {
 
   const artifactId = genResult.task_id;
 
-  // Step 2: for text types, download content inline
+  // Step 2: for text types, download to temp file and read content
   let content = null;
   if (!BINARY_TYPES.has(type)) {
-    const dlArgs = ['download', type, '-n', notebookId, '--json', '-a', artifactId];
-    const dlResult = runNotebooklm(dlArgs, { jsonMode: true, functionName: 'generateArtifact' });
-    content = dlResult?.content ?? dlResult?.text ?? null;
+    const tmpDir = mkdtempSync(join(tmpdir(), 'notebooklm-'));
+    try {
+      const dlArgs = ['download', type, '--json', '--latest', '-n', notebookId];
+      const dlResult = runNotebooklm(dlArgs, {
+        jsonMode: true,
+        functionName: 'generateArtifact',
+        spawnOpts: { cwd: tmpDir },
+      });
+      // dlResult: {operation, artifact:{id,title}, output_path, status}
+      const filePath = dlResult?.output_path;
+      if (filePath) {
+        content = readFileSync(filePath, 'utf8');
+      }
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
   }
 
   return { artifactId, content, type };
 }
 ```
 
-[VERIFIED: generate.py `_output_generation_status()` emits `{task_id, status, url}` on completed; ASSUMED: download `--json` emits `{content}` field — needs runtime verification]
+[VERIFIED: generate.py `_output_generation_status()` emits `{task_id, status, url}` on completed; download.py writes to file and returns `{operation, artifact, output_path, status}` — VERIFIED from Python source]
 
 ### Pattern 4: CLI subcommand dispatch — extend switch/case
 
@@ -275,6 +293,7 @@ const savePath = join(vaultRoot, 'projects', slug, 'docs', 'notebooklm-answers',
 
 - **Passing question as a shell string:** Always pass question as last element of argv array to `spawnSync`. NEVER concatenate into a shell command string — `runNotebooklm` already prevents this.
 - **Assuming `--json` generates inline content:** `generate --wait --json` returns only `{task_id, status, url}` — not the text content. Must call `download {type} --json` separately.
+- **Assuming download returns content in JSON:** `download --json` writes content to a FILE and returns `{output_path}` in JSON. Must read file from `output_path`, NOT parse content from JSON body.
 - **sourceTitle in citations:** `ask --json` output does NOT include source titles in the `references` array — only `source_id`, `citation_number`, `cited_text`. Do not attempt to extract a title field that doesn't exist.
 - **Using `--new` flag for fresh conversation:** The `--new` flag does NOT exist on `notebooklm ask`. Starting fresh requires omitting `--conversation-id`. The `ask` command continues the last conversation by default unless given no conversation context.
 - **Retry inside generateArtifact wrapper:** D-12 says delegate retry to notebooklm-py via `--retry 2`. Do NOT implement wrapper-level retry for generate.
@@ -366,9 +385,34 @@ On failure:
 
 ## `notebooklm download {type} --json` Output Shape
 
-**Source:** `download.py` — output is not fully documented in source. The `--json` flag returns a dict per the generic download handler. [ASSUMED] — download `--json` output shape for text artifacts is unknown without live testing. It likely includes a `content` or `text` field.
+**RESOLVED** (verified from Python source code inspection of `download.py`):
 
-**Risk:** The `download report --json` output shape needs to be confirmed via a live test or inspection of `_artifacts.py`. The planner should include a Wave 0 task to run `notebooklm download report --json` against a real notebook (or inspect `_artifacts.py::download_report`) before implementing the content extraction.
+The `download` command writes content to a FILE on disk and returns JSON metadata via stdout:
+
+```json
+{
+  "operation": "download_single",
+  "artifact": {
+    "id": "artifact-uuid-5678",
+    "title": "Report Title",
+    "selection_reason": "latest"
+  },
+  "output_path": "/path/to/downloaded/report.md",
+  "status": "downloaded"
+}
+```
+
+**Key facts:**
+- Content is in the FILE at `output_path`, NOT in the JSON body
+- The file is written to the current working directory (cwd) by default
+- For text artifacts (report, quiz, etc.): read content via `readFileSync(output_path, 'utf8')`
+- For binary artifacts: `generateArtifact()` returns `content: null` per D-07
+
+**Implementation approach for text artifacts:**
+1. Create temp directory with `mkdtempSync`
+2. Run `notebooklm download {type} --json --latest -n {notebookId}` with `cwd: tmpDir`
+3. Read file content from `output_path` in the JSON response
+4. Clean up temp directory in `finally` block
 
 **For binary types (audio, video, cinematic-video, slide-deck, infographic):** `generateArtifact()` returns `content: null` per D-07. The CLI's `runGenerate()` can optionally call `notebooklm download {type}` (not `--json`, just `stdout`) to save to disk (D-16).
 
@@ -444,6 +488,8 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 
 [ASSUMED] — option (1) injectable `_runFn` is the pattern least invasive to the existing architecture.
 
+**Note for download test with `_runFn`:** Since download writes to a file, tests using `_runFn` should create a real temp file and return `{output_path: tempFilePath}` in the mock response so the `readFileSync(output_path)` call succeeds.
+
 ---
 
 ## Common Pitfalls
@@ -463,10 +509,10 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 **Why it happens:** `--wait` mode in notebooklm-py polls until completion. No streaming.
 **How to avoid:** The CLI `runGenerate()` should print "Generating {type}... (this may take up to 5 minutes)" before calling the binary.
 
-### Pitfall 4: `download {type} --json` output shape is unconfirmed
-**What goes wrong:** Assuming `{content: "..."}` in download JSON output and getting a KeyError/undefined.
-**Why it happens:** The download.py source does not clearly emit a `content` field in `--json` mode — it writes to a file by default.
-**How to avoid:** Include a Wave 0 verification step: run `notebooklm download report --json` against a real notebook (or inspect `_artifacts.py::download_report` return value) and record the exact JSON shape.
+### Pitfall 4: `download {type} --json` writes to FILE, not inline content — RESOLVED
+**What goes wrong:** Assuming `{content: "..."}` in download JSON output and getting undefined.
+**Why it happens:** The download command writes content to a file on disk. The `--json` output contains `{output_path}` pointing to the file, NOT the content itself.
+**How to avoid:** Use `mkdtempSync` to create a temp directory, run download with `cwd: tmpDir`, read the file from `dlResult.output_path` via `readFileSync`, clean up tmpDir in a `finally` block. [RESOLVED: verified from Python source]
 
 ### Pitfall 5: Error code mismatch for generate rate limits
 **What goes wrong:** Treating `GENERATION_FAILED` as a permanent error when it may be a rate limit.
@@ -486,9 +532,9 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 
 | Dependency | Required By | Available | Version | Fallback |
 |------------|------------|-----------|---------|----------|
-| `notebooklm` binary | askNotebook, generateArtifact | ✓ | 0.3.4 | `NotebooklmNotInstalledError` (lazy detection) |
-| `node:test` | tests | ✓ | native | — |
-| `node:fs`, `node:path`, `node:os` | lib, tests | ✓ | native | — |
+| `notebooklm` binary | askNotebook, generateArtifact | Yes | 0.3.4 | `NotebooklmNotInstalledError` (lazy detection) |
+| `node:test` | tests | Yes | native | — |
+| `node:fs`, `node:path`, `node:os` | lib, tests | Yes | native | — |
 
 `notebooklm` binary detected at `/opt/anaconda3/bin/notebooklm`. [VERIFIED: `which notebooklm`]
 
@@ -507,14 +553,14 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 ### Phase Requirements → Test Map
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| QUERY-01 | `askNotebook()` returns `{answer, citations}` | unit | `node --test tests/notebooklm.test.mjs` | ✅ (extend existing) |
-| QUERY-01 | `askNotebook()` retries 2x on rate limit | unit | same | ✅ |
-| QUERY-01 | `askNotebook()` throws TypeError on bad args | unit | same | ✅ |
-| QUERY-02 | `main(['ask', 'question'])` dispatches to runAsk | unit | `node --test tests/notebooklm-cli.test.mjs` | ✅ (extend existing) |
-| QUERY-02 | `--save` writes file to correct path | unit | same | ✅ |
-| QUERY-02 | `--notebook` flag overrides manifest resolution | unit | same | ✅ |
-| QUERY-03 | `generateArtifact()` returns `{artifactId, content, type}` | unit | `node --test tests/notebooklm.test.mjs` | ✅ (extend existing) |
-| QUERY-03 | `generateArtifact()` returns `content: null` for binary types | unit | same | ✅ |
+| QUERY-01 | `askNotebook()` returns `{answer, citations}` | unit | `node --test tests/notebooklm.test.mjs` | Yes (extend existing) |
+| QUERY-01 | `askNotebook()` retries 2x on rate limit | unit | same | Yes |
+| QUERY-01 | `askNotebook()` throws TypeError on bad args | unit | same | Yes |
+| QUERY-02 | `main(['ask', 'question'])` dispatches to runAsk | unit | `node --test tests/notebooklm-cli.test.mjs` | Yes (extend existing) |
+| QUERY-02 | `--save` writes file to correct path | unit | same | Yes |
+| QUERY-02 | `--notebook` flag overrides manifest resolution | unit | same | Yes |
+| QUERY-03 | `generateArtifact()` returns `{artifactId, content, type}` | unit | `node --test tests/notebooklm.test.mjs` | Yes (extend existing) |
+| QUERY-03 | `generateArtifact()` returns `content: null` for binary types | unit | same | Yes |
 
 ### Sampling Rate
 - **Per task commit:** `node --test tests/notebooklm.test.mjs tests/notebooklm-cli.test.mjs`
@@ -522,7 +568,7 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 - **Phase gate:** Full suite green before `/gsd-verify-work`
 
 ### Wave 0 Gaps
-- [ ] `notebooklm download report --json` output shape — **verify live** or inspect `_artifacts.py::download_report`. This blocks the `content` extraction implementation for text artifacts.
+- [x] `notebooklm download report --json` output shape — **RESOLVED**: verified from Python source. Returns `{operation, artifact, output_path, status}`. Content is in the FILE at `output_path`, not in JSON.
 - No new test files needed — extend `tests/notebooklm.test.mjs` and `tests/notebooklm-cli.test.mjs`.
 
 ---
@@ -562,7 +608,7 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 
 | # | Claim | Section | Risk if Wrong |
 |---|-------|---------|---------------|
-| A1 | `notebooklm download report --json` emits `{content: "..."}` field | Code Examples (Pattern 3), Pitfall 4 | If download `--json` writes to file instead of stdout, `generateArtifact` needs a different content-retrieval strategy (e.g., write to tmpfile, read, delete) |
+| A1 | ~~`notebooklm download report --json` emits `{content: "..."}` field~~ **RESOLVED:** download writes to FILE and returns `{output_path}` in JSON. Implementation uses mkdtempSync + readFileSync + rmSync. | Code Examples (Pattern 3), Pitfall 4 | N/A — resolved |
 | A2 | Injectable `_runFn` parameter is cleaner than splitting `generateArtifact` for test control | Architecture Patterns (Fake Binary section) | If planner prefers a different test isolation approach, no functional impact |
 | A3 | Retry backoff for `askNotebook` is 1s → 2s (from D-11 spec) | Pattern 2 | These values are from D-11 decision, not from an existing utility — planner can adjust |
 | A4 | `sourceTitle: null` is acceptable for v1 citations (D-01 spec says `sourceTitle` but `ask --json` doesn't emit it) | ask output shape section | If user expects titles, a `listSources()` enrichment pass would need to be added — breaks single-function simplicity |
@@ -571,10 +617,10 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 
 ## Open Questions
 
-1. **`notebooklm download {type} --json` output shape**
-   - What we know: `download.py` has a `--json` flag; `json_output_response` is imported
-   - What's unclear: Whether `--json` mode writes to stdout or only to file; what the JSON fields are
-   - Recommendation: Wave 0 task — run `notebooklm download report --json -n <test-nb>` live and capture output. If it only writes to file, `generateArtifact` for text types must write to a temp file and read it back.
+1. **`notebooklm download {type} --json` output shape** — **RESOLVED**
+   - Verified from Python source: download writes content to FILE, returns `{operation, artifact:{id,title,selection_reason}, output_path, status}` in JSON stdout
+   - Content is at `output_path`, NOT inline in JSON
+   - Implementation: `mkdtempSync` -> run download with `cwd: tmpDir` -> `readFileSync(output_path, 'utf8')` -> `rmSync(tmpDir)`
 
 2. **Project slug detection for D-13**
    - What we know: Manifest stores `projects[slug].notebook_id`; slug = directory name under `vault/projects/`
@@ -595,9 +641,10 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 - `/opt/anaconda3/lib/python3.12/site-packages/notebooklm/types.py` — `AskResult`, `ChatReference`, `GenerationStatus` dataclass fields [VERIFIED]
 - `notebooklm ask --help`, `notebooklm generate report --help`, `notebooklm generate quiz --help`, `notebooklm download --help` — CLI flags [VERIFIED: live binary]
 - `tests/fixtures/notebooklm-stub.sh` + `tests/notebooklm.test.mjs` — Fake binary approach [VERIFIED]
+- `/opt/anaconda3/lib/python3.12/site-packages/notebooklm/cli/download.py` — Download command writes to file, returns `{operation, artifact, output_path, status}` [VERIFIED from source]
 
 ### Tertiary (LOW confidence — needs runtime verification)
-- `notebooklm download report --json` output shape — NOT inspected; `download.py` source inspected only partially [ASSUMED]
+- (None remaining — all open questions resolved)
 
 ---
 
@@ -607,7 +654,7 @@ For `generateArtifact` tests, two stub calls are needed (generate then download)
 - Standard stack: HIGH — no new deps, existing patterns reused
 - ask JSON shape: HIGH — verified from Python source (types.py AskResult + chat.py json path)
 - generate JSON shape: HIGH — verified from generate.py `_output_generation_status()`
-- download JSON shape: LOW — not verified; Wave 0 task required
+- download JSON shape: HIGH — verified from download.py source; writes to file, returns `{output_path}` in JSON
 - Fake binary test approach: HIGH — verified from existing test code
 - D-13 notebook ID resolution: HIGH — manifest structure verified
 
