@@ -1,12 +1,15 @@
 /**
- * tests/install.test.mjs — NotebookLM wizard step in bin/install.mjs (NBLM-26)
+ * tests/install.test.mjs — NotebookLM wizard step and install module tests (NBLM-26)
  *
  * Strategy:
  *   1. Structural (grep-based) tests verify the wizard body contains the required
  *      patterns and is free of forbidden patterns (ADR-0001, D-09, D-10, D-11).
+ *      Each test reads from the correct lib/install/*.mjs module (not bin/install.mjs).
  *   2. Functional tests invoke the exported installNotebookLM() function directly
  *      with a PATH-prefixed fake binary directory. Prompts are bypassed by a
  *      minimal env-var-driven answer file injected via the test environment.
+ *   3. Importability smoke tests (D-08) verify all 13 lib/install/*.mjs modules
+ *      export the expected functions.
  */
 
 import { describe, it, before } from 'node:test';
@@ -24,66 +27,68 @@ const projectRoot = join(__dirname, '..');
 const installMjsPath = join(projectRoot, 'bin', 'install.mjs');
 const stubSh = join(projectRoot, 'tests', 'fixtures', 'notebooklm-sync-stub.sh');
 
-// Read the install.mjs source once for structural tests.
-const installSource = readFileSync(installMjsPath, 'utf8');
+// Read module sources for structural tests — each test suite reads the correct module.
+const notebooklmSource = readFileSync(join(projectRoot, 'lib', 'install', 'notebooklm.mjs'), 'utf8');
+const gitConventionsSource = readFileSync(join(projectRoot, 'lib', 'install', 'git-conventions.mjs'), 'utf8');
+const hooksSource = readFileSync(join(projectRoot, 'lib', 'install', 'hooks.mjs'), 'utf8');
 
 // ── Structural tests ──────────────────────────────────────────────
 
-describe('bin/install.mjs — structural integrity (NBLM-26 + ADR-0001)', () => {
+describe('lib/install/notebooklm.mjs — structural integrity (NBLM-26 + ADR-0001)', () => {
 
   it('contains no NOTEBOOKLM_API_KEY reference (ADR-0001 credential-leak guard)', () => {
-    const count = (installSource.match(/NOTEBOOKLM_API_KEY/g) || []).length;
-    assert.equal(count, 0, 'NOTEBOOKLM_API_KEY must not appear in install.mjs');
+    const count = (notebooklmSource.match(/NOTEBOOKLM_API_KEY/g) || []).length;
+    assert.equal(count, 0, 'NOTEBOOKLM_API_KEY must not appear in notebooklm.mjs');
   });
 
   it('contains no storage_state.json credential file access (ADR-0001)', () => {
-    const count = (installSource.match(/storage_state/g) || []).length;
-    assert.equal(count, 0, 'storage_state must not appear in install.mjs');
+    const count = (notebooklmSource.match(/storage_state/g) || []).length;
+    assert.equal(count, 0, 'storage_state must not appear in notebooklm.mjs');
   });
 
   it('uses spawnSync with notebooklm login and stdio inherit (D-10 exact invocation)', () => {
     assert.ok(
-      /spawnSync\s*\(\s*['"]notebooklm['"].*\[\s*['"]login['"]\s*\]/.test(installSource),
+      /spawnSync\s*\(\s*['"]notebooklm['"].*\[\s*['"]login['"]\s*\]/.test(notebooklmSource),
       'spawnSync("notebooklm", ["login"], ...) must be present',
     );
     assert.ok(
-      /stdio:\s*['"]inherit['"]/.test(installSource),
+      /stdio:\s*['"]inherit['"]/.test(notebooklmSource),
       "stdio: 'inherit' must be present for interactive login",
     );
   });
 
   it('offers pipx install as primary method (D-09)', () => {
     assert.ok(
-      installSource.includes('pipx install'),
+      notebooklmSource.includes('pipx install'),
       'pipx install must be the primary install command',
     );
   });
 
   it('offers pip install --user as fallback method (D-09)', () => {
     assert.ok(
-      installSource.includes('pip install --user') || installSource.includes('python3 -m pip install --user'),
+      notebooklmSource.includes('pip install --user') || notebooklmSource.includes('python3 -m pip install --user'),
       'pip install --user fallback must be present',
     );
   });
 
   it('calls auth check for verification after login (D-10 verify)', () => {
     assert.ok(
-      installSource.includes('auth check'),
+      notebooklmSource.includes('auth check'),
       'notebooklm auth check must be present in wizard',
     );
   });
 
   it('calls syncVault for optional first sync (D-11)', () => {
     assert.ok(
-      installSource.includes('syncVault'),
+      notebooklmSource.includes('syncVault'),
       'syncVault call must be present for first-sync step',
     );
   });
 
   it('handles SIGINT during login gracefully', () => {
     assert.ok(
-      installSource.includes("result.signal === 'SIGINT'") ||
-      installSource.includes('loginResult.signal'),
+      notebooklmSource.includes("result.signal === 'SIGINT'") ||
+      notebooklmSource.includes('loginResult.signal'),
       'SIGINT handling must be present for Ctrl+C during login',
     );
   });
@@ -91,8 +96,9 @@ describe('bin/install.mjs — structural integrity (NBLM-26 + ADR-0001)', () => 
   it('old --break-system-packages pattern removed from installNotebookLM (research finding #4)', () => {
     // The old installNotebookLM used --break-system-packages for notebooklm-py.
     // That pattern must be gone. (A separate occurrence for pyyaml is allowed.)
-    const nblmSection = installSource.match(
-      /async function installNotebookLM[\s\S]+?(?=\n\/\/ ──)/
+    // Match from function declaration to next section separator or end of file
+    const nblmSection = notebooklmSource.match(
+      /async function installNotebookLM[\s\S]+?(?=\n\/\/ ──|$)/
     );
     assert.ok(nblmSection, 'installNotebookLM function must exist');
     assert.ok(
@@ -104,85 +110,83 @@ describe('bin/install.mjs — structural integrity (NBLM-26 + ADR-0001)', () => 
   it('showInstructions NotebookLM block updated to post-wizard summary', () => {
     // Old placeholder: "notebooklm login" as a manual step instruction.
     // New: references to "notebooklm sync" and "notebooklm status" CLI commands.
+    // Note: these now live in lib/install/summary.mjs — check the full source set.
+    const summarySource = readFileSync(join(projectRoot, 'lib', 'install', 'summary.mjs'), 'utf8');
     assert.ok(
-      installSource.includes('notebooklm sync') && installSource.includes('notebooklm status'),
-      'showInstructions must reference sync and status commands (post-wizard summary)',
+      summarySource.includes('notebooklm sync') && summarySource.includes('notebooklm status'),
+      'summary.mjs must reference sync and status commands (post-wizard summary)',
     );
     // Old manual login instruction must be gone from showInstructions block.
-    // We check that the old "Opens browser for Google sign-in" line is removed.
     assert.ok(
-      !installSource.includes('Opens browser for Google sign-in'),
-      'Old manual login instruction must be removed from showInstructions',
+      !summarySource.includes('Opens browser for Google sign-in'),
+      'Old manual login instruction must be removed from summary.mjs',
     );
   });
 });
 
 // ── Git Conventions structural tests (GIT-08 / GIT-09 / GIT-10) ──
 
-describe('bin/install.mjs — git-conventions structural (GIT-08/GIT-09/GIT-10)', () => {
+describe('lib/install/git-conventions.mjs — structural (GIT-08/GIT-09/GIT-10)', () => {
 
-  it('imports from ../lib/git-scopes.mjs', () => {
+  it('imports from ../git-scopes.mjs', () => {
     assert.ok(
-      installSource.includes("from '../lib/git-scopes.mjs'"),
-      'install.mjs must import from ../lib/git-scopes.mjs',
+      gitConventionsSource.includes("from '../git-scopes.mjs'"),
+      'git-conventions.mjs must import from ../git-scopes.mjs',
     );
   });
 
   it('imports detectStack from git-scopes.mjs', () => {
     assert.ok(
-      installSource.includes('detectStack'),
-      'install.mjs must import and use detectStack',
+      gitConventionsSource.includes('detectStack'),
+      'git-conventions.mjs must import and use detectStack',
     );
   });
 
   it('imports installSkill from git-scopes.mjs', () => {
     assert.ok(
-      installSource.includes('installSkill'),
-      'install.mjs must import and use installSkill',
+      gitConventionsSource.includes('installSkill'),
+      'git-conventions.mjs must import and use installSkill',
     );
   });
 
   it('contains async function installGitConventions(', () => {
     assert.ok(
-      installSource.includes('async function installGitConventions('),
+      gitConventionsSource.includes('async function installGitConventions('),
       'installGitConventions must be defined as an async function',
     );
   });
 
   it('prints info when no projects mapped (empty projects path)', () => {
     assert.ok(
-      installSource.includes('No projects mapped'),
+      gitConventionsSource.includes('No projects mapped'),
       'installGitConventions must handle the empty-projects case gracefully',
     );
   });
 
   it('uses printCommitlintInstructions for commitlint (print-only, T-06-11)', () => {
     assert.ok(
-      installSource.includes('printCommitlintInstructions'),
+      gitConventionsSource.includes('printCommitlintInstructions'),
       'commitlint must be print-only via printCommitlintInstructions',
     );
   });
 
   it('does NOT call spawnSync npm install anywhere (T-06-11 elevation guard)', () => {
-    // Ensure no npm install subprocess is ever spawned
     assert.ok(
-      !installSource.includes("spawnSync('npm', ['install'"),
-      "spawnSync('npm', ['install'...) must never appear in install.mjs",
+      !gitConventionsSource.includes("spawnSync('npm', ['install'"),
+      "spawnSync('npm', ['install'...) must never appear in git-conventions.mjs",
     );
     assert.ok(
-      !installSource.includes('spawnSync("npm", ["install"'),
-      'spawnSync("npm", ["install"...) must never appear in install.mjs',
+      !gitConventionsSource.includes('spawnSync("npm", ["install"'),
+      'spawnSync("npm", ["install"...) must never appear in git-conventions.mjs',
     );
   });
 
   it('co_authored_by defaults to false via createDefaultConfig (GIT-08)', () => {
-    // createDefaultConfig sets co_authored_by: false — verify it is used (not overridden to true)
     assert.ok(
-      installSource.includes('createDefaultConfig'),
+      gitConventionsSource.includes('createDefaultConfig'),
       'createDefaultConfig must be called to build the default config',
     );
-    // Verify no hardcoded co_authored_by: true override in installGitConventions
-    const gcFn = installSource.match(/async function installGitConventions[\s\S]+?(?=\n\/\/ ──)/);
+    const gcFn = gitConventionsSource.match(/async function installGitConventions[\s\S]+/);
     assert.ok(gcFn, 'installGitConventions function must exist in source');
     assert.ok(
       !gcFn[0].includes('co_authored_by: true'),
@@ -191,7 +195,7 @@ describe('bin/install.mjs — git-conventions structural (GIT-08/GIT-09/GIT-10)'
   });
 
   it('commitlint prompt only appears when package.json exists (GIT-09)', () => {
-    const gcFn = installSource.match(/async function installGitConventions[\s\S]+?(?=\n\/\/ ──)/);
+    const gcFn = gitConventionsSource.match(/async function installGitConventions[\s\S]+/);
     assert.ok(gcFn, 'installGitConventions function must exist in source');
     assert.ok(
       gcFn[0].includes("'package.json'"),
@@ -203,21 +207,18 @@ describe('bin/install.mjs — git-conventions structural (GIT-08/GIT-09/GIT-10)'
 
 // ── WR-04: installSessionHook corrupt settings.json ──────────────
 
-describe('bin/install.mjs — installSessionHook corrupt settings.json (WR-04)', () => {
+describe('lib/install/hooks.mjs — installSessionHook corrupt settings.json (WR-04)', () => {
   it('settings.json JSON.parse catch block warns on corrupt JSON', () => {
-    // The JSON.parse catch must call warn — not be empty
-    // Pattern: try { settings = JSON.parse(...) } catch { warn(...) }
     assert.ok(
-      installSource.includes('settings.json is corrupt') ||
-      installSource.includes('corrupt') ||
-      (installSource.match(/JSON\.parse[\s\S]{0,200}catch\s*\{[\s\S]{0,100}warn/) !== null),
+      hooksSource.includes('settings.json is corrupt') ||
+      hooksSource.includes('corrupt') ||
+      (hooksSource.match(/JSON\.parse[\s\S]{0,200}catch\s*\{[\s\S]{0,100}warn/) !== null),
       'settings.json parse error must call warn in the catch block',
     );
   });
 
   it('installSessionHook returns early on corrupt settings.json (does not proceed)', () => {
-    // Verify there is a return statement in the catch/error handling path
-    const hookFn = installSource.match(/function installSessionHook[\s\S]+?(?=\n\/\/ ──|\nfunction |\nexport )/);
+    const hookFn = hooksSource.match(/function installSessionHook[\s\S]+/);
     assert.ok(hookFn, 'installSessionHook function must exist in source');
     assert.ok(
       hookFn[0].includes('return'),
@@ -228,7 +229,7 @@ describe('bin/install.mjs — installSessionHook corrupt settings.json (WR-04)',
 
 // ── Functional: no-python-no-pipx path ───────────────────────────
 
-describe('bin/install.mjs — installNotebookLM functional (no-python path)', () => {
+describe('lib/install/notebooklm.mjs — installNotebookLM functional (no-python path)', () => {
 
   it('returns false when neither pipx nor python3 available (no install possible)', async () => {
     // Build a restricted PATH that excludes pipx, python3, and notebooklm.
@@ -245,9 +246,10 @@ describe('bin/install.mjs — installNotebookLM functional (no-python path)', ()
     // printing the return value to stdout.
     const tmpDir = mkdtempSync(join(tmpdir(), 'install-test-'));
     try {
+      const notebooklmMjsPath = join(projectRoot, 'lib', 'install', 'notebooklm.mjs');
       const runnerPath = join(tmpDir, 'runner.mjs');
       writeFileSync(runnerPath, [
-        `import { installNotebookLM } from '${installMjsPath}';`,
+        `import { installNotebookLM } from '${notebooklmMjsPath}';`,
         `const result = await installNotebookLM('pip3', 1, 1);`,
         `process.stdout.write(String(result));`,
       ].join('\n'), 'utf8');
@@ -265,9 +267,6 @@ describe('bin/install.mjs — installNotebookLM functional (no-python path)', ()
 
       // With no pipx and no python3, installNotebookLM should return false
       // after printing "Neither pipx nor python3 detected."
-      // It may fail/crash if prompt() is called without a TTY — that's acceptable
-      // in the no-python path since it exits before the prompt.
-      // Primary check: either result is 'false' or process exited with a message about no python.
       const stdout = result.stdout || '';
       const stderr = result.stderr || '';
       assert.ok(
@@ -279,4 +278,80 @@ describe('bin/install.mjs — installNotebookLM functional (no-python path)', ()
       rmSync(tmpDir, { recursive: true, force: true });
     }
   });
+});
+
+// ── lib/install/ module importability (D-08) ─────────────────────
+
+describe('lib/install/ module importability (D-08)', () => {
+
+  it('lib/install/prereqs.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/prereqs.mjs');
+    assert.strictEqual(typeof m.printHeader, 'function');
+    assert.strictEqual(typeof m.checkPrerequisites, 'function');
+    assert.strictEqual(typeof m.getInstallHint, 'function');
+  });
+
+  it('lib/install/profile.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/profile.mjs');
+    assert.strictEqual(typeof m.collectProfile, 'function');
+  });
+
+  it('lib/install/projects.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/projects.mjs');
+    assert.strictEqual(typeof m.collectProjects, 'function');
+  });
+
+  it('lib/install/components.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/components.mjs');
+    assert.strictEqual(typeof m.selectComponents, 'function');
+  });
+
+  it('lib/install/plugins.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/plugins.mjs');
+    assert.strictEqual(typeof m.selectAndInstallPlugins, 'function');
+  });
+
+  it('lib/install/vault.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/vault.mjs');
+    assert.strictEqual(typeof m.getVaultPath, 'function');
+    assert.strictEqual(typeof m.installVault, 'function');
+  });
+
+  it('lib/install/gsd.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/gsd.mjs');
+    assert.strictEqual(typeof m.installGSD, 'function');
+  });
+
+  it('lib/install/skills.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/skills.mjs');
+    assert.strictEqual(typeof m.installObsidianSkills, 'function');
+    assert.strictEqual(typeof m.installCustomSkills, 'function');
+    assert.strictEqual(typeof m.installDeepResearch, 'function');
+  });
+
+  it('lib/install/notebooklm.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/notebooklm.mjs');
+    assert.strictEqual(typeof m.installNotebookLM, 'function');
+  });
+
+  it('lib/install/git-conventions.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/git-conventions.mjs');
+    assert.strictEqual(typeof m.installGitConventions, 'function');
+  });
+
+  it('lib/install/claude-md.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/claude-md.mjs');
+    assert.strictEqual(typeof m.generateClaudeMD, 'function');
+  });
+
+  it('lib/install/hooks.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/hooks.mjs');
+    assert.strictEqual(typeof m.installSessionHook, 'function');
+  });
+
+  it('lib/install/summary.mjs exports expected functions', async () => {
+    const m = await import('../lib/install/summary.mjs');
+    assert.strictEqual(typeof m.printSummary, 'function');
+  });
+
 });
