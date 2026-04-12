@@ -117,6 +117,90 @@ describe('bin/install.mjs — structural integrity (NBLM-26 + ADR-0001)', () => 
   });
 });
 
+// ── Git Conventions structural tests (GIT-08 / GIT-09 / GIT-10) ──
+
+describe('bin/install.mjs — git-conventions structural (GIT-08/GIT-09/GIT-10)', () => {
+
+  it('imports from ../lib/git-scopes.mjs', () => {
+    assert.ok(
+      installSource.includes("from '../lib/git-scopes.mjs'"),
+      'install.mjs must import from ../lib/git-scopes.mjs',
+    );
+  });
+
+  it('imports detectStack from git-scopes.mjs', () => {
+    assert.ok(
+      installSource.includes('detectStack'),
+      'install.mjs must import and use detectStack',
+    );
+  });
+
+  it('imports installSkill from git-scopes.mjs', () => {
+    assert.ok(
+      installSource.includes('installSkill'),
+      'install.mjs must import and use installSkill',
+    );
+  });
+
+  it('contains async function installGitConventions(', () => {
+    assert.ok(
+      installSource.includes('async function installGitConventions('),
+      'installGitConventions must be defined as an async function',
+    );
+  });
+
+  it('prints info when no projects mapped (empty projects path)', () => {
+    assert.ok(
+      installSource.includes('No projects mapped'),
+      'installGitConventions must handle the empty-projects case gracefully',
+    );
+  });
+
+  it('uses printCommitlintInstructions for commitlint (print-only, T-06-11)', () => {
+    assert.ok(
+      installSource.includes('printCommitlintInstructions'),
+      'commitlint must be print-only via printCommitlintInstructions',
+    );
+  });
+
+  it('does NOT call spawnSync npm install anywhere (T-06-11 elevation guard)', () => {
+    // Ensure no npm install subprocess is ever spawned
+    assert.ok(
+      !installSource.includes("spawnSync('npm', ['install'"),
+      "spawnSync('npm', ['install'...) must never appear in install.mjs",
+    );
+    assert.ok(
+      !installSource.includes('spawnSync("npm", ["install"'),
+      'spawnSync("npm", ["install"...) must never appear in install.mjs',
+    );
+  });
+
+  it('co_authored_by defaults to false via createDefaultConfig (GIT-08)', () => {
+    // createDefaultConfig sets co_authored_by: false — verify it is used (not overridden to true)
+    assert.ok(
+      installSource.includes('createDefaultConfig'),
+      'createDefaultConfig must be called to build the default config',
+    );
+    // Verify no hardcoded co_authored_by: true override in installGitConventions
+    const gcFn = installSource.match(/async function installGitConventions[\s\S]+?(?=\n\/\/ ──)/);
+    assert.ok(gcFn, 'installGitConventions function must exist in source');
+    assert.ok(
+      !gcFn[0].includes('co_authored_by: true'),
+      'installGitConventions must not hardcode co_authored_by: true',
+    );
+  });
+
+  it('commitlint prompt only appears when package.json exists (GIT-09)', () => {
+    const gcFn = installSource.match(/async function installGitConventions[\s\S]+?(?=\n\/\/ ──)/);
+    assert.ok(gcFn, 'installGitConventions function must exist in source');
+    assert.ok(
+      gcFn[0].includes("'package.json'"),
+      "commitlint prompt must be guarded by existsSync(...'package.json'...) check",
+    );
+  });
+
+});
+
 // ── Functional: no-python-no-pipx path ───────────────────────────
 
 describe('bin/install.mjs — installNotebookLM functional (no-python path)', () => {
