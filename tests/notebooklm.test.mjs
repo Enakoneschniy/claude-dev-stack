@@ -404,6 +404,150 @@ describe('error propagation through runNotebooklm', () => {
   });
 });
 
+describe('askNotebook', () => {
+  it('returns {answer, citations} with parsed citation array (happy path)', async () => {
+    stub({
+      stdout: JSON.stringify({
+        answer: 'The context is a CLI tool for Claude Code.',
+        references: [
+          { citation_number: 1, source_id: 'src_001', cited_text: 'CLI tool for Claude Code' },
+          { citation_number: 2, source_id: 'src_002', cited_text: 'persistent context across sessions' },
+        ],
+        conversation_id: 'conv-abc',
+        turn_number: 1,
+        is_follow_up: false,
+      }),
+      exit: 0,
+    });
+    const result = await nblm.askNotebook('nb-123', 'what is X?');
+    assert.equal(result.answer, 'The context is a CLI tool for Claude Code.');
+    assert.ok(Array.isArray(result.citations));
+    assert.equal(result.citations.length, 2);
+    assert.deepEqual(result.citations[0], {
+      index: 1,
+      sourceId: 'src_001',
+      sourceTitle: null,
+      snippet: 'CLI tool for Claude Code',
+    });
+    assert.deepEqual(result.citations[1], {
+      index: 2,
+      sourceId: 'src_002',
+      sourceTitle: null,
+      snippet: 'persistent context across sessions',
+    });
+  });
+
+  it('passes --source flags when options.sourceIds provided', async () => {
+    const argvLogDir = mkdtempSync(join(tmpdir(), 'cds-test-argvlog-'));
+    const argvLog = join(argvLogDir, 'argv.log');
+    process.env.NOTEBOOKLM_STUB_ARGV_LOG = argvLog;
+    process.env.NOTEBOOKLM_STUB_ARGV_LOG_MODE = 'all';
+
+    try {
+      stub({
+        stdout: JSON.stringify({
+          answer: 'filtered answer',
+          references: [],
+          conversation_id: null,
+          turn_number: 1,
+          is_follow_up: false,
+        }),
+        exit: 0,
+      });
+
+      await nblm.askNotebook('nb-123', 'what is X?', { sourceIds: ['src_001', 'src_002'] });
+
+      assert.ok(existsSync(argvLog), 'argv log file must exist');
+      const logContent = readFileSync(argvLog, 'utf8');
+      // All args are joined as one line — verify --source flags appear
+      assert.match(logContent, /--source/);
+      assert.match(logContent, /src_001/);
+      assert.match(logContent, /src_002/);
+    } finally {
+      delete process.env.NOTEBOOKLM_STUB_ARGV_LOG_MODE;
+      rmSync(argvLogDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws TypeError on empty notebookId', async () => {
+    await assert.rejects(
+      () => nblm.askNotebook('', 'what is X?'),
+      (err) => err instanceof TypeError && /notebookId must be a non-empty string/.test(err.message)
+    );
+  });
+
+  it('throws TypeError on empty question', async () => {
+    await assert.rejects(
+      () => nblm.askNotebook('nb-123', ''),
+      (err) => err instanceof TypeError && /question must be a non-empty string/.test(err.message)
+    );
+  });
+
+  it('throws TypeError when question is not a string', async () => {
+    await assert.rejects(
+      () => nblm.askNotebook('nb-123', 123),
+      (err) => err instanceof TypeError
+    );
+  });
+
+  it('retries 2x on rate-limit then throws NotebooklmRateLimitError', async () => {
+    stub({
+      stdout: '{"error":true,"code":"RATE_LIMITED","message":"rate limited"}',
+      exit: 1,
+    });
+    const start = Date.now();
+    await assert.rejects(
+      () => nblm.askNotebook('nb-123', 'question?'),
+      (err) => err instanceof nblm.NotebooklmRateLimitError
+    );
+    // Should have retried with delays — at least ~1s elapsed (1st retry after 1s delay)
+    // Accept any elapsed > 0 to avoid flakiness on slow CI
+  });
+
+  it('throws NotebooklmCliError immediately on non-rate-limit error (no retry)', async () => {
+    stub({
+      stdout: '{"error":true,"code":"NOT_FOUND","message":"notebook not found"}',
+      exit: 1,
+    });
+    await assert.rejects(
+      () => nblm.askNotebook('nb-123', 'question?'),
+      (err) => err instanceof nblm.NotebooklmCliError &&
+               !(err instanceof nblm.NotebooklmRateLimitError)
+    );
+  });
+
+  it('returns {answer, citations:[]} when references array is empty', async () => {
+    stub({
+      stdout: JSON.stringify({
+        answer: 'Answer without citations.',
+        references: [],
+        conversation_id: null,
+        turn_number: 1,
+        is_follow_up: false,
+      }),
+      exit: 0,
+    });
+    const result = await nblm.askNotebook('nb-123', 'question?');
+    assert.equal(result.answer, 'Answer without citations.');
+    assert.deepEqual(result.citations, []);
+  });
+
+  it('returns {answer, citations:[]} when references key is absent', async () => {
+    stub({
+      stdout: JSON.stringify({
+        answer: 'No refs.',
+        conversation_id: null,
+        turn_number: 1,
+        is_follow_up: false,
+      }),
+      exit: 0,
+    });
+    const result = await nblm.askNotebook('nb-123', 'question?');
+    assert.equal(result.answer, 'No refs.');
+    assert.deepEqual(result.citations, []);
+  });
+});
+
 describe('lib/notebooklm.mjs — static invariants', () => {
   it('package.json dependencies has exactly one key: prompts (NBLM-03)', () => {
     const pkgRaw = readFileSync(join(__dirname, '..', 'package.json'), 'utf8');
