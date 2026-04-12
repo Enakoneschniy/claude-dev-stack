@@ -47,7 +47,10 @@ Plans:
   2. User running `claude-dev-stack notebooklm ask "what did we decide about auth?"` sees the answer printed in the terminal with citations listed beneath it.
   3. User running the same command with `--save` gets the answer written to `vault/projects/{slug}/docs/notebooklm-answers/{timestamp}-{slug}.md` and sees a confirmation path in the output.
   4. User can call `generateArtifact(notebookId, 'report')` (or `mind-map` / `quiz`) from code and get back artifact content or a download path.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 11-01-PLAN.md — askNotebook() + generateArtifact() library functions with tests (QUERY-01, QUERY-03)
+- [ ] 11-02-PLAN.md — CLI ask/generate subcommands with --save, notebook ID resolution (QUERY-02)
 **UI hint**: no
 
 ---
@@ -137,7 +140,7 @@ Phase 13 — GSD Infrastructure (LOW risk)
 | Phase | Plans Complete | Status | Tests Added (est) | Completed |
 |-------|---------------|--------|-------------------|-----------|
 | 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
-| 11. NotebookLM Query API | 0/? | Not started | ~20 (~416 → ~436) | — |
+| 11. NotebookLM Query API | 0/2 | Planned | ~20 (~416 → ~436) | — |
 | 12. Sync Automation + install.mjs Refactor | 0/? | Not started | ~15 (~436 → ~451) | — |
 | 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
 
