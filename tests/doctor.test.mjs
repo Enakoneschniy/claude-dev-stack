@@ -361,3 +361,111 @@ describe('doctor — output-style plugin conflict detection (260411-u3g)', () =>
     );
   });
 });
+
+// ── Git Conventions section (GIT-08 / GIT-09 / GIT-10) ───────────
+
+/**
+ * Write a project-map.json into the vault pointing at dirPath → projectName.
+ */
+function writeProjectMap(vaultRoot, projectMap) {
+  writeFileSync(
+    join(vaultRoot, 'project-map.json'),
+    JSON.stringify({ projects: projectMap }, null, 2),
+    'utf8',
+  );
+}
+
+describe('doctor — Git Conventions section (GIT-08/GIT-09/GIT-10)', () => {
+  let tmpVault = null;
+  let tmpProjectDir = null;
+
+  afterEach(() => {
+    if (tmpVault && existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
+    if (tmpProjectDir && existsSync(tmpProjectDir)) rmSync(tmpProjectDir, { recursive: true, force: true });
+    tmpVault = null;
+    tmpProjectDir = null;
+  });
+
+  it('warns for missing .claude/git-scopes.json on existing project', () => {
+    tmpVault = makeTempVault();
+    tmpProjectDir = mkdtempSync(join(tmpdir(), 'doctor-git-proj-'));
+    writeProjectMap(tmpVault, { [tmpProjectDir]: 'test-project' });
+
+    const result = runDoctor({ excludeNblm: true, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('git-scopes.json missing'),
+      `Expected "git-scopes.json missing" in stdout.\nGot: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('claude-dev-stack scopes init'),
+      `Expected "claude-dev-stack scopes init" guidance.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('shows OK for valid .claude/git-scopes.json', () => {
+    tmpVault = makeTempVault();
+    tmpProjectDir = mkdtempSync(join(tmpdir(), 'doctor-git-proj-'));
+    // Create .claude/ directory and write a valid git-scopes.json
+    mkdirSync(join(tmpProjectDir, '.claude'), { recursive: true });
+    writeFileSync(
+      join(tmpProjectDir, '.claude', 'git-scopes.json'),
+      JSON.stringify({ version: 1, scopes: ['core', 'api'], main_branch: 'main' }, null, 2),
+      'utf8',
+    );
+    writeProjectMap(tmpVault, { [tmpProjectDir]: 'test-project' });
+
+    const result = runDoctor({ excludeNblm: true, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('git-scopes.json (2 scopes)'),
+      `Expected "git-scopes.json (2 scopes)" in stdout.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('warns for invalid (schema-violating) .claude/git-scopes.json', () => {
+    tmpVault = makeTempVault();
+    tmpProjectDir = mkdtempSync(join(tmpdir(), 'doctor-git-proj-'));
+    mkdirSync(join(tmpProjectDir, '.claude'), { recursive: true });
+    // version: 99 is unknown — validateScopes returns invalid
+    writeFileSync(
+      join(tmpProjectDir, '.claude', 'git-scopes.json'),
+      JSON.stringify({ version: 99, scopes: [] }),
+      'utf8',
+    );
+    writeProjectMap(tmpVault, { [tmpProjectDir]: 'test-project' });
+
+    const result = runDoctor({ excludeNblm: true, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('invalid'),
+      `Expected "invalid" in stdout.\nGot: ${result.stdout}`,
+    );
+    assert.ok(
+      result.stdout.includes('claude-dev-stack scopes init'),
+      `Expected guidance.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('skips gracefully when no project-map.json exists', () => {
+    // makeTempVault() does NOT write project-map.json
+    tmpVault = makeTempVault();
+
+    const result = runDoctor({ excludeNblm: true, vaultPath: tmpVault });
+
+    assert.ok(
+      result.stdout.includes('No project-map.json'),
+      `Expected "No project-map.json" in stdout.\nGot: ${result.stdout}`,
+    );
+  });
+
+  it('doctor exits 0 even when git-scopes.json is missing', () => {
+    tmpVault = makeTempVault();
+    tmpProjectDir = mkdtempSync(join(tmpdir(), 'doctor-git-proj-'));
+    writeProjectMap(tmpVault, { [tmpProjectDir]: 'test-project' });
+
+    const result = runDoctor({ excludeNblm: true, vaultPath: tmpVault });
+
+    assert.equal(result.status, 0, `Expected exit 0, got ${result.status}`);
+  });
+});
