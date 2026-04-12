@@ -196,24 +196,18 @@ function withStubClaudeMcp(jsonOutput, exitCode, fn) {
 }
 
 describe('checkNotionMcp', () => {
-  test('returns found=true when notion entry is in mcp list JSON array', async () => {
+  test('returns found=true when notion appears in plaintext mcp list', async () => {
     const { checkNotionMcp } = await import('../lib/doctor.mjs');
-    const mcpJson = JSON.stringify([
-      { name: 'github', command: 'github-mcp' },
-      { name: 'notion', command: 'notion-mcp' },
-    ]);
-    const result = withStubClaudeMcp(mcpJson, 0, () => checkNotionMcp());
+    const output = 'claude.ai Notion: https://mcp.notion.com/mcp - ✓ Connected\nclaude.ai GitHub: https://github.com - ✓ Connected';
+    const result = withStubClaudeMcp(output, 0, () => checkNotionMcp());
     assert.equal(result.found, true);
     assert.equal(result.error, undefined);
   });
 
-  test('returns found=false when no notion entry in mcp list', async () => {
+  test('returns found=false when notion not in mcp list', async () => {
     const { checkNotionMcp } = await import('../lib/doctor.mjs');
-    const mcpJson = JSON.stringify([
-      { name: 'github', command: 'github-mcp' },
-      { name: 'filesystem', command: 'fs-mcp' },
-    ]);
-    const result = withStubClaudeMcp(mcpJson, 0, () => checkNotionMcp());
+    const output = 'claude.ai GitHub: https://github.com - ✓ Connected\nclaude.ai Slack: https://slack.com - ✓ Connected';
+    const result = withStubClaudeMcp(output, 0, () => checkNotionMcp());
     assert.equal(result.found, false);
     assert.equal(result.error, undefined);
   });
@@ -225,10 +219,10 @@ describe('checkNotionMcp', () => {
     assert.equal(result.error, 'exec_failed');
   });
 
-  test('returns error=exec_failed when mcp list returns invalid JSON', async () => {
+  test('returns found=false on empty output', async () => {
     const { checkNotionMcp } = await import('../lib/doctor.mjs');
-    const result = withStubClaudeMcp('not valid json at all', 0, () => checkNotionMcp());
+    const result = withStubClaudeMcp('', 0, () => checkNotionMcp());
     assert.equal(result.found, false);
-    assert.equal(result.error, 'exec_failed');
+    assert.equal(result.error, undefined);
   });
 });
