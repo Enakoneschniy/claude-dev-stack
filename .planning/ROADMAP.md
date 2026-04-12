@@ -61,7 +61,11 @@ Plans:
   2. If sync fails during session end, the session-end hook exits 0 (non-blocking) and a warn-level message appears in the log — Claude's session end is never interrupted by a sync failure.
   3. `bin/install.mjs` wizard runs identically before and after the refactor — all existing interactive flows, prompts, and defaults are preserved. No wizard behavior changes.
   4. Each wizard section extracted from `bin/install.mjs` is a separately importable function in its own module — utility functions duplicated from `lib/shared.mjs` are removed from install.mjs and the shared version is imported instead.
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 12-01-PLAN.md — SYNC-01 verification + structural regression tests
+- [ ] 12-02-PLAN.md — Extract 13 wizard modules from install.mjs into lib/install/
+- [ ] 12-03-PLAN.md — Rewrite bin/install.mjs as thin orchestrator + update tests
 
 ---
 
@@ -138,7 +142,7 @@ Phase 13 — GSD Infrastructure (LOW risk)
 |-------|---------------|--------|-------------------|-----------|
 | 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
 | 11. NotebookLM Query API | 0/? | 2/2 | Complete    | 2026-04-12 |
-| 12. Sync Automation + install.mjs Refactor | 0/? | Not started | ~15 (~436 → ~451) | — |
+| 12. Sync Automation + install.mjs Refactor | 0/3 | Not started | ~15 (~436 → ~451) | — |
 | 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
 
 **Total plans (estimated)**: TBD (plan counts filled during `/gsd-plan-phase`)
