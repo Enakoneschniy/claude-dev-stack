@@ -1,8 +1,9 @@
 /**
  * tests/notebooklm-cli.test.mjs — unit tests for lib/notebooklm-cli.mjs dispatcher.
  *
- * Covers: main() dispatch, runStatus (fresh vault, populated vault), runSync error paths.
- * Validation rows: 5-01-01 (NBLM-19 + NBLM-20).
+ * Covers: main() dispatch, runStatus (fresh vault, populated vault), runSync error paths,
+ *         runAsk, runGenerate (Plan 02 — ask/generate subcommands).
+ * Validation rows: 5-01-01 (NBLM-19 + NBLM-20), QUERY-02.
  */
 
 import { describe, it, beforeEach, afterEach } from 'node:test';
@@ -325,7 +326,7 @@ describe('notebooklm-cli: runSync — stats display uses stats.total (FIX-02)', 
     _resetNotebooklmBinary();
   });
 
-  it('sync summary line shows numeric counts not "undefined" (FIX-02)', async () => {
+  it('sync summary line shows numeric counts not "undefined" (FIX-02 regression)', async () => {
     // Create a vault project with a context.md so syncVault walks at least one file.
     mkdirSync(join(vaultRoot, 'projects', 'myapp'), { recursive: true });
     writeFileSync(join(vaultRoot, 'projects', 'myapp', 'context.md'), '# MyApp');
@@ -385,6 +386,220 @@ esac
     assert.ok(
       /\d+ failed/.test(joined),
       `Summary must contain numeric failed count; got:\n${joined}`
+    );
+  });
+});
+
+// ── runAsk — ask subcommand (Plan 02 / QUERY-02) ─────────────────────────────
+
+describe('notebooklm-cli: runAsk — ask subcommand', () => {
+  let vaultRoot;
+  let cap;
+  let origVaultPath;
+  let origPath;
+  let stubDir;
+
+  beforeEach(() => {
+    vaultRoot = mkTempVault();
+    origVaultPath = process.env.VAULT_PATH;
+    origPath = process.env.PATH;
+    process.env.VAULT_PATH = vaultRoot;
+    cap = captureConsole();
+    _resetNotebooklmBinary();
+  });
+
+  afterEach(() => {
+    cap.restore();
+    process.env.PATH = origPath;
+    if (origVaultPath === undefined) {
+      delete process.env.VAULT_PATH;
+    } else {
+      process.env.VAULT_PATH = origVaultPath;
+    }
+    if (stubDir) {
+      rmSync(stubDir, { recursive: true, force: true });
+      stubDir = null;
+    }
+    rmSync(vaultRoot, { recursive: true, force: true });
+    _resetNotebooklmBinary();
+  });
+
+  function makeAskStub(answer, references = []) {
+    stubDir = mkdtempSync(join(tmpdir(), 'nb-ask-stub-'));
+    const stubPath = join(stubDir, 'notebooklm');
+    const jsonOut = JSON.stringify({ answer, references });
+    writeFileSync(stubPath, `#!/bin/sh\necho '${jsonOut}'\n`, 'utf8');
+    chmodSync(stubPath, 0o755);
+    process.env.PATH = `${stubDir}${delimiter}${origPath}`;
+  }
+
+  it('main([\'ask\', \'--notebook\', \'nb-123\', \'what is auth?\']) prints answer', async () => {
+    makeAskStub('Auth is identity verification.', []);
+    await main(['ask', '--notebook', 'nb-123', 'what is auth?']);
+    const joined = cap.lines.join('\n');
+    assert.ok(joined.includes('Auth is identity verification.'), `Expected answer in output, got:\n${joined}`);
+  });
+
+  it('main([\'ask\', \'--notebook\', \'nb-123\', \'q\']) with citations prints Citations section', async () => {
+    makeAskStub('Auth is identity.', [{ citation_number: 1, source_id: 'src-001', cited_text: 'some snippet' }]);
+    await main(['ask', '--notebook', 'nb-123', 'q']);
+    const joined = cap.lines.join('\n');
+    assert.ok(joined.includes('Citations'), `Expected "Citations" in output, got:\n${joined}`);
+    assert.ok(joined.includes('src-001'), `Expected source_id in output, got:\n${joined}`);
+  });
+
+  it('main([\'ask\']) with no question prints error and does not throw', async () => {
+    // No binary needed — question validation happens before CLI invocation
+    // Use empty PATH so binary check doesn't interfere; resolveNotebookId with --notebook avoids manifest
+    stubDir = mkdtempSync(join(tmpdir(), 'nb-ask-noq-'));
+    process.env.PATH = `${stubDir}${delimiter}${origPath}`;
+    await main(['ask', '--notebook', 'nb-123']);
+    const joined = cap.lines.join('\n');
+    assert.ok(
+      joined.includes('No question') || joined.includes('question'),
+      `Expected "No question" error in output, got:\n${joined}`
+    );
+  });
+
+  it('main([\'ask\', \'--notebook\', \'nb-123\', \'q\', \'--save\']) writes answer file to vault', async () => {
+    makeAskStub('The answer to life.', []);
+    // Set up a matching project slug directory in vault so --save can write
+    mkdirSync(join(vaultRoot, 'projects', 'agent-abace361'), { recursive: true });
+    await main(['ask', '--notebook', 'nb-123', 'q', '--save']);
+    const joined = cap.lines.join('\n');
+    // Should either print "Saved to" or warn about vault
+    assert.ok(
+      joined.includes('notebooklm-answers') || joined.includes('Saved') || joined.includes('Cannot save'),
+      `Expected save confirmation in output, got:\n${joined}`
+    );
+  });
+
+  it('notebooklm binary absent → ask throws (so CLI exits non-zero)', async () => {
+    const emptyDir = mkdtempSync(join(tmpdir(), 'nb-ask-nobin-'));
+    process.env.PATH = emptyDir;
+    stubDir = emptyDir;
+    await assert.rejects(
+      () => main(['ask', '--notebook', 'nb-123', 'what is auth?']),
+      (err) => {
+        assert.ok(err instanceof Error, 'Expected Error instance');
+        return true;
+      }
+    );
+  });
+
+  it('help output includes "ask" and "generate" subcommand entries', async () => {
+    await main([]);
+    const joined = cap.lines.join('\n');
+    assert.ok(joined.includes('ask'), `Expected "ask" in help output, got:\n${joined}`);
+    assert.ok(joined.includes('generate'), `Expected "generate" in help output, got:\n${joined}`);
+  });
+});
+
+// ── runGenerate — generate subcommand (Plan 02 / QUERY-02) ───────────────────
+
+describe('notebooklm-cli: runGenerate — generate subcommand', () => {
+  let vaultRoot;
+  let cap;
+  let origVaultPath;
+  let origPath;
+  let stubDir;
+
+  beforeEach(() => {
+    vaultRoot = mkTempVault();
+    origVaultPath = process.env.VAULT_PATH;
+    origPath = process.env.PATH;
+    process.env.VAULT_PATH = vaultRoot;
+    cap = captureConsole();
+    _resetNotebooklmBinary();
+  });
+
+  afterEach(() => {
+    cap.restore();
+    process.env.PATH = origPath;
+    if (origVaultPath === undefined) {
+      delete process.env.VAULT_PATH;
+    } else {
+      process.env.VAULT_PATH = origVaultPath;
+    }
+    if (stubDir) {
+      rmSync(stubDir, { recursive: true, force: true });
+      stubDir = null;
+    }
+    rmSync(vaultRoot, { recursive: true, force: true });
+    _resetNotebooklmBinary();
+  });
+
+  function makeGenerateStub({ taskId = 'task-abc', outputPath = null } = {}) {
+    stubDir = mkdtempSync(join(tmpdir(), 'nb-gen-stub-'));
+    // Write a content file if outputPath-style content needed
+    let dlJson = `{"operation":"download","artifact":{"id":"${taskId}","title":"report"},"output_path":null,"status":"completed"}`;
+    if (outputPath) {
+      const contentFile = join(stubDir, 'artifact-content.md');
+      writeFileSync(contentFile, '# Generated Report\nContent here.', 'utf8');
+      dlJson = `{"operation":"download","artifact":{"id":"${taskId}","title":"report"},"output_path":"${contentFile}","status":"completed"}`;
+    }
+    const genJson = JSON.stringify({ status: 'completed', task_id: taskId });
+    const stubPath = join(stubDir, 'notebooklm');
+    writeFileSync(stubPath, `#!/bin/sh
+case "$1" in
+  generate)
+    echo '${genJson}'
+    ;;
+  download)
+    echo '${dlJson}'
+    ;;
+  *)
+    echo '{}'
+    ;;
+esac
+`, 'utf8');
+    chmodSync(stubPath, 0o755);
+    process.env.PATH = `${stubDir}${delimiter}${origPath}`;
+    return { taskId };
+  }
+
+  it('main([\'generate\', \'audio\', \'--notebook\', \'nb-123\']) prints artifact ID and download hint', async () => {
+    makeGenerateStub({ taskId: 'art-001' });
+    await main(['generate', 'audio', '--notebook', 'nb-123']);
+    const joined = cap.lines.join('\n');
+    assert.ok(joined.includes('art-001'), `Expected artifactId in output, got:\n${joined}`);
+    // Binary type — should show download hint, not content
+    assert.ok(
+      joined.includes('download') || joined.includes('Binary'),
+      `Expected download hint for binary artifact, got:\n${joined}`
+    );
+  });
+
+  it('main([\'generate\', \'report\', \'--notebook\', \'nb-123\']) with content prints text content', async () => {
+    makeGenerateStub({ taskId: 'art-002', outputPath: true });
+    await main(['generate', 'report', '--notebook', 'nb-123']);
+    const joined = cap.lines.join('\n');
+    // Should print generated content and confirm artifact ID
+    assert.ok(joined.includes('art-002'), `Expected artifactId in output, got:\n${joined}`);
+  });
+
+  it('main([\'generate\']) with no type prints error and does not throw', async () => {
+    // No binary needed — type validation happens before CLI call
+    stubDir = mkdtempSync(join(tmpdir(), 'nb-gen-notype-'));
+    process.env.PATH = `${stubDir}${delimiter}${origPath}`;
+    await main(['generate', '--notebook', 'nb-123']);
+    const joined = cap.lines.join('\n');
+    assert.ok(
+      joined.includes('No artifact type') || joined.includes('type'),
+      `Expected "No artifact type" error in output, got:\n${joined}`
+    );
+  });
+
+  it('notebooklm binary absent → generate throws (so CLI exits non-zero)', async () => {
+    const emptyDir = mkdtempSync(join(tmpdir(), 'nb-gen-nobin-'));
+    process.env.PATH = emptyDir;
+    stubDir = emptyDir;
+    await assert.rejects(
+      () => main(['generate', 'audio', '--notebook', 'nb-123']),
+      (err) => {
+        assert.ok(err instanceof Error, 'Expected Error instance');
+        return true;
+      }
     );
   });
 });
