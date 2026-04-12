@@ -14,7 +14,7 @@
 
 ## Phases
 
-- [ ] **Phase 10: Bugfixes** — Fix v0.9 migration ADR path resolution, sync stats `undefined` display, and 5 Phase 6 code-review warnings
+- [x] **Phase 10: Bugfixes** — Fix v0.9 migration ADR path resolution, sync stats `undefined` display, and 5 Phase 6 code-review warnings (completed 2026-04-12)
 - [ ] **Phase 11: NotebookLM Query API** — `askNotebook()` + `generateArtifact()` in `lib/notebooklm.mjs`, `notebooklm ask` CLI command with optional `--save` to vault
 - [ ] **Phase 12: Sync Automation + install.mjs Refactor** — Session-end hook triggers background sync; `bin/install.mjs` split from 1287-line monolith into focused modules
 - [ ] **Phase 13: GSD Infrastructure** — ADR bridge (decisions auto-populated from `.planning/CONTEXT.md`) + parallel phase execution via TeamCreate
@@ -31,10 +31,10 @@
   1. User running `notebooklm migrate --execute` on a vault with ADR files titled `{slug}__ADR-NNNN-slug.md` sees the file resolved to `vault/projects/{slug}/decisions/NNNN-slug.md` (no `ADR-` in filename) with no "file not found" errors.
   2. User running `notebooklm sync` sees actual numeric counts in the output (`12 uploaded, 5 skipped, 0 failed`) instead of `undefined` for any field.
   3. `hasCommand()` uses `spawnSync` (not shell string interpolation), `--full` mode does not double-prompt for main branch, Go detector skips `node_modules/vendor/.git`, `installSessionHook` warns on corrupt settings.json, and `withStubBinary` is async-safe — all verified by `npm test` green.
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 10-01-PLAN.md — Fix ADR path resolution (FIX-01) and sync stats undefined (FIX-02)
-- [ ] 10-02-PLAN.md — Fix 5 code review warnings WR-01 through WR-05 (FIX-03)
+- [x] 10-01-PLAN.md — Fix ADR path resolution (FIX-01) and sync stats undefined (FIX-02)
+- [x] 10-02-PLAN.md — Fix 5 code review warnings WR-01 through WR-05 (FIX-03)
 
 ---
 
@@ -136,7 +136,7 @@ Phase 13 — GSD Infrastructure (LOW risk)
 
 | Phase | Plans Complete | Status | Tests Added (est) | Completed |
 |-------|---------------|--------|-------------------|-----------|
-| 10. Bugfixes | 0/2 | Planning complete | ~10 (406 → ~416) | — |
+| 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
 | 11. NotebookLM Query API | 0/? | Not started | ~20 (~416 → ~436) | — |
 | 12. Sync Automation + install.mjs Refactor | 0/? | Not started | ~15 (~436 → ~451) | — |
 | 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
