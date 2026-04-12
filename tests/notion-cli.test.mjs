@@ -173,14 +173,62 @@ describe('notion-cli', () => {
 
 // ── doctor Notion MCP detection tests ────────────────────────────────────────
 
+import { chmodSync } from 'fs';
+import { delimiter } from 'path';
+
+function withStubClaudeMcp(jsonOutput, exitCode, fn) {
+  const dir = mkdtempSync(join(tmpdir(), 'cds-claude-stub-'));
+  const stubPath = join(dir, 'claude');
+  const script = exitCode === 0
+    ? `#!/bin/sh\necho '${jsonOutput.replace(/'/g, "'\\''")}'`
+    : `#!/bin/sh\nexit 1`;
+  writeFileSync(stubPath, script, 'utf8');
+  chmodSync(stubPath, 0o755);
+
+  const originalPath = process.env.PATH;
+  process.env.PATH = dir + delimiter + originalPath;
+  try {
+    return fn();
+  } finally {
+    process.env.PATH = originalPath;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 describe('checkNotionMcp', () => {
-  test('returns found=true when notion entry present in mcp list', async () => {
+  test('returns found=true when notion entry is in mcp list JSON array', async () => {
     const { checkNotionMcp } = await import('../lib/doctor.mjs');
-    if (!checkNotionMcp) {
-      // If not exported separately, skip this test
-      return;
-    }
-    // Mock would be needed here — skip if no export
-    assert.ok(true);
+    const mcpJson = JSON.stringify([
+      { name: 'github', command: 'github-mcp' },
+      { name: 'notion', command: 'notion-mcp' },
+    ]);
+    const result = withStubClaudeMcp(mcpJson, 0, () => checkNotionMcp());
+    assert.equal(result.found, true);
+    assert.equal(result.error, undefined);
+  });
+
+  test('returns found=false when no notion entry in mcp list', async () => {
+    const { checkNotionMcp } = await import('../lib/doctor.mjs');
+    const mcpJson = JSON.stringify([
+      { name: 'github', command: 'github-mcp' },
+      { name: 'filesystem', command: 'fs-mcp' },
+    ]);
+    const result = withStubClaudeMcp(mcpJson, 0, () => checkNotionMcp());
+    assert.equal(result.found, false);
+    assert.equal(result.error, undefined);
+  });
+
+  test('returns error=exec_failed when mcp list command fails', async () => {
+    const { checkNotionMcp } = await import('../lib/doctor.mjs');
+    const result = withStubClaudeMcp('', 1, () => checkNotionMcp());
+    assert.equal(result.found, false);
+    assert.equal(result.error, 'exec_failed');
+  });
+
+  test('returns error=exec_failed when mcp list returns invalid JSON', async () => {
+    const { checkNotionMcp } = await import('../lib/doctor.mjs');
+    const result = withStubClaudeMcp('not valid json at all', 0, () => checkNotionMcp());
+    assert.equal(result.found, false);
+    assert.equal(result.error, 'exec_failed');
   });
 });
