@@ -7,9 +7,13 @@
 import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { mkdtempSync, rmSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const gitConventionsSource = readFileSync(join(__dirname, '..', 'lib', 'git-conventions.mjs'), 'utf8');
 
 import { main } from '../lib/git-conventions.mjs';
 import { makeTempGitRepo } from './helpers/fixtures.mjs';
@@ -190,5 +194,44 @@ describe('main(["unknown"])', () => {
     }
     const output = logs.join('\n');
     assert.ok(output.includes('unknown') || output.includes('Unknown'), 'should mention unknown subcommand');
+  });
+});
+
+// ── WR-02: --full mode structural integrity ───────────────────────────────────
+
+describe('cmdInit --full structural (WR-02)', () => {
+  it('prompts 1-4 are NOT wrapped in a useQuick conditional (always run)', () => {
+    // The old bug: const useQuick = quick || !full; if (useQuick) { prompts 1-4 }
+    // Fix: prompts 1-4 run unconditionally
+    assert.ok(
+      !gitConventionsSource.includes('useQuick'),
+      'useQuick variable must be removed — prompts 1-4 always run',
+    );
+  });
+
+  it('prompts 5-7 remain inside if (full) block', () => {
+    // Prompts 5-7 (ticket prefix, branch format, co-authored-by) are full-only
+    const fullBlock = gitConventionsSource.match(/if \(full\)\s*\{([\s\S]+?)\n  \}/);
+    assert.ok(fullBlock, 'if (full) block must exist for prompts 5-7');
+    assert.ok(
+      fullBlock[1].includes('ticketPrefix') || fullBlock[1].includes('ticket'),
+      'ticket prefix prompt must be inside if (full) block',
+    );
+    assert.ok(
+      fullBlock[1].includes('branchFormat') || fullBlock[1].includes('branch_format'),
+      'branch format prompt must be inside if (full) block',
+    );
+    assert.ok(
+      fullBlock[1].includes('coAuthoredBy') || fullBlock[1].includes('co_authored_by'),
+      'co-authored-by prompt must be inside if (full) block',
+    );
+  });
+
+  it('main branch prompt appears exactly once in cmdInit source', () => {
+    // Extract cmdInit function body to check for duplicated main branch prompt
+    const cmdInitFn = gitConventionsSource.match(/async function cmdInit[\s\S]+?(?=\n\/\/ ──|\nasync function )/);
+    assert.ok(cmdInitFn, 'cmdInit function must exist');
+    const matches = (cmdInitFn[0].match(/acceptBranch/g) || []).length;
+    assert.equal(matches, 2, `acceptBranch should appear exactly twice (prompt + check), found ${matches}`);
   });
 });

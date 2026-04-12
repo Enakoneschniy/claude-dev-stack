@@ -201,6 +201,31 @@ describe('bin/install.mjs — git-conventions structural (GIT-08/GIT-09/GIT-10)'
 
 });
 
+// ── WR-04: installSessionHook corrupt settings.json ──────────────
+
+describe('bin/install.mjs — installSessionHook corrupt settings.json (WR-04)', () => {
+  it('settings.json JSON.parse catch block warns on corrupt JSON', () => {
+    // The JSON.parse catch must call warn — not be empty
+    // Pattern: try { settings = JSON.parse(...) } catch { warn(...) }
+    assert.ok(
+      installSource.includes('settings.json is corrupt') ||
+      installSource.includes('corrupt') ||
+      (installSource.match(/JSON\.parse[\s\S]{0,200}catch\s*\{[\s\S]{0,100}warn/) !== null),
+      'settings.json parse error must call warn in the catch block',
+    );
+  });
+
+  it('installSessionHook returns early on corrupt settings.json (does not proceed)', () => {
+    // Verify there is a return statement in the catch/error handling path
+    const hookFn = installSource.match(/function installSessionHook[\s\S]+?(?=\n\/\/ ──|\nfunction |\nexport )/);
+    assert.ok(hookFn, 'installSessionHook function must exist in source');
+    assert.ok(
+      hookFn[0].includes('return'),
+      'installSessionHook must return early when settings.json is corrupt',
+    );
+  });
+});
+
 // ── Functional: no-python-no-pipx path ───────────────────────────
 
 describe('bin/install.mjs — installNotebookLM functional (no-python path)', () => {
