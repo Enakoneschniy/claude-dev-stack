@@ -548,6 +548,135 @@ describe('askNotebook', () => {
   });
 });
 
+describe('generateArtifact', () => {
+  it('returns {artifactId, content, type} for text artifact type (happy path)', async () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'test-notebooklm-'));
+    const fakeFilePath = join(tmpDir, 'report.md');
+    writeFileSync(fakeFilePath, 'Report content here');
+
+    let callCount = 0;
+    const _runFn = (args) => {
+      callCount++;
+      if (args[0] === 'generate') {
+        return { task_id: 'art-uuid', status: 'completed', url: null };
+      }
+      // download response — returns output_path pointing to real file
+      return {
+        operation: 'download_single',
+        artifact: { id: 'art-uuid', title: 'Report' },
+        output_path: fakeFilePath,
+        status: 'downloaded',
+      };
+    };
+
+    try {
+      const result = await nblm.generateArtifact('nb-123', 'report', { _runFn });
+      assert.equal(result.artifactId, 'art-uuid');
+      assert.equal(result.content, 'Report content here');
+      assert.equal(result.type, 'report');
+      assert.equal(callCount, 2); // generate + download
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns {artifactId, content:null, type} for binary artifact type (no download)', async () => {
+    let callCount = 0;
+    const _runFn = () => {
+      callCount++;
+      return { task_id: 'art-uuid', status: 'completed', url: null };
+    };
+    const result = await nblm.generateArtifact('nb-123', 'audio', { _runFn });
+    assert.equal(callCount, 1); // no download call for binary types
+    assert.equal(result.content, null);
+    assert.equal(result.artifactId, 'art-uuid');
+    assert.equal(result.type, 'audio');
+  });
+
+  it('throws TypeError on empty notebookId', async () => {
+    await assert.rejects(
+      () => nblm.generateArtifact('', 'report'),
+      (err) => err instanceof TypeError && /notebookId must be a non-empty string/.test(err.message)
+    );
+  });
+
+  it('throws TypeError on empty type', async () => {
+    await assert.rejects(
+      () => nblm.generateArtifact('nb-123', ''),
+      (err) => err instanceof TypeError && /type must be a non-empty string/.test(err.message)
+    );
+  });
+
+  it('throws NotebooklmCliError when generation status is not completed', async () => {
+    const _runFn = () => ({ task_id: 'art-uuid', status: 'failed', url: null });
+    await assert.rejects(
+      () => nblm.generateArtifact('nb-123', 'report', { _runFn }),
+      (err) => err instanceof nblm.NotebooklmCliError &&
+               /generation did not complete/.test(err.message)
+    );
+  });
+
+  it('passes --retry 2 and --wait in generate args', async () => {
+    let capturedArgs = null;
+    const _runFn = (args) => {
+      if (args[0] === 'generate') {
+        capturedArgs = args;
+        return { task_id: 'art-uuid', status: 'completed', url: null };
+      }
+      return { operation: 'download_single', artifact: { id: 'art-uuid' }, output_path: null, status: 'downloaded' };
+    };
+    // Use a binary type so no file read is attempted after download returns null output_path
+    await nblm.generateArtifact('nb-123', 'video', { _runFn });
+    assert.ok(capturedArgs, 'generate was called');
+    assert.ok(capturedArgs.includes('--wait'), '--wait flag must be present');
+    assert.ok(capturedArgs.includes('--retry'), '--retry flag must be present');
+    const retryIdx = capturedArgs.indexOf('--retry');
+    assert.equal(capturedArgs[retryIdx + 1], '2', '--retry must be followed by 2');
+  });
+
+  it('passes --wait in generate args', async () => {
+    let capturedArgs = null;
+    const _runFn = (args) => {
+      if (args[0] === 'generate') {
+        capturedArgs = args;
+        return { task_id: 'art-uuid', status: 'completed', url: null };
+      }
+      return { operation: 'download_single', artifact: { id: 'art-uuid' }, output_path: null, status: 'downloaded' };
+    };
+    await nblm.generateArtifact('nb-123', 'video', { _runFn });
+    assert.ok(capturedArgs.includes('--wait'), '--wait must be in generate args');
+  });
+
+  it('reads content from output_path file (not inline JSON content field)', async () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'test-notebooklm-'));
+    const fakeFilePath = join(tmpDir, 'quiz.md');
+    writeFileSync(fakeFilePath, 'Quiz content from file');
+
+    const _runFn = (args) => {
+      if (args[0] === 'generate') {
+        return { task_id: 'task-1', status: 'completed', url: null };
+      }
+      // Return content inline too — but wrapper must read from output_path file
+      return {
+        operation: 'download_single',
+        artifact: { id: 'task-1', title: 'Quiz' },
+        output_path: fakeFilePath,
+        content: 'SHOULD NOT USE THIS', // inline field that must be ignored
+        text: 'SHOULD NOT USE THIS EITHER',
+        status: 'downloaded',
+      };
+    };
+
+    try {
+      const result = await nblm.generateArtifact('nb-123', 'quiz', { _runFn });
+      assert.equal(result.content, 'Quiz content from file');
+      assert.notEqual(result.content, 'SHOULD NOT USE THIS');
+    } finally {
+      rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('lib/notebooklm.mjs — static invariants', () => {
   it('package.json dependencies has exactly one key: prompts (NBLM-03)', () => {
     const pkgRaw = readFileSync(join(__dirname, '..', 'package.json'), 'utf8');
