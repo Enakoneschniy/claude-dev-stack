@@ -60,7 +60,10 @@ Archive: `.planning/milestones/v0.10-ROADMAP.md`
   2. A new `lib/project-naming.mjs` module exists and exports `toSlug(name)` and `fromSlug(slug)`.
   3. `add-project.mjs`, `projects.mjs`, `project-setup.mjs`, and `docs.mjs` all import slug utilities from `lib/project-naming.mjs` — no local duplicate implementations remain.
   4. All existing tests pass with the refactored imports — no behavior change observable by users.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 14-01-PLAN.md — Fix 4 Phase 11 code review warnings (WR-01..WR-04) in notebooklm.mjs and notebooklm-cli.mjs
+- [ ] 14-02-PLAN.md — Centralize slug logic into lib/project-naming.mjs and update all consumer files
 
 ---
 
@@ -191,7 +194,7 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 | 11. NotebookLM Query API | v0.10 | 2/2 | Complete | 2026-04-12 |
 | 12. Sync Automation + install.mjs Refactor | v0.10 | 3/3 | Complete | 2026-04-13 |
 | 13. GSD Infrastructure | v0.10 | 2/2 | Complete | 2026-04-13 |
-| 14. Code Review Fixes + Quality Refactor | v0.11 | 0/? | Not started | - |
+| 14. Code Review Fixes + Quality Refactor | v0.11 | 0/2 | Planned | - |
 | 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/? | Not started | - |
 | 16. Git Conventions Ecosystem | v0.11 | 0/? | Not started | - |
 | 17. NotebookLM Cross-Notebook Search | v0.11 | 0/? | Not started | - |
@@ -199,4 +202,4 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 
 ---
 
-*Roadmap updated: 2026-04-13 — v0.11 phases 14–18 added by `gsd-roadmapper`. 11/11 v1 requirements mapped, 0 orphaned. Continues from v0.10 (last phase: 13).*
+*Roadmap updated: 2026-04-13 — Phase 14 planned: 2 plans, 1 wave (parallel). v0.11 phases 14–18, 11/11 v1 requirements mapped, 0 orphaned.*
