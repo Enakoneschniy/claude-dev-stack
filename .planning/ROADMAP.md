@@ -221,7 +221,7 @@
 221	**Goal:** Replace the "detect parallel → offer TeamCreate" model in transition.md Route A with an "always TeamCreate" model — all pending phases are spawned as team members with dependency-aware scheduling via TaskCreate blockedBy.
 222	**Requirements**: INFRA-04 improvement (no new requirement IDs)
 223	**Depends on:** Phase 18
-224	**Plans:** 1 plan
+224	**Plans:** 1/1 plans complete
 225	
 226	Plans:
-227	- [ ] 18.1-01-PLAN.md — Replace parallel detection block in transition.md Route A with always-on TeamCreate spawning
+227	- [x] 18.1-01-PLAN.md — Replace parallel detection block in transition.md Route A with always-on TeamCreate spawning
