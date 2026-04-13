@@ -70,9 +70,10 @@ async function main() {
     earlyTotal,
     installState.projects.length > 0 ? installState.projects : null,
     null,
+    installState.vaultPath,
   );
   projectsData._profileName = profile.name;
-  const components = await selectComponents(earlyTotal, !!pipCmd);
+  const components = await selectComponents(earlyTotal, !!pipCmd, installState);
 
   const setupSteps = 6;
   const installCount = [
@@ -144,10 +145,10 @@ async function main() {
       info('Session hooks already configured (skipped)');
       stepNum++;
     } else {
-      installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath);
+      installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
     }
   } else {
-    installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath);
+    installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
   }
 
   // Vault git sync setup (optional)

@@ -6,6 +6,12 @@
 # 1. Check project-map.json for current directory → project name mapping
 # 2. Fall back to directory basename matching vault/projects/
 
+# BUG-06: Auto-reapply GSD patches after /gsd-update (silent on no-op)
+HOOKS_DIR="$(cd "$(dirname "$0")" && pwd)"
+if [ -f "$HOOKS_DIR/gsd-auto-reapply-patches.sh" ]; then
+  bash "$HOOKS_DIR/gsd-auto-reapply-patches.sh" 2>/dev/null || true
+fi
+
 VAULT="${VAULT_PATH:-$HOME/vault}"
 MAP_FILE="$VAULT/project-map.json"
 CURRENT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || pwd)

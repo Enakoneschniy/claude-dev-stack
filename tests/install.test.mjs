@@ -354,4 +354,214 @@ describe('lib/install/ module importability (D-08)', () => {
     assert.strictEqual(typeof m.printSummary, 'function');
   });
 
+  it('lib/install/components.mjs exports installLoopMd (LIMIT-03)', async () => {
+    const m = await import('../lib/install/components.mjs');
+    assert.strictEqual(typeof m.installLoopMd, 'function');
+  });
+
+});
+
+// ── Phase 19: BUG-01/02 — project-level hooks structural tests ───
+
+describe('lib/install/hooks.mjs — project-level hooks (BUG-01/BUG-02)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'hooks.mjs'), 'utf8');
+
+  it('installSessionHook accepts projectsData as 5th argument', () => {
+    assert.ok(
+      src.includes('installSessionHook(stepNum, totalSteps, pkgRoot, vaultPath, projectsData)'),
+      'installSessionHook must accept projectsData as 5th parameter',
+    );
+  });
+
+  it('writes to project .claude/settings.json not global settings (BUG-01)', () => {
+    assert.ok(
+      src.includes("join(project.path, '.claude')"),
+      'must build project-level .claude dir path from project.path',
+    );
+    // Must NOT write to ~/.claude/settings.json directly as the primary path
+    const globalSettingsRef = src.match(/join\(homedir\(\),\s*['"]\.claude['"],\s*['"]settings\.json['"]\)/g) || [];
+    // The global path may only appear in the fallback branch, not as primary write target
+    assert.ok(
+      src.includes('fallback') || src.includes('No project directories') || globalSettingsRef.length <= 1,
+      'global settings.json write must only appear in fallback branch',
+    );
+  });
+
+  it('writes allowedTools with vault patterns (BUG-02)', () => {
+    assert.ok(src.includes('allowedTools'), 'allowedTools must be written');
+    assert.ok(src.includes('context.md'), 'vault context.md read pattern must be present');
+    assert.ok(src.includes('sessions/*.md'), 'vault sessions write pattern must be present');
+  });
+
+  it('writes safe bash allowedTools entries (BUG-02)', () => {
+    assert.ok(src.includes('git status'), 'git status allowedTool must be present');
+    assert.ok(src.includes('git branch -d'), 'git branch -d allowedTool must be present');
+  });
+
+  it('copies gsd-auto-reapply-patches.sh to hooksDir (BUG-06)', () => {
+    assert.ok(
+      src.includes('gsd-auto-reapply-patches.sh'),
+      'gsd-auto-reapply-patches.sh must be copied to hooksDir',
+    );
+  });
+});
+
+// ── Phase 19: BUG-03 — collectProjects pre-select structural ─────
+
+describe('lib/install/projects.mjs — pre-select from project-map (BUG-03)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'projects.mjs'), 'utf8');
+
+  it('collectProjects accepts vaultPath as 4th argument', () => {
+    assert.ok(
+      src.includes('collectProjects(totalSteps, detectedProjects, detectedBaseDir, vaultPath)'),
+      'collectProjects must accept vaultPath as 4th parameter',
+    );
+  });
+
+  it('reads project-map.json to determine pre-selected dirs (BUG-03)', () => {
+    assert.ok(src.includes('project-map.json'), 'must read project-map.json');
+    assert.ok(src.includes('registeredPaths'), 'must track registered paths from project-map.json');
+  });
+
+  it('uses registeredPaths.has() for pre-selection in multiselect choices', () => {
+    assert.ok(
+      src.includes('registeredPaths.has(d.path)'),
+      'choices.selected must check registeredPaths.has(d.path)',
+    );
+  });
+});
+
+// ── Phase 19: BUG-04 — selectComponents pre-select structural ────
+
+describe('lib/install/components.mjs — pre-select installed (BUG-04)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'components.mjs'), 'utf8');
+
+  it('selectComponents accepts installState as 3rd argument', () => {
+    assert.ok(
+      src.includes('selectComponents(totalSteps, hasPip, installState)'),
+      'selectComponents must accept installState as 3rd parameter',
+    );
+  });
+
+  it('detects installed components via _detectInstalled (BUG-04)', () => {
+    assert.ok(src.includes('_detectInstalled'), 'must call _detectInstalled helper');
+    assert.ok(src.includes('session-manager'), 'must check session-manager for customSkills');
+    assert.ok(src.includes('gsd-manager'), 'must check gsd-manager for gsd');
+  });
+
+  it('shows (installed) label for detected components (BUG-04)', () => {
+    assert.ok(src.includes('(installed)'), 'must show (installed) indicator for installed components');
+  });
+
+  it('pre-selects installed components as default (BUG-04)', () => {
+    assert.ok(
+      src.includes('detected.vault') && src.includes('detected.gsd'),
+      'selected field must reference detected.* flags',
+    );
+  });
+});
+
+// ── Phase 19: BUG-05 — git-conventions skip existing ─────────────
+
+describe('lib/install/git-conventions.mjs — skip existing git-scopes.json (BUG-05)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'git-conventions.mjs'), 'utf8');
+
+  it('checks for existing git-scopes.json before re-initializing (BUG-05)', () => {
+    assert.ok(src.includes('git-scopes.json'), 'must check for existing git-scopes.json');
+    assert.ok(
+      src.includes('already configured') || src.includes('reconfigure'),
+      'must prompt user when git-scopes.json exists',
+    );
+  });
+
+  it('offers reconfigure prompt when git-scopes.json exists (BUG-05)', () => {
+    assert.ok(
+      src.includes("message: `git-scopes.json already configured") ||
+      src.includes("reconfigure?"),
+      'must show reconfigure prompt',
+    );
+  });
+
+  it('skips project when user declines reconfigure (BUG-05)', () => {
+    assert.ok(
+      src.includes('if (!reconfigure)') || src.includes("if (reconfigure === false") ||
+      src.includes('!reconfigure'),
+      'must skip project when reconfigure is false',
+    );
+  });
+});
+
+// ── Phase 19: BUG-06 — GSD patch auto-reapply ────────────────────
+
+const patchHookPath = join(projectRoot, 'hooks', 'gsd-auto-reapply-patches.sh');
+const patchFilePath = join(projectRoot, 'patches', 'transition.md');
+
+describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06)', () => {
+  it('patches/transition.md exists in package (BUG-06)', () => {
+    assert.ok(existsSync(patchFilePath), 'patches/transition.md must exist in package');
+  });
+
+  it('patches/transition.md contains TeamCreate parallel execution content', () => {
+    const content = readFileSync(patchFilePath, 'utf8');
+    assert.ok(content.includes('TeamCreate'), 'transition.md patch must contain TeamCreate content');
+    assert.ok(content.includes('Always-on team execution'), 'must contain always-on team execution section');
+  });
+
+  it('hooks/gsd-auto-reapply-patches.sh exists (BUG-06)', () => {
+    assert.ok(existsSync(patchHookPath), 'hooks/gsd-auto-reapply-patches.sh must exist');
+  });
+
+  it('gsd-auto-reapply-patches.sh starts with shebang', () => {
+    const content = readFileSync(patchHookPath, 'utf8');
+    assert.ok(content.startsWith('#!/bin/bash'), 'must start with #!/bin/bash');
+  });
+
+  it('gsd-auto-reapply-patches.sh is valid bash syntax', () => {
+    const result = spawnSync('bash', ['-n', patchHookPath], {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    assert.equal(result.status, 0, `bash -n failed: ${result.stderr}`);
+  });
+
+  it('gsd-auto-reapply-patches.sh exits 0 when GSD not installed (graceful)', () => {
+    const result = spawnSync('bash', [patchHookPath], {
+      encoding: 'utf8',
+      env: { ...process.env, GSD_DIR: '/nonexistent/gsd/path' },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    assert.equal(result.status, 0, `must exit 0 when GSD absent, got ${result.status}`);
+  });
+
+  it('gsd-auto-reapply-patches.sh prints reapply message when patch differs', () => {
+    const tmpBase = mkdtempSync(join(tmpdir(), 'patch-test-'));
+    const fakeGsd = join(tmpBase, 'get-shit-done');
+    const fakeWorkflows = join(fakeGsd, 'workflows');
+    mkdirSync(fakeWorkflows, { recursive: true });
+    // Write a DIFFERENT transition.md (outdated content)
+    writeFileSync(join(fakeWorkflows, 'transition.md'), 'outdated content without TeamCreate');
+    const result = spawnSync('bash', [patchHookPath], {
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        GSD_DIR: fakeGsd,
+        PATCHES_DIR: join(projectRoot, 'patches'),
+      },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    rmSync(tmpBase, { recursive: true, force: true });
+    assert.equal(result.status, 0, `must exit 0, got ${result.status}: ${result.stderr}`);
+    assert.ok(
+      result.stdout.includes('auto-reapplied') || result.stdout.includes('updated'),
+      `must print reapply message, got: "${result.stdout}"`,
+    );
+  });
+
+  it('session-start-context.sh invokes gsd-auto-reapply-patches.sh (BUG-06)', () => {
+    const sessionStart = readFileSync(join(projectRoot, 'hooks', 'session-start-context.sh'), 'utf8');
+    assert.ok(
+      sessionStart.includes('gsd-auto-reapply-patches.sh'),
+      'session-start-context.sh must invoke gsd-auto-reapply-patches.sh',
+    );
+  });
 });

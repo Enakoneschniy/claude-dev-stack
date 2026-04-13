@@ -39,6 +39,7 @@
     "bin/",
     "lib/",
     "hooks/",
+    "patches/",
     "skills/",
     "templates/",
     "README.md",
