@@ -133,7 +133,24 @@ claude-dev-stack notebooklm sync
 # cds__shared-lib: 2 sources (all current)
 ```
 
-Each project gets its own `cds__{slug}` notebook. Hash-based delta sync — only changed files are re-uploaded.
+Each project gets its own `cds__{slug}` notebook. Hash-based delta sync — only changed files are re-uploaded. **Sync runs automatically on every session end** — your notebooks stay current without manual intervention.
+
+Query your notebooks directly from Claude:
+
+```
+> "ask notebooklm what we decided about the auth flow"
+
+Answer: In session 2026-04-11, you decided to use JWT with refresh tokens...
+Citations: [sessions/2026-04-11-auth-flow.md, decisions/0003-jwt-auth.md]
+```
+
+Or from the CLI:
+
+```bash
+claude-dev-stack notebooklm ask "what's our API rate limiting strategy?"
+claude-dev-stack notebooklm generate report    # AI-generated summary of your project
+claude-dev-stack notebooklm generate mind-map  # Visual mind map of project knowledge
+```
 
 Upgrading from v0.8? Migrate existing sources safely:
 
@@ -179,7 +196,7 @@ Working across multiple projects in a session:
 | **Knowledge Vault** | Obsidian-compatible markdown vault — project context, session logs, ADRs, docs |
 | **Session Hooks** | Auto-loads context at session start, reminds to log at session end |
 | **Git Conventions** | Per-project `.claude/git-scopes.json` — auto-detected scopes, commit formats, branch conventions |
-| **NotebookLM Sync** | Per-project notebooks with hash-based delta sync + two-phase migration |
+| **NotebookLM Sync + Query** | Per-project notebooks with auto-sync on session end, hash-based delta, query API (ask + generate), two-phase migration |
 | **Notion Import** | Declare pages in `.claude/notion_pages.json`, import via CLI or MCP skill with overwrite protection |
 | **Skills** | Session manager, project switcher, auto-router, dev-research, git-conventions, notion-importer |
 | **GSD Workflow** | Spec-driven development with subagent orchestration (optional) |
@@ -230,6 +247,9 @@ claude-dev-stack notion import             # Import all configured pages (or --p
 ```bash
 claude-dev-stack notebooklm sync           # Sync vault to per-project NotebookLM notebooks
 claude-dev-stack notebooklm status         # Show sync status, file counts, stale files
+claude-dev-stack notebooklm ask "question" # Query your notebook — returns answer + citations
+claude-dev-stack notebooklm generate report     # Generate AI summary of project knowledge
+claude-dev-stack notebooklm generate mind-map   # Generate visual mind map
 claude-dev-stack notebooklm migrate        # Dry-run migration from shared to per-project notebooks
 claude-dev-stack notebooklm migrate --execute  # Execute migration (two-phase-commit)
 ```
@@ -351,7 +371,7 @@ Two hooks run at the Claude Code level for reliability (skills can be ignored by
 | Hook | When | What |
 |------|------|------|
 | **session-start-context** | Session starts | Loads `context.md` + outstanding TODOs |
-| **session-end-check** | Session ends | Reminds to create session log if none exists today |
+| **session-end-check** | Session ends | Reminds to create session log, auto-syncs vault to NotebookLM, auto-pushes vault git |
 
 ---
 
