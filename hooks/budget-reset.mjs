@@ -15,11 +15,21 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
+  // Try source location first (../lib/), then installed location (./lib/)
+  let budget;
   try {
-    const budget = await import(join(__dirname, '..', 'lib', 'budget.mjs'));
+    budget = await import(join(__dirname, '..', 'lib', 'budget.mjs'));
+  } catch {
+    try {
+      budget = await import(join(__dirname, 'lib', 'budget.mjs'));
+    } catch {
+      return; // lib not available — silent skip
+    }
+  }
+  try {
     budget.clearState();
   } catch {
-    // lib not available or state file error — silent skip
+    // state file error — silent skip
   }
 }
 

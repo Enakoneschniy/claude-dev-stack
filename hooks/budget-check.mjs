@@ -53,12 +53,16 @@ async function main() {
     return; // unparseable stdin — silent exit
   }
 
-  // 2. Import budget utilities (relative to this hook file)
+  // 2. Import budget utilities — try source location first (../lib/), then installed (./lib/)
   let budget;
   try {
     budget = await import(join(__dirname, '..', 'lib', 'budget.mjs'));
   } catch {
-    return; // lib not available — silent exit
+    try {
+      budget = await import(join(__dirname, 'lib', 'budget.mjs'));
+    } catch {
+      return; // lib not available — silent exit
+    }
   }
 
   const { parseUsage, computePercent, loadThreshold, loadState, saveState,
