@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const gitConventionsSource = readFileSync(join(__dirname, '..', 'lib', 'git-conventions.mjs'), 'utf8');
 
-import { main } from '../lib/git-conventions.mjs';
+import { main, cmdGitAction, cmdMigrateClaude } from '../lib/git-conventions.mjs';
 import { makeTempGitRepo } from './helpers/fixtures.mjs';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -194,6 +194,48 @@ describe('main(["unknown"])', () => {
     }
     const output = logs.join('\n');
     assert.ok(output.includes('unknown') || output.includes('Unknown'), 'should mention unknown subcommand');
+  });
+});
+
+// ── cmdGitAction tests ────────────────────────────────────────────────────────
+
+describe('cmdGitAction', () => {
+  let origCwd;
+  before(() => { origCwd = process.cwd(); });
+  after(() => { process.chdir(origCwd); });
+
+  it('guard path: does not write commitlint.yml when no git-scopes.json present', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-gitaction-guard-'));
+    try {
+      process.chdir(tempDir);
+      await cmdGitAction([]);
+      const ymlPath = join(tempDir, '.github', 'workflows', 'commitlint.yml');
+      assert.ok(!existsSync(ymlPath), 'commitlint.yml must not be written when no git-scopes.json');
+    } finally {
+      process.chdir(origCwd);
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+});
+
+// ── cmdMigrateClaude tests ────────────────────────────────────────────────────
+
+describe('cmdMigrateClaude', () => {
+  let origCwd;
+  before(() => { origCwd = process.cwd(); });
+  after(() => { process.chdir(origCwd); });
+
+  it('guard path: does not write git-scopes.json when no CLAUDE.md found', async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-migrate-guard-'));
+    try {
+      process.chdir(tempDir);
+      await cmdMigrateClaude([]);
+      const scopesPath = join(tempDir, '.claude', 'git-scopes.json');
+      assert.ok(!existsSync(scopesPath), 'git-scopes.json must not be written when no CLAUDE.md');
+    } finally {
+      process.chdir(origCwd);
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });
 
