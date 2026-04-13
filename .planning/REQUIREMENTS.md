@@ -64,14 +64,14 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DX-01 | TBD | pending |
-| DX-02 | TBD | pending |
-| QUALITY-01 | TBD | pending |
-| GIT-01 | TBD | pending |
-| GIT-02 | TBD | pending |
-| GIT-03 | TBD | pending |
-| GIT-04 | TBD | pending |
-| NBLM-01 | TBD | pending |
-| NOTION-01 | TBD | pending |
-| ANALYTICS-01 | TBD | pending |
-| REVIEW-01 | TBD | pending |
+| REVIEW-01 | Phase 14 | pending |
+| QUALITY-01 | Phase 14 | pending |
+| DX-01 | Phase 15 | pending |
+| DX-02 | Phase 15 | pending |
+| GIT-01 | Phase 16 | pending |
+| GIT-02 | Phase 16 | pending |
+| GIT-03 | Phase 16 | pending |
+| GIT-04 | Phase 16 | pending |
+| NBLM-01 | Phase 17 | pending |
+| NOTION-01 | Phase 18 | pending |
+| ANALYTICS-01 | Phase 18 | pending |

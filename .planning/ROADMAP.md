@@ -1,172 +1,202 @@
-# Milestone v0.10 Roadmap — Query, Sync Automation & Quality
+# Roadmap: claude-dev-stack
 
-**Goal**: Make NotebookLM a two-way tool (upload + query), auto-sync vault on session end, fix v0.9 bugs, and prepare infrastructure for parallel phase execution.
-**Status**: 🚧 in progress
-**Created**: 2026-04-12
-**Phase numbering**: continues from v0.9 (last phase: 9) → starts at Phase 10
-**Branching**: `phase` (per config.json `branching_strategy: "phase"` → `gsd/phase-{phase}-{slug}`)
-**Granularity**: standard
-**Test baseline**: 406 (v0.9.1)
-**Single-dep constraint**: preserved unchanged (`prompts@^2.4.2` only)
-**Core Value**: Claude Code can resume work across sessions as if it remembered everything — extended with two-way NotebookLM (upload + query) and automatic session-end sync.
+## Milestones
+
+- ✅ **v0.8 NotebookLM Sync** - Phases 1–5 (shipped 2026-04-10)
+- ✅ **v0.9 Git Conventions & NotebookLM Per-Project** - Phases 6–9 (shipped 2026-04-11)
+- ✅ **v0.10 Query, Sync Automation & Quality** - Phases 10–13 (shipped 2026-04-13)
+- 🚧 **v0.11 DX Polish & Ecosystem** - Phases 14–18 (in progress)
 
 ---
 
+<details>
+<summary>✅ v0.8–v0.10 (Phases 1–13) - SHIPPED 2026-04-13</summary>
+
+### v0.8 — NotebookLM Sync (Phases 1–5)
+
+4 phases completed. NotebookLM sync pipeline, manifest change detection, CLI integration, session-context fix.
+
+### v0.9 — Git Conventions & NotebookLM Per-Project (Phases 6–9)
+
+4 phases completed. Git conventions skill ecosystem, per-project notebook manifest v2, migration script, Notion auto-import via MCP.
+
+### v0.10 — Query, Sync Automation & Quality (Phases 10–13)
+
+4 phases completed. Bugfixes, NotebookLM Query API, sync automation + install.mjs refactor, GSD infrastructure (ADR bridge + parallel execution).
+
+Archive: `.planning/milestones/v0.10-ROADMAP.md`
+
+</details>
+
+---
+
+## 🚧 v0.11 — DX Polish & Ecosystem (In Progress)
+
+**Milestone Goal:** Improve developer experience with auto-approve for vault operations, idempotent re-install wizard, git-conventions enhancements, NotebookLM cross-notebook search, Notion whole-database import, analytics integration, and path→slug centralization.
+
+**Phase numbering:** continues from v0.10 (last phase: 13) → starts at Phase 14
+**Granularity:** standard
+**Test baseline:** 483 (v0.10.0)
+**Branching:** `phase` → `gsd/phase-{phase}-{slug}`
+
 ## Phases
 
-- [x] **Phase 10: Bugfixes** — Fix v0.9 migration ADR path resolution, sync stats `undefined` display, and 5 Phase 6 code-review warnings (completed 2026-04-12)
-- [x] **Phase 11: NotebookLM Query API** — `askNotebook()` + `generateArtifact()` in `lib/notebooklm.mjs`, `notebooklm ask` CLI command with optional `--save` to vault (completed 2026-04-12)
-- [x] **Phase 12: Sync Automation + install.mjs Refactor** — Session-end hook triggers background sync; `bin/install.mjs` split from 1287-line monolith into focused modules (completed 2026-04-12)
-- [x] **Phase 13: GSD Infrastructure** — ADR bridge (decisions auto-populated from `.planning/CONTEXT.md`) + parallel phase execution via TeamCreate (completed 2026-04-13)
+- [ ] **Phase 14: Code Review Fixes + Quality Refactor** — Fix 4 Phase 11 code review warnings and consolidate path-to-slug mapping into a single module
+- [ ] **Phase 15: DX — Auto-Approve & Smart Re-install** — Configure auto-approve for vault operations and make the install wizard idempotent with pre-filled values
+- [ ] **Phase 16: Git Conventions Ecosystem** — Add error handling, gitmoji support, GitHub Action generation, and CLAUDE.md migration helper to git-conventions
+- [ ] **Phase 17: NotebookLM Cross-Notebook Search** — Enable querying across all project notebooks simultaneously from a single CLI command
+- [ ] **Phase 18: Notion Database Import + Analytics Integration** — Import full Notion databases into vault and surface NotebookLM sync stats in the analytics dashboard
 
 ---
 
 ## Phase Details
 
-### Phase 10: Bugfixes
-**Goal**: Users can run NotebookLM migrate and sync commands without hitting the three known v0.9 bugs — ADR path mismatch, undefined sync counts, and the 5 code-review warnings that cause subtle misbehavior in the CLI.
-**Depends on**: Nothing (starts fresh off main, all fixes are to shipped code)
-**Requirements**: FIX-01, FIX-02, FIX-03
+### Phase 14: Code Review Fixes + Quality Refactor
+**Goal**: Codebase is clean — Phase 11 warnings are fixed and path-to-slug mapping is centralized so future modules have one import to call instead of reinventing the same slug logic.
+**Depends on**: Nothing (starts off main; all changes are to shipped code)
+**Requirements**: REVIEW-01, QUALITY-01
 **Success Criteria** (what must be TRUE):
-  1. User running `notebooklm migrate --execute` on a vault with ADR files titled `{slug}__ADR-NNNN-slug.md` sees the file resolved to `vault/projects/{slug}/decisions/NNNN-slug.md` (no `ADR-` in filename) with no "file not found" errors.
-  2. User running `notebooklm sync` sees actual numeric counts in the output (`12 uploaded, 5 skipped, 0 failed`) instead of `undefined` for any field.
-  3. `hasCommand()` uses `spawnSync` (not shell string interpolation), `--full` mode does not double-prompt for main branch, Go detector skips `node_modules/vendor/.git`, `installSessionHook` warns on corrupt settings.json, and `withStubBinary` is async-safe — all verified by `npm test` green.
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 10-01-PLAN.md — Fix ADR path resolution (FIX-01) and sync stats undefined (FIX-02)
-- [x] 10-02-PLAN.md — Fix 5 code review warnings WR-01 through WR-05 (FIX-03)
+  1. `npm test` passes with 0 failures and the 4 Phase 11 warnings (WR-01..WR-04: unused tmpdir, missing null check, shell quoting, silent flag discard) are gone from `lib/notebooklm.mjs` and `lib/notebooklm-cli.mjs`.
+  2. A new `lib/project-naming.mjs` module exists and exports `toSlug(name)` and `fromSlug(slug)`.
+  3. `add-project.mjs`, `projects.mjs`, `project-setup.mjs`, and `docs.mjs` all import slug utilities from `lib/project-naming.mjs` — no local duplicate implementations remain.
+  4. All existing tests pass with the refactored imports — no behavior change observable by users.
+**Plans**: TBD
 
 ---
 
-### Phase 11: NotebookLM Query API
-**Goal**: Users can query their NotebookLM notebook from the CLI and from `lib/notebooklm.mjs` API — turning NotebookLM from a write-only sync target into a queryable knowledge base.
-**Depends on**: Phase 10 (clean baseline — migrate and sync bugs resolved before adding new NotebookLM surface)
-**Requirements**: QUERY-01, QUERY-02, QUERY-03
+### Phase 15: DX — Auto-Approve & Smart Re-install
+**Goal**: Running `claude-dev-stack` on a machine with existing config pre-fills known values and skips completed steps, and session-manager vault operations no longer trigger permission prompts.
+**Depends on**: Phase 14 (clean baseline — slug module available for wizard to use when detecting existing projects)
+**Requirements**: DX-01, DX-02
 **Success Criteria** (what must be TRUE):
-  1. User can call `askNotebook(notebookId, question)` from code and get back `{answer, citations}` — with JSON parsing, transient-error retry, and a meaningful error message on permanent failure.
-  2. User running `claude-dev-stack notebooklm ask "what did we decide about auth?"` sees the answer printed in the terminal with citations listed beneath it.
-  3. User running the same command with `--save` gets the answer written to `vault/projects/{slug}/docs/notebooklm-answers/{timestamp}-{slug}.md` and sees a confirmation path in the output.
-  4. User can call `generateArtifact(notebookId, 'report')` (or `mind-map` / `quiz`) from code and get back artifact content or a download path.
-**Plans:** 2 plans
-Plans:
-- [x] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
-- [x] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
-**UI hint**: no
+  1. User running `claude-dev-stack` on a machine with existing vault sees vault path, git remote, and project list pre-filled — they do not have to retype values they already configured.
+  2. Each wizard section (vault setup, git sync, profiles, projects) shows a "skip" option when that section is already complete — user can skip all complete sections in one pass.
+  3. User who selects "reconfigure" on a completed section sees the wizard re-run that section with existing values as defaults (not blank fields).
+  4. Session-manager reads `context.md` and writes session logs without triggering permission prompts — `allowedTools` patterns are added to `.claude/settings.json` covering vault read/write paths.
+  5. User can inspect `.claude/settings.json` and see the auto-approve allowlist patterns that were written during wizard setup.
+**Plans**: TBD
+**UI hint**: yes
 
 ---
 
-### Phase 12: Sync Automation + install.mjs Refactor
-**Goal**: Vault syncs to NotebookLM automatically on every session end (no manual intervention), and `bin/install.mjs` becomes maintainable by splitting the 1287-line monolith into focused importable modules.
-**Depends on**: Phase 11 (session-end sync is most valuable after query also works — user gets full two-way flow from day one of this phase)
-**Requirements**: SYNC-01, REFACTOR-01
+### Phase 16: Git Conventions Ecosystem
+**Goal**: Git-conventions skill is production-ready — missing prerequisites surface a clear error, gitmoji is opt-in, a GitHub Action enforces conventions in CI, and existing prose CLAUDE.md can be migrated to `git-scopes.json` automatically.
+**Depends on**: Phase 14 (slug refactor in place; git-conventions tooling may use slug for file naming)
+**Requirements**: GIT-01, GIT-02, GIT-03, GIT-04
 **Success Criteria** (what must be TRUE):
-  1. User ending a Claude session (triggering the session-end hook) sees vault sync to NotebookLM start silently in the background — with no blocking, no modal prompt, and a non-intrusive log entry in `~/vault/.notebooklm-sync.log`.
-  2. If sync fails during session end, the session-end hook exits 0 (non-blocking) and a warn-level message appears in the log — Claude's session end is never interrupted by a sync failure.
-  3. `bin/install.mjs` wizard runs identically before and after the refactor — all existing interactive flows, prompts, and defaults are preserved. No wizard behavior changes.
-  4. Each wizard section extracted from `bin/install.mjs` is a separately importable function in its own module — utility functions duplicated from `lib/shared.mjs` are removed from install.mjs and the shared version is imported instead.
-**Plans:** 3/3 plans complete
-Plans:
-- [x] 12-01-PLAN.md — SYNC-01 verification + structural regression tests
-- [x] 12-02-PLAN.md — Extract 13 wizard modules from install.mjs into lib/install/
-- [x] 12-03-PLAN.md — Rewrite bin/install.mjs as thin orchestrator + update tests
+  1. User running `scopes init` without git or Node installed sees a formatted error message with install instructions — no cryptic stack trace or silent failure.
+  2. User who ran `scopes init --gitmoji` (or selected gitmoji in the interactive prompt) sees emoji prefixes applied to their commits — the mapping is stored in `git-scopes.json` and the skill reads it.
+  3. User running `claude-dev-stack git-action` gets a `.github/workflows/commitlint.yml` file written to their project — the file is valid YAML that runs commitlint on every PR.
+  4. User running `claude-dev-stack migrate-claude-md` sees an interactive review of extracted scopes/conventions before any file is written — they can accept, edit, or cancel before `git-scopes.json` is created.
+**Plans**: TBD
 
 ---
 
-### Phase 13: GSD Infrastructure
-**Goal**: GSD workflow captures locked decisions into vault ADRs automatically, and independent phases can be offered to run in parallel (with explicit user consent) — reducing manual ceremony around decision logging and cutting wall-clock time for future milestones.
-**Depends on**: Nothing (pure GSD tooling; independent of NotebookLM phases)
-**Requirements**: INFRA-03, INFRA-04
+### Phase 17: NotebookLM Cross-Notebook Search
+**Goal**: Users can search across all their project notebooks with a single command — results are attributed to the right project so they know where each answer came from.
+**Depends on**: Nothing (independent of Phases 15–16; builds on existing `lib/notebooklm.mjs` askNotebook from Phase 11)
+**Requirements**: NBLM-01
 **Success Criteria** (what must be TRUE):
-  1. After a GSD phase transition, locked decisions from `.planning/CONTEXT.md` (D-XX entries) are automatically written as ADR files in `vault/projects/{slug}/decisions/` with standardized format — without any manual copy-paste from the user.
-  2. User can open an existing vault ADR and see it was created by the bridge (via a provenance comment or frontmatter field) rather than being manually authored.
-  3. When GSD detects two or more phases with no shared `depends_on` overlap, it presents the user with a parallel execution option and a cost estimate before spawning any subagents — explicit consent is required every time.
-  4. If user declines parallel execution, phases run sequentially in their numbered order — existing GSD behavior is fully preserved as the default.
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
-- [x] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
+  1. User running `claude-dev-stack notebooklm search "query"` sees results from all project notebooks — each result shows the project name, source title, and a relevant excerpt.
+  2. Search runs notebooks in parallel — a query to 5 notebooks does not take 5× longer than a single-notebook query.
+  3. If one notebook query fails, the command still returns results from the other notebooks — partial results are shown with a warning for the failed project.
+  4. User with zero configured notebooks sees a clear message ("no notebooks configured") instead of an empty result or an error.
+**Plans**: TBD
+
+---
+
+### Phase 18: Notion Database Import + Analytics Integration
+**Goal**: Users can import an entire Notion database into vault with one command, and the analytics dashboard shows NotebookLM sync stats alongside existing session metrics.
+**Depends on**: Phase 14 (slug module needed for database page file naming in vault)
+**Requirements**: NOTION-01, ANALYTICS-01
+**Success Criteria** (what must be TRUE):
+  1. User running `claude-dev-stack notion import --database <id>` sees all pages from the Notion database saved as individual markdown files in `vault/projects/{name}/docs/notion/` — databases with more than 100 pages are fully imported (pagination handled).
+  2. User running `claude-dev-stack analytics` sees NotebookLM sync stats (last sync time, source count, sync duration) in the dashboard output alongside existing session and context quality metrics.
+  3. User running `claude-dev-stack analytics` sees query usage stats (questions asked, artifacts generated) — these counts update after each `notebooklm ask` or `notebooklm generate` call.
+  4. User with no NotebookLM configured sees analytics dashboard without errors — NotebookLM section shows "not configured" instead of crashing or showing undefined values.
+**Plans**: TBD
 
 ---
 
 ## Coverage Table
 
-All 10 v1 requirements mapped to exactly one owning phase:
+All 11 v1 requirements mapped to exactly one owning phase:
 
-| REQ-ID | Phase | Notes |
-|--------|-------|-------|
-| FIX-01 | 10 | ADR path resolution in notebooklm-migrate.mjs |
-| FIX-02 | 10 | Sync stats undefined display fix in notebooklm-sync.mjs |
-| FIX-03 | 10 | 5 code-review warnings from Phase 6 |
-| QUERY-01 | 11 | `askNotebook()` API in lib/notebooklm.mjs |
-| QUERY-02 | 11 | `notebooklm ask` CLI with --save flag |
-| QUERY-03 | 11 | `generateArtifact()` API in lib/notebooklm.mjs |
-| SYNC-01 | 12 | Session-end hook triggers background sync |
-| REFACTOR-01 | 12 | bin/install.mjs monolith split |
-| INFRA-03 | 13 | ADR bridge from .planning/CONTEXT.md decisions |
-| INFRA-04 | 13 | Parallel phase execution via TeamCreate |
+| REQ-ID | Phase | Description |
+|--------|-------|-------------|
+| REVIEW-01 | 14 | Fix 4 Phase 11 code review warnings (WR-01..WR-04) |
+| QUALITY-01 | 14 | Centralize path-to-slug into lib/project-naming.mjs |
+| DX-01 | 15 | Auto-approve allowlist for vault read/write in settings.json |
+| DX-02 | 15 | Smart re-install wizard with pre-fill + skip/reconfigure |
+| GIT-01 | 16 | GIT-09 error path — clear error for missing prerequisites |
+| GIT-02 | 16 | Gitmoji opt-in via --gitmoji flag or interactive prompt |
+| GIT-03 | 16 | GitHub Action generation for commitlint CI enforcement |
+| GIT-04 | 16 | Migration helper from prose CLAUDE.md to git-scopes.json |
+| NBLM-01 | 17 | Cross-notebook search with parallel execution + attribution |
+| NOTION-01 | 18 | Notion database import with pagination handling |
+| ANALYTICS-01 | 18 | NotebookLM sync stats + query usage in analytics dashboard |
 
-**Coverage check**: 10/10 requirements mapped (100%), 0 orphaned.
+**Coverage check**: 11/11 requirements mapped (100%), 0 orphaned.
 
-- Phase 10: 3 requirements (FIX-01, FIX-02, FIX-03)
-- Phase 11: 3 requirements (QUERY-01, QUERY-02, QUERY-03)
-- Phase 12: 2 requirements (SYNC-01, REFACTOR-01)
-- Phase 13: 2 requirements (INFRA-03, INFRA-04)
+- Phase 14: 2 requirements (REVIEW-01, QUALITY-01)
+- Phase 15: 2 requirements (DX-01, DX-02)
+- Phase 16: 4 requirements (GIT-01, GIT-02, GIT-03, GIT-04)
+- Phase 17: 1 requirement (NBLM-01)
+- Phase 18: 2 requirements (NOTION-01, ANALYTICS-01)
 
-Total: 3 + 3 + 2 + 2 = 10 ✓
+Total: 2 + 2 + 4 + 1 + 2 = 11 ✓
 
 ---
 
 ## Dependency Graph
 
 ```
-Phase 10 — Bugfixes (LOW risk)
-  ├─ fixes shipped code in notebooklm-migrate.mjs, notebooklm-sync.mjs, shared utilities
+Phase 14 — Code Review Fixes + Quality Refactor (LOW risk)
+  ├─ fixes shipped Phase 11 warnings (notebooklm.mjs, notebooklm-cli.mjs)
+  ├─ extracts slug logic into lib/project-naming.mjs
   └─ no upstream deps — starts fresh off main
 
-Phase 11 — NotebookLM Query API (LOW-MEDIUM risk)
-  ├─ depends on Phase 10: clean NotebookLM baseline (migrate + sync bugs resolved)
-  └─ extends lib/notebooklm.mjs with askNotebook + generateArtifact
+Phase 15 — DX: Auto-Approve & Smart Re-install (MEDIUM risk)
+  ├─ depends on Phase 14: slug module available for wizard project detection
+  └─ largest feature in milestone — wizard refactor touches bin/install.mjs
 
-Phase 12 — Sync Automation + install.mjs Refactor (LOW risk)
-  ├─ SYNC-01 depends on Phase 11: session-end sync more coherent after query ships
-  ├─ REFACTOR-01 is independent but co-located for milestone coherence
-  └─ no new external dependencies introduced
+Phase 16 — Git Conventions Ecosystem (LOW risk)
+  ├─ depends on Phase 14: slug module (file naming)
+  ├─ independent of Phase 15 — can run in parallel with 15
+  └─ extends existing git-conventions skill infrastructure
 
-Phase 13 — GSD Infrastructure (LOW risk)
-  ├─ INFRA-03: independent of all NotebookLM phases
-  ├─ INFRA-04: independent of all NotebookLM phases
-  └─ can execute in parallel with Phase 10 or 11 if INFRA-04 were already done (ironic)
+Phase 17 — NotebookLM Cross-Notebook Search (LOW-MEDIUM risk)
+  ├─ no upstream deps — independent of Phases 15, 16
+  ├─ builds on lib/notebooklm.mjs askNotebook() from Phase 11
+  └─ can execute in parallel with Phases 15 and 16 after Phase 14 completes
+
+Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
+  ├─ depends on Phase 14: slug module for file naming
+  ├─ independent of Phases 15, 16, 17 — can run in parallel with them
+  └─ ANALYTICS-01 extends lib/analytics.mjs; NOTION-01 extends lib/docs.mjs
 ```
 
-**DAG verification**: strict DAG, no cycles. Forward edges only: 10→11, 11→12. Phase 10 and Phase 13 are both source-adjacent (13 has no deps on any v0.10 phase). Phase 12 is the sink for the NotebookLM track.
+**Parallel opportunities** (after Phase 14):
+- Phases 15, 16, 17, 18 are all independent of each other
+- All depend only on Phase 14 (slug module)
+- Maximum parallelism: run 15+16+17+18 concurrently after 14 completes
 
 ---
 
-## Progress Table
+## Progress
 
-| Phase | Plans Complete | Status | Tests Added (est) | Completed |
-|-------|---------------|--------|-------------------|-----------|
-| 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
-| 11. NotebookLM Query API | 0/? | 2/2 | Complete    | 2026-04-12 |
-| 12. Sync Automation + install.mjs Refactor | 0/3 | 3/3 | Complete    | 2026-04-13 |
-| 13. GSD Infrastructure | 0/? | 2/2 | Complete    | 2026-04-13 |
-
-**Total plans (estimated)**: TBD (plan counts filled during `/gsd-plan-phase`)
-**Total tests added (estimated)**: ~55 (406 → ~461)
-
----
-
-## Backlog
-
-### Phase 999.1: Smart Re-install Wizard (BACKLOG)
-
-**Goal:** Make the install wizard idempotent — detect existing vault/config, skip completed steps, pre-fill known values (git remote, profile, projects). Running wizard twice should not re-ask for info it already has. Needs global config or vault-based state to remember what was installed. User-reported friction: vault found but git sync still asks for remote URL that's already configured. Scope to be detailed after v0.10 release — likely more issues than initially listed.
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 10. Bugfixes | v0.10 | 2/2 | Complete | 2026-04-12 |
+| 11. NotebookLM Query API | v0.10 | 2/2 | Complete | 2026-04-12 |
+| 12. Sync Automation + install.mjs Refactor | v0.10 | 3/3 | Complete | 2026-04-13 |
+| 13. GSD Infrastructure | v0.10 | 2/2 | Complete | 2026-04-13 |
+| 14. Code Review Fixes + Quality Refactor | v0.11 | 0/? | Not started | - |
+| 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/? | Not started | - |
+| 16. Git Conventions Ecosystem | v0.11 | 0/? | Not started | - |
+| 17. NotebookLM Cross-Notebook Search | v0.11 | 0/? | Not started | - |
+| 18. Notion Database Import + Analytics Integration | v0.11 | 0/? | Not started | - |
 
 ---
 
-*Roadmap generated: 2026-04-12 by `gsd-roadmapper` from REQUIREMENTS.md. Phase numbering continues from v0.9 (last phase: 9) → starts at Phase 10. 10/10 v1 requirements mapped, 0 orphaned.*
+*Roadmap updated: 2026-04-13 — v0.11 phases 14–18 added by `gsd-roadmapper`. 11/11 v1 requirements mapped, 0 orphaned. Continues from v0.10 (last phase: 13).*
