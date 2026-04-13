@@ -38,6 +38,16 @@
 - [ ] **DX-12**: NotebookLM login checks `~/.notebooklm/storage_state.json` existence — skips browser OAuth if already authenticated. "First sync" text replaced with "Run sync now?" for re-installs.
 - [ ] **DX-13**: Bulk prompts (loop.md per project, git-conventions per project) use "Install for all N projects? (Y/n)" or multiselect instead of N individual y/N prompts.
 
+### Wizard UX Polish (UX)
+
+- [ ] **UX-01**: Git sync step detects existing configured remote and shows "Git sync: configured (remote: origin → github.com/...)" instead of offering "(recommended)" sync setup.
+- [ ] **UX-02**: loop.md installation uses "Install loop.md for all N projects? (Y/n)" bulk prompt instead of N separate per-project confirms.
+- [ ] **UX-03**: git-conventions installation uses "Install git-conventions for all N projects? (Y/n)" bulk prompt instead of N separate per-project confirms.
+- [ ] **UX-04**: Git sync step checks for existing remote (`git remote -v` in vault) — if remote exists, shows status instead of re-running init/push flow.
+- [ ] **UX-05**: Wizard step counter is accurate — total step count matches actual steps shown (no "Step 15 of 14").
+- [ ] **UX-06**: Detect banner project count matches vault step project count — both use same source (`project-map.json`), no "0 projects" vs "8 project(s)" discrepancy.
+- [ ] **UX-07**: All wizard confirmation prompts use consistent select-style prompts instead of mixed confirm (y/N) and select styles.
+
 ---
 
 ## Future Requirements
@@ -77,3 +87,10 @@
 | DX-11 | 23 | — | pending |
 | DX-12 | 23 | — | pending |
 | DX-13 | 23 | — | pending |
+| UX-01 | 24 | — | pending |
+| UX-02 | 24 | — | pending |
+| UX-03 | 24 | — | pending |
+| UX-04 | 24 | — | pending |
+| UX-05 | 24 | — | pending |
+| UX-06 | 24 | — | pending |
+| UX-07 | 24 | — | pending |

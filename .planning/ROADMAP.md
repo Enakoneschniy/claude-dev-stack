@@ -52,6 +52,8 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [ ] **Phase 20: Budget Detection** — Monitor session usage and emit warnings at configurable threshold (LIMIT-01)
 - [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
 - [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
+- [ ] **Phase 23: Smart Re-install Pre-fill** — Wizard re-install pre-fills all steps with existing config (DX-07..DX-13)
+- [ ] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07)
 
 ---
 
@@ -128,14 +130,32 @@ All 10 v1 requirements mapped to exactly one owning phase:
 | LIMIT-03 | 21 | loop.md template for GSD-aware scheduled/recurring tasks |
 | LIMIT-04 | 22 | Post-reset handoff reads STATE.md stopped_at and resumes execution |
 
-**Coverage check**: 10/10 requirements mapped (100%), 0 orphaned.
+| UX-01 | 24 | Wizard UX Polish |
+| UX-02 | 24 | Wizard UX Polish |
+| UX-03 | 24 | Wizard UX Polish |
+| UX-04 | 24 | Wizard UX Polish |
+| UX-05 | 24 | Wizard UX Polish |
+| UX-06 | 24 | Wizard UX Polish |
+| UX-07 | 24 | Wizard UX Polish |
+| DX-07 | 23 | Smart Re-install Pre-fill |
+| DX-08 | 23 | Smart Re-install Pre-fill |
+| DX-09 | 23 | Smart Re-install Pre-fill |
+| DX-10 | 23 | Smart Re-install Pre-fill |
+| DX-11 | 23 | Smart Re-install Pre-fill |
+| DX-12 | 23 | Smart Re-install Pre-fill |
+| DX-13 | 23 | Smart Re-install Pre-fill |
 
-- Phase 19: 6 requirements (BUG-01, BUG-02, BUG-03, BUG-04, BUG-05, BUG-06)
+**Coverage check**: 24/24 requirements mapped (100%), 0 orphaned.
+
+- Phase 19: 6 requirements (BUG-01..BUG-06)
 - Phase 20: 1 requirement (LIMIT-01)
 - Phase 21: 2 requirements (LIMIT-02, LIMIT-03)
 - Phase 22: 1 requirement (LIMIT-04)
+- Phase 23: 7 requirements (DX-07..DX-13)
+- Phase 24: 7 requirements (UX-01..UX-07)
+- BUG-07: Phase 19 (added post-UAT)
 
-Total: 6 + 1 + 2 + 1 = 10 ✓
+Total: 6 + 1 + 2 + 1 + 7 + 7 = 24 ✓
 
 ---
 
@@ -188,6 +208,8 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 20. Budget Detection | v0.12 | 0/? | Not started | - |
 | 21. Continuation Prompt & loop.md | v0.12 | 0/? | Not started | - |
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
+| 23. Smart Re-install Pre-fill | v0.12 | 0/? | Not started | - |
+| 24. Wizard UX Polish | v0.12 | 0/? | Not started | - |
 
 ### Phase 23: Smart Re-install Pre-fill
 **Goal**: Wizard re-install skips or pre-fills all steps that have existing configuration — no redundant prompts for already-configured values.
@@ -205,4 +227,19 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 
 ---
 
-*Roadmap updated: 2026-04-13 — v0.12 Hooks & Limits milestone added. 4 phases (19–22), 9 requirements, 100% coverage.*
+### Phase 24: Wizard UX Polish
+**Goal**: Fix all UX inconsistencies found during manual UAT — step counter accuracy, project count discrepancy, bulk prompts for per-project operations, git sync remote detection, and consistent prompt style throughout wizard.
+**Depends on**: Phase 23 (smart re-install pre-fill must be in place — UX-02/03 overlap with DX-13 bulk prompts)
+**Requirements**: UX-01, UX-02, UX-03, UX-04, UX-05, UX-06, UX-07
+**Success Criteria** (what must be TRUE):
+  1. Git sync step detects existing remote and shows status instead of offering re-setup.
+  2. loop.md and git-conventions use bulk "Install for all?" prompt instead of per-project confirms.
+  3. Git sync checks for existing remote before offering init/push flow.
+  4. Step counter shows correct total (no "Step 15 of 14").
+  5. Detect banner and vault step show consistent project counts from same data source.
+  6. All confirmation prompts use consistent select-style (no mixed y/N and select).
+**Plans**: TBD
+
+---
+
+*Roadmap updated: 2026-04-13 — Phase 24 (Wizard UX Polish) added. v0.12 now 6 phases (19–24), 17 requirements + BUG-07.*
