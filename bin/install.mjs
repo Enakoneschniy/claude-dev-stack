@@ -65,9 +65,10 @@ async function main() {
   if (components.deepResearch) installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
   if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
 
-  await installGitConventions(projectsData, stepNum++, totalSteps);
-  await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum, totalSteps, PKG_ROOT);
-  installSessionHook(undefined, undefined, PKG_ROOT);
+  const gitConvOk = await installGitConventions(projectsData, stepNum++, totalSteps);
+  if (gitConvOk) installed.push('Git conventions'); else failed.push('Git conventions');
+  await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum++, totalSteps, PKG_ROOT);
+  installSessionHook(stepNum++, totalSteps, PKG_ROOT);
 
   // Vault git sync setup (optional)
   console.log('');
