@@ -565,3 +565,168 @@ describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06
     );
   });
 });
+
+// ── Phase 23 — Smart Re-install Pre-fill ─────────────────────────
+
+describe('Phase 23 — readInstallProfile (DX-07 / D-01 / D-03)', () => {
+  let tmpVault;
+
+  before(() => {
+    tmpVault = mkdtempSync(join(tmpdir(), 'vault-test-'));
+    mkdirSync(join(tmpVault, 'meta'), { recursive: true });
+  });
+
+  it('returns profile object when profile.json exists with valid content', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const profilePath = join(tmpVault, 'meta', 'profile.json');
+    writeFileSync(profilePath, JSON.stringify({ lang: 'ru', codeLang: 'en', useCase: 'fullstack' }));
+    const result = readInstallProfile(tmpVault);
+    assert.deepStrictEqual(result, { lang: 'ru', codeLang: 'en', useCase: 'fullstack' });
+  });
+
+  it('returns null when profile.json does not exist', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const emptyVault = mkdtempSync(join(tmpdir(), 'vault-empty-'));
+    mkdirSync(join(emptyVault, 'meta'), { recursive: true });
+    const result = readInstallProfile(emptyVault);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when vaultPath is null', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const result = readInstallProfile(null);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when profile.json is corrupt JSON', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const corruptVault = mkdtempSync(join(tmpdir(), 'vault-corrupt-'));
+    mkdirSync(join(corruptVault, 'meta'), { recursive: true });
+    writeFileSync(join(corruptVault, 'meta', 'profile.json'), '{ invalid json !!');
+    const result = readInstallProfile(corruptVault);
+    assert.strictEqual(result, null);
+  });
+});
+
+describe('Phase 23 — saveInstallProfile (DX-07 / D-01)', () => {
+  it('writes profile.json with correct JSON content', async () => {
+    const { saveInstallProfile } = await import('../lib/install/profile.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-save-'));
+    mkdirSync(join(tmpVault, 'meta'), { recursive: true });
+    saveInstallProfile(tmpVault, { lang: 'ru', codeLang: 'en', useCase: 'fullstack' });
+    const written = JSON.parse(readFileSync(join(tmpVault, 'meta', 'profile.json'), 'utf8'));
+    assert.deepStrictEqual(written, { lang: 'ru', codeLang: 'en', useCase: 'fullstack' });
+  });
+
+  it('does nothing (no throw) when vaultPath is null', async () => {
+    const { saveInstallProfile } = await import('../lib/install/profile.mjs');
+    assert.doesNotThrow(() => saveInstallProfile(null, { lang: 'en' }));
+  });
+
+  it('creates meta/ dir if missing', async () => {
+    const { saveInstallProfile } = await import('../lib/install/profile.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-nometa-'));
+    // Do NOT create meta/ dir — saveInstallProfile should create it
+    saveInstallProfile(tmpVault, { lang: 'en', codeLang: 'en', useCase: 'any' });
+    assert.ok(existsSync(join(tmpVault, 'meta', 'profile.json')), 'profile.json must exist after save');
+  });
+});
+
+describe('Phase 23 — detectProjectsDir (DX-08)', () => {
+  it('returns common prefix when project-map.json has paths under same dir', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-pdir-'));
+    mkdirSync(join(tmpVault, 'meta'), { recursive: true });
+    writeFileSync(join(tmpVault, 'project-map.json'), JSON.stringify({
+      projects: {
+        '/Users/x/Projects/alpha': 'alpha',
+        '/Users/x/Projects/beta': 'beta',
+      },
+    }));
+    const result = detectProjectsDir(tmpVault);
+    assert.strictEqual(result, '/Users/x/Projects');
+  });
+
+  it('returns null when no project-map.json', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-nomap-'));
+    const result = detectProjectsDir(tmpVault);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when vaultPath is null', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const result = detectProjectsDir(null);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null for empty projects object', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-empty-proj-'));
+    writeFileSync(join(tmpVault, 'project-map.json'), JSON.stringify({ projects: {} }));
+    const result = detectProjectsDir(tmpVault);
+    assert.strictEqual(result, null);
+  });
+});
+
+describe('Phase 23 — detectRegisteredPaths (DX-09)', () => {
+  it('returns object with path→name mapping from project-map.json', async () => {
+    const { detectRegisteredPaths } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-regpaths-'));
+    writeFileSync(join(tmpVault, 'project-map.json'), JSON.stringify({
+      projects: {
+        '/path/to/foo': 'foo',
+        '/path/to/bar': 'bar',
+      },
+    }));
+    const result = detectRegisteredPaths(tmpVault);
+    assert.deepStrictEqual(result, { '/path/to/foo': 'foo', '/path/to/bar': 'bar' });
+  });
+
+  it('returns empty object when vaultPath is null', async () => {
+    const { detectRegisteredPaths } = await import('../lib/install/detect.mjs');
+    const result = detectRegisteredPaths(null);
+    assert.deepStrictEqual(result, {});
+  });
+});
+
+describe('Phase 23 — detectInstallState extended fields', () => {
+  it('detectInstallState result includes profile, projectsDir, registeredPaths, notebooklmAuthenticated', async () => {
+    const { detectInstallState } = await import('../lib/install/detect.mjs');
+    const result = detectInstallState();
+    assert.ok('profile' in result, 'result must include profile field');
+    assert.ok('projectsDir' in result, 'result must include projectsDir field');
+    assert.ok('registeredPaths' in result, 'result must include registeredPaths field');
+    assert.ok('notebooklmAuthenticated' in result, 'result must include notebooklmAuthenticated field');
+    assert.strictEqual(typeof result.notebooklmAuthenticated, 'boolean');
+  });
+});
+
+describe('Phase 23 — lib/install/detect.mjs exports (D-08 extended)', () => {
+  it('exports readInstallProfile function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.readInstallProfile, 'function');
+  });
+
+  it('exports detectProjectsDir function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.detectProjectsDir, 'function');
+  });
+
+  it('exports detectRegisteredPaths function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.detectRegisteredPaths, 'function');
+  });
+
+  it('exports detectInstallState function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.detectInstallState, 'function');
+  });
+});
+
+describe('Phase 23 — lib/install/profile.mjs exports saveInstallProfile (D-08 extended)', () => {
+  it('exports saveInstallProfile function', async () => {
+    const m = await import('../lib/install/profile.mjs');
+    assert.strictEqual(typeof m.saveInstallProfile, 'function');
+  });
+});
