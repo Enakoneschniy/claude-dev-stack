@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
-status: defining_requirements
-stopped_at: Milestone v0.12 started — defining requirements
+status: roadmap_ready
+stopped_at: Roadmap created — ready to plan Phase 19
 last_updated: "2026-04-13"
 last_activity: 2026-04-13
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -16,7 +16,7 @@ progress:
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-13 — Milestone v0.12 started, defining requirements.
+**Last updated:** 2026-04-13 — Roadmap for v0.12 Hooks & Limits created. 4 phases (19–22), 9 requirements mapped.
 
 **Last activity:** 2026-04-13
 
@@ -33,10 +33,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: Not started (roadmap ready)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-13 — Milestone v0.12 started
+Status: Ready to plan Phase 19
+Last activity: 2026-04-13 — Roadmap created (4 phases, 9 requirements)
+
+Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
 
 ---
 
@@ -47,6 +49,10 @@ Last activity: 2026-04-13 — Milestone v0.12 started
 - Total plans completed (v0.11): 12
 - Phases: 6 (14–18.1)
 - Tests: 558
+
+**v0.12 targets:**
+- Phases: 4 (19–22)
+- Requirements: 9
 
 *Updated after each plan completion*
 
@@ -66,18 +72,18 @@ Last activity: 2026-04-13 — Milestone v0.12 started
 
 ### Pending Todos
 
-None.
+None — roadmap defined, ready to start Phase 19 planning.
 
 ### Blockers/Concerns
 
-- Hooks currently global — affects all projects including non-claude-dev-stack ones. Priority fix.
-- allowedTools written to global settings but missing — either overwritten or never persisted.
-- 3 wizard UAT bugs from v0.11 (pre-select, components, git-conventions).
+- Hooks currently global — affects all projects including non-claude-dev-stack ones. Priority fix (Phase 19).
+- allowedTools written to global settings but missing — either overwritten or never persisted. Priority fix (Phase 19).
+- 3 wizard UAT bugs from v0.11 (pre-select, components, git-conventions). All addressed in Phase 19.
 
 ---
 
 ## Session Continuity
 
 Last session: 2026-04-13
-Stopped at: Milestone v0.12 started — defining requirements
-Resume file: None — continue with requirements definition
+Stopped at: Roadmap created — ready to plan Phase 19
+Resume file: None — run `/gsd-plan-phase 19` to begin
