@@ -19,6 +19,7 @@ import { installGitConventions } from '../lib/install/git-conventions.mjs';
 import { generateClaudeMD } from '../lib/install/claude-md.mjs';
 import { installSessionHook } from '../lib/install/hooks.mjs';
 import { printSummary } from '../lib/install/summary.mjs';
+import { detectInstallState } from '../lib/install/detect.mjs';
 
 const PKG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const skillsDir = join(homedir(), '.claude', 'skills');
@@ -34,10 +35,42 @@ async function main() {
   const { ready } = await prompt({ type: 'confirm', name: 'ready', message: 'Ready to start?', initial: true });
   if (!ready) { console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`); return; }
 
+  // DX-02: Detect existing install state
+  const installState = detectInstallState();
+
+  let reconfigure = false;
+  if (installState.vaultExists) {
+    const projectCount = installState.projects.length;
+    const vaultDisplay = installState.vaultPath.replace(homedir(), '~');
+    console.log('');
+    console.log(`  ${c.blue}ℹ${c.reset} ${c.bold}Existing install detected:${c.reset}`);
+    console.log(`    ${c.green}✔${c.reset} Vault: ${vaultDisplay}  (${projectCount} project${projectCount === 1 ? '' : 's'})`);
+    console.log(`    ${installState.hooksInstalled ? c.green + '✔' : c.red + '✘'}${c.reset} Hooks: ${installState.hooksInstalled ? 'installed' : 'not installed'}`);
+    console.log(`    ${installState.gitRemote ? c.green + '✔' : c.dim + '–'}${c.reset} Git remote: ${installState.gitRemote || 'not configured'}`);
+    console.log('');
+
+    const result = await prompt({
+      type: 'confirm',
+      name: 'reconfigure',
+      message: 'Reconfigure everything from scratch?',
+      initial: false,
+    });
+    reconfigure = result.reconfigure;
+
+    if (!reconfigure) {
+      console.log(`  ${c.dim}Skip-aware mode: completed sections will offer skip/reconfigure.${c.reset}`);
+      console.log('');
+    }
+  }
+
   const earlyTotal = '...';
   const { pythonCmd, pipCmd } = checkPrerequisites(earlyTotal);
-  const profile = await collectProfile(earlyTotal);
-  const projectsData = await collectProjects(earlyTotal);
+  const profile = await collectProfile(earlyTotal, installState.profile);
+  const projectsData = await collectProjects(
+    earlyTotal,
+    installState.projects.length > 0 ? installState.projects : null,
+    null,
+  );
   projectsData._profileName = profile.name;
   const components = await selectComponents(earlyTotal, !!pipCmd);
 
@@ -49,7 +82,29 @@ async function main() {
   const totalSteps = setupSteps + installCount + 2;
 
   const pluginResults = await selectAndInstallPlugins(5, totalSteps);
-  const vaultPath = await getVaultPath(totalSteps);
+
+  // DX-02: Skip/reconfigure vault step if already configured
+  let vaultPath;
+  if (installState.vaultExists && !reconfigure) {
+    const { vaultAction } = await prompt({
+      type: 'select',
+      name: 'vaultAction',
+      message: `Vault setup — already at ${installState.vaultPath.replace(homedir(), '~')} (${installState.projects.length} project${installState.projects.length === 1 ? '' : 's'})`,
+      choices: [
+        { title: 'Skip (keep existing)', value: 'skip' },
+        { title: 'Reconfigure', value: 'reconfigure' },
+      ],
+      initial: 0,
+    });
+    if (vaultAction === 'skip') {
+      vaultPath = installState.vaultPath;
+      info(`Vault: ${vaultPath.replace(homedir(), '~')} (skipped)`);
+    } else {
+      vaultPath = await getVaultPath(totalSteps, installState.vaultPath);
+    }
+  } else {
+    vaultPath = await getVaultPath(totalSteps, installState.vaultPath || null);
+  }
 
   const installed = [];
   const failed = [];
@@ -68,7 +123,27 @@ async function main() {
   const gitConvOk = await installGitConventions(projectsData, stepNum++, totalSteps);
   if (gitConvOk) installed.push('Git conventions'); else failed.push('Git conventions');
   await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum++, totalSteps, PKG_ROOT);
-  installSessionHook(stepNum++, totalSteps, PKG_ROOT);
+  // DX-02: Skip/reconfigure hooks step if already installed
+  if (installState.hooksInstalled && !reconfigure) {
+    const { hookAction } = await prompt({
+      type: 'select',
+      name: 'hookAction',
+      message: 'Session hooks — already installed',
+      choices: [
+        { title: 'Skip (keep existing)', value: 'skip' },
+        { title: 'Reconfigure', value: 'reconfigure' },
+      ],
+      initial: 0,
+    });
+    if (hookAction === 'skip') {
+      info('Session hooks already configured (skipped)');
+      stepNum++;
+    } else {
+      installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath);
+    }
+  } else {
+    installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath);
+  }
 
   // Vault git sync setup (optional)
   console.log('');
