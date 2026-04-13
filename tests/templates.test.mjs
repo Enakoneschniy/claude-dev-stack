@@ -41,3 +41,31 @@ describe('stack templates (in lib/templates.mjs)', () => {
     assert.ok(typeof mod.main === 'function');
   });
 });
+
+describe('templates/loop.md', () => {
+  const projectRoot = join(__dirname, '..');
+
+  it('exists in package templates directory', () => {
+    assert.ok(existsSync(join(projectRoot, 'templates', 'loop.md')), 'templates/loop.md should exist');
+  });
+
+  it('references STATE.md for state detection', () => {
+    const content = readFileSync(join(projectRoot, 'templates', 'loop.md'), 'utf8');
+    assert.ok(content.includes('STATE.md'), 'should reference STATE.md');
+  });
+
+  it('references gsd-resume-work for resumption', () => {
+    const content = readFileSync(join(projectRoot, 'templates', 'loop.md'), 'utf8');
+    assert.ok(content.includes('gsd-resume-work'), 'should reference /gsd-resume-work');
+  });
+
+  it('references gsd-next for milestone advancement', () => {
+    const content = readFileSync(join(projectRoot, 'templates', 'loop.md'), 'utf8');
+    assert.ok(content.includes('gsd-next'), 'should reference /gsd-next');
+  });
+
+  it('references gsd-health for health checking', () => {
+    const content = readFileSync(join(projectRoot, 'templates', 'loop.md'), 'utf8');
+    assert.ok(content.includes('gsd-health'), 'should reference /gsd-health');
+  });
+});

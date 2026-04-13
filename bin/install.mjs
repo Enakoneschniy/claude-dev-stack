@@ -9,7 +9,7 @@ import { c, ok, warn, info, prompt } from '../lib/shared.mjs';
 import { printHeader, checkPrerequisites } from '../lib/install/prereqs.mjs';
 import { collectProfile } from '../lib/install/profile.mjs';
 import { collectProjects } from '../lib/install/projects.mjs';
-import { selectComponents } from '../lib/install/components.mjs';
+import { selectComponents, installLoopMd } from '../lib/install/components.mjs';
 import { selectAndInstallPlugins } from '../lib/install/plugins.mjs';
 import { getVaultPath, installVault } from '../lib/install/vault.mjs';
 import { installGSD } from '../lib/install/gsd.mjs';
@@ -70,9 +70,10 @@ async function main() {
     earlyTotal,
     installState.projects.length > 0 ? installState.projects : null,
     null,
+    installState.vaultPath,
   );
   projectsData._profileName = profile.name;
-  const components = await selectComponents(earlyTotal, !!pipCmd);
+  const components = await selectComponents(earlyTotal, !!pipCmd, installState);
 
   const setupSteps = 6;
   const installCount = [
@@ -120,6 +121,11 @@ async function main() {
   if (components.deepResearch) installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
   if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
 
+  // LIMIT-03: Install loop.md for scheduled tasks (only if GSD selected or already installed)
+  if (components.gsd || installState.gsdInstalled) {
+    await installLoopMd(stepNum++, totalSteps, PKG_ROOT, projectsData?.projects || [], installState.loopMdByProject || {});
+  }
+
   const gitConvOk = await installGitConventions(projectsData, stepNum++, totalSteps);
   if (gitConvOk) installed.push('Git conventions'); else failed.push('Git conventions');
   await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum++, totalSteps, PKG_ROOT);
@@ -139,10 +145,10 @@ async function main() {
       info('Session hooks already configured (skipped)');
       stepNum++;
     } else {
-      installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath);
+      installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
     }
   } else {
-    installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath);
+    installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
   }
 
   // Vault git sync setup (optional)
