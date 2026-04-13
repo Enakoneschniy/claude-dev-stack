@@ -48,7 +48,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 ## Phases
 
-- [ ] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs and git-conventions skip (BUG-01..05)
+- [ ] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06)
 - [ ] **Phase 20: Budget Detection** — Monitor session usage and emit warnings at configurable threshold (LIMIT-01)
 - [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
 - [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
@@ -60,13 +60,14 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 ### Phase 19: Project-Level Hooks & Wizard Bug Fixes
 **Goal**: Session hooks run only for projects configured via claude-dev-stack, wizard pre-selects existing state so users do not re-enter known values, and git-conventions does not overwrite existing config.
 **Depends on**: Nothing (starts off main)
-**Requirements**: BUG-01, BUG-02, BUG-03, BUG-04, BUG-05
+**Requirements**: BUG-01, BUG-02, BUG-03, BUG-04, BUG-05, BUG-06
 **Success Criteria** (what must be TRUE):
   1. User running the install wizard on a configured project sees session hooks written to `.claude/settings.json` in the project directory — not to `~/.claude/settings.json`. Existing global hooks remain untouched.
   2. User inspecting project `.claude/settings.json` sees an `allowedTools` list that includes vault read/write patterns and safe git bash commands — no permission prompt appears when session-manager reads context.md or writes session logs.
   3. User re-running the install wizard sees projects already in `project-map.json` pre-checked in the `collectProjects` step — they do not start with a blank selection.
   4. User re-running the install wizard sees components already detected as installed marked with "(installed)" in `selectComponents` and pre-selected by default.
   5. User running git-conventions setup on a project that already has `git-scopes.json` is offered "(already configured) — reconfigure?" instead of silent re-initialization.
+  6. After `/gsd-update`, transition.md TeamCreate patch is auto-reapplied from package-shipped `patches/` via SessionStart hook. User sees "GSD patches auto-reapplied" message if patch was restored.
 **Plans**: TBD
 
 ---
@@ -112,7 +113,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 ## Coverage Table
 
-All 9 v1 requirements mapped to exactly one owning phase:
+All 10 v1 requirements mapped to exactly one owning phase:
 
 | REQ-ID | Phase | Description |
 |--------|-------|-------------|
@@ -121,19 +122,20 @@ All 9 v1 requirements mapped to exactly one owning phase:
 | BUG-03 | 19 | collectProjects pre-selects existing project-map.json entries |
 | BUG-04 | 19 | selectComponents pre-selects installed components with "(installed)" label |
 | BUG-05 | 19 | installGitConventions skips or prompts when git-scopes.json exists |
+| BUG-06 | 19 | GSD transition.md TeamCreate patch auto-reapplied after /gsd-update |
 | LIMIT-01 | 20 | Budget detection hook with configurable threshold and warning |
 | LIMIT-02 | 21 | 4-option continuation prompt triggering corresponding scheduling primitive |
 | LIMIT-03 | 21 | loop.md template for GSD-aware scheduled/recurring tasks |
 | LIMIT-04 | 22 | Post-reset handoff reads STATE.md stopped_at and resumes execution |
 
-**Coverage check**: 9/9 requirements mapped (100%), 0 orphaned.
+**Coverage check**: 10/10 requirements mapped (100%), 0 orphaned.
 
-- Phase 19: 5 requirements (BUG-01, BUG-02, BUG-03, BUG-04, BUG-05)
+- Phase 19: 6 requirements (BUG-01, BUG-02, BUG-03, BUG-04, BUG-05, BUG-06)
 - Phase 20: 1 requirement (LIMIT-01)
 - Phase 21: 2 requirements (LIMIT-02, LIMIT-03)
 - Phase 22: 1 requirement (LIMIT-04)
 
-Total: 5 + 1 + 2 + 1 = 9 ✓
+Total: 6 + 1 + 2 + 1 = 10 ✓
 
 ---
 

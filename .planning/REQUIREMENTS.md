@@ -4,7 +4,7 @@
 
 **Phase numbering**: continues from v0.11 (last phase: 18.1) → starts at Phase 19
 **Test baseline**: 558 (v0.11.0)
-**Total requirements**: 9 v1 requirements.
+**Total requirements**: 10 v1 requirements.
 
 ---
 
@@ -17,6 +17,7 @@
 - [ ] **BUG-03**: Re-install wizard (`collectProjects`) pre-selects projects already registered in vault's `project-map.json`. User sees existing projects checked by default and can add/remove.
 - [ ] **BUG-04**: Re-install wizard (`selectComponents`) pre-selects components already installed (vault, skills, hooks detected via `detectInstallState`). Components show "(installed)" indicator.
 - [ ] **BUG-05**: `installGitConventions()` checks for existing `git-scopes.json` per project and skips or offers "(already configured) — reconfigure?" instead of blindly re-initializing.
+- [ ] **BUG-06**: GSD transition.md TeamCreate patch (Phase 18.1) survives `/gsd-update`. Package ships patched transition.md in `patches/`, install wizard copies it to `~/.claude/gsd-local-patches/`, and a SessionStart hook auto-reapplies if GSD overwrites it.
 
 ### Limit Management (LIMIT)
 
@@ -52,6 +53,7 @@
 | BUG-03 | 19 | — | pending |
 | BUG-04 | 19 | — | pending |
 | BUG-05 | 19 | — | pending |
+| BUG-06 | 19 | — | pending |
 | LIMIT-01 | 20 | — | pending |
 | LIMIT-02 | 21 | — | pending |
 | LIMIT-03 | 21 | — | pending |
