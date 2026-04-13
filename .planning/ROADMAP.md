@@ -215,3 +215,13 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 ---
 
 *Roadmap updated: 2026-04-13 — Phase 16 planned: 2 plans, 2 waves. GIT-01, GIT-02, GIT-03, GIT-04 fully covered.*
+
+### Phase 18.1: Always-on TeamCreate execution (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 18
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 18.1 to break down)
