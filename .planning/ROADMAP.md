@@ -56,6 +56,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [ ] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07)
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
+- [ ] **Phase 27: GSD Workflow Customization via Patches** — Per-project GSD overrides for branching, push/PR behavior, agent prompts; survives /gsd-update (GSD-01)
 
 ---
 
@@ -142,6 +143,22 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   3. Duplicate detection: if a decision about the same topic already exists, it updates the existing ADR instead of creating a duplicate.
   4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
   5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
+**Plans**: TBD
+
+---
+
+### Phase 27: GSD Workflow Customization via Patches
+**Goal**: Projects can override GSD workflow behavior (branching, push/PR, agent prompts) via local patch files that survive `/gsd-update`. Eliminates pain points: unwanted auto-push, PR spam, merge conflicts from rigid default workflows.
+**Depends on**: Nothing
+**Requirements**: GSD-01
+**Success Criteria** (what must be TRUE):
+  1. `.planning/gsd-overrides/` directory in a project can contain partial or full workflow file replacements (e.g., `execute-phase.md`, `transition.md`) that override `~/.claude/get-shit-done/workflows/`.
+  2. GSD tools resolve workflows with override priority: project `.planning/gsd-overrides/` > package `patches/` > installed `~/.claude/get-shit-done/`.
+  3. Per-project config in `.planning/config.json` supports: `workflow.auto_push: false` (no auto push), `workflow.auto_pr: false` (no auto PR creation), `workflow.merge_strategy: "rebase"|"merge"|"squash"`.
+  4. `gsd-tools init` reads project overrides and passes resolved workflow paths to agents — agents use overridden prompts without knowing about the override mechanism.
+  5. `/gsd-update` preserves `.planning/gsd-overrides/` — it only updates `~/.claude/get-shit-done/` (global install), project-level overrides are untouched.
+  6. `claude-dev-stack gsd customize` CLI scaffolds `.planning/gsd-overrides/` with commented templates showing what can be overridden.
+  7. Patch script supports diff-based patches (not just full file replacement) — user can patch a single section of a workflow without maintaining the entire file.
 **Plans**: TBD
 
 ---
