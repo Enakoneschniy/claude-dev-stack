@@ -60,3 +60,10 @@ if [ -f "$CONTEXT" ]; then
     fi
   fi
 fi
+
+# Budget check: show plan usage at session start
+BUDGET_OUT=$(node "$HOOKS_DIR/budget-check-status.mjs" 2>/dev/null)
+if [ -n "$BUDGET_OUT" ]; then
+  echo ""
+  echo "$BUDGET_OUT"
+fi

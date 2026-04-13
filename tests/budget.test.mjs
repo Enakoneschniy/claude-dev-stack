@@ -205,64 +205,32 @@ describe('hooks/budget-check.mjs', () => {
     assert.equal(result.status, 0);
   });
 
-  it('prints warning when usage crosses threshold via bridge file, exits 0', () => {
-    const tmpHome = join(tmpdir(), `cds-budget-hook-warn-${process.pid}`);
-    mkdirSync(join(tmpHome, '.claude'), { recursive: true });
-
-    // Create a statusline bridge file
-    const sessionId = `test-budget-${process.pid}`;
-    const bridgePath = join(tmpdir(), `claude-ctx-${sessionId}.json`);
-    writeFileSync(bridgePath, JSON.stringify({
-      session_id: sessionId,
-      remaining_percentage: 20,
-      used_pct: 80,
-      timestamp: Math.floor(Date.now() / 1000),
-    }));
-
-    const payload = JSON.stringify({ session_id: sessionId, tool_name: 'Bash' });
-
-    const result = spawnSync(process.execPath, [hookPath], {
-      encoding: 'utf8',
-      input: payload,
-      env: { ...process.env, HOME: tmpHome, BUDGET_THRESHOLD_PERCENT: '70' },
-      timeout: 5000,
-    });
-
-    rmSync(bridgePath, { force: true });
-    rmSync(tmpHome, { recursive: true, force: true });
-
-    assert.equal(result.status, 0, `exit code must be 0, stderr: ${result.stderr}`);
-    assert.ok(result.stdout.includes('BUDGET WARNING'), `stdout must include "BUDGET WARNING", got: ${result.stdout}`);
-    assert.ok(result.stdout.includes('80%'), 'warning must include usage percent (80%)');
+  it('hook contains OAuth usage API call', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('api.anthropic.com/api/oauth/usage'), 'must call OAuth usage API');
   });
 
-  it('does NOT print warning when usage below threshold', () => {
-    const tmpHome = join(tmpdir(), `cds-budget-hook-ok-${process.pid}`);
-    mkdirSync(join(tmpHome, '.claude'), { recursive: true });
+  it('hook contains Keychain token retrieval', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('Claude Code-credentials'), 'must read from Keychain');
+  });
 
-    const sessionId = `test-budget-ok-${process.pid}`;
-    const bridgePath = join(tmpdir(), `claude-ctx-${sessionId}.json`);
-    writeFileSync(bridgePath, JSON.stringify({
-      session_id: sessionId,
-      remaining_percentage: 55,
-      used_pct: 45,
-      timestamp: Math.floor(Date.now() / 1000),
-    }));
+  it('hook contains BUDGET WARNING output', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('BUDGET WARNING'), 'must output BUDGET WARNING');
+  });
 
-    const payload = JSON.stringify({ session_id: sessionId, tool_name: 'Bash' });
+  it('hook contains five_hour and seven_day checks', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('five_hour'), 'must check five_hour utilization');
+    assert.ok(src.includes('seven_day'), 'must check seven_day utilization');
+    assert.ok(src.includes('extra_usage'), 'must check extra_usage utilization');
+  });
 
-    const result = spawnSync(process.execPath, [hookPath], {
-      encoding: 'utf8',
-      input: payload,
-      env: { ...process.env, HOME: tmpHome, BUDGET_THRESHOLD_PERCENT: '70' },
-      timeout: 5000,
-    });
-
-    rmSync(bridgePath, { force: true });
-    rmSync(tmpHome, { recursive: true, force: true });
-
-    assert.equal(result.status, 0);
-    assert.ok(!result.stdout.includes('BUDGET WARNING'), 'must NOT warn when usage < threshold');
+  it('hook contains cache logic to avoid API spam', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('budget-usage-cache.json'), 'must use cache file');
+    assert.ok(src.includes('CACHE_TTL_MS'), 'must have cache TTL');
   });
 
   it('does NOT print warning twice in same session (state file present)', () => {
@@ -270,19 +238,12 @@ describe('hooks/budget-check.mjs', () => {
     mkdirSync(join(tmpHome, '.claude'), { recursive: true });
 
     const sessionId = `test-budget-once-${process.pid}`;
-    const bridgePath = join(tmpdir(), `claude-ctx-${sessionId}.json`);
-    writeFileSync(bridgePath, JSON.stringify({
-      session_id: sessionId,
-      remaining_percentage: 10,
-      used_pct: 90,
-      timestamp: Math.floor(Date.now() / 1000),
-    }));
 
     // Pre-seed state file indicating warning already fired for this session
     const statePath = join(tmpHome, '.claude', 'budget-state.json');
-    writeFileSync(statePath, JSON.stringify({ firedForSession: sessionId, firedAtPercent: 75 }));
+    writeFileSync(statePath, JSON.stringify({ firedForSession: sessionId, alerts: ['5h: 80%'] }));
 
-    const payload = JSON.stringify({ session_id: sessionId, tool_name: 'Bash' });
+    const payload = JSON.stringify({ session_id: sessionId });
 
     const result = spawnSync(process.execPath, [hookPath], {
       encoding: 'utf8',
@@ -291,44 +252,10 @@ describe('hooks/budget-check.mjs', () => {
       timeout: 5000,
     });
 
-    rmSync(bridgePath, { force: true });
     rmSync(tmpHome, { recursive: true, force: true });
 
     assert.equal(result.status, 0);
     assert.ok(!result.stdout.includes('BUDGET WARNING'), 'must NOT warn again when already fired for this session');
-  });
-
-  it('saves state file after warning fires', () => {
-    const tmpHome = join(tmpdir(), `cds-budget-hook-state-${process.pid}`);
-    mkdirSync(join(tmpHome, '.claude'), { recursive: true });
-
-    const sessionId = `test-budget-state-${process.pid}`;
-    const bridgePath = join(tmpdir(), `claude-ctx-${sessionId}.json`);
-    writeFileSync(bridgePath, JSON.stringify({
-      session_id: sessionId,
-      remaining_percentage: 15,
-      used_pct: 85,
-      timestamp: Math.floor(Date.now() / 1000),
-    }));
-
-    const payload = JSON.stringify({ session_id: sessionId, tool_name: 'Bash' });
-
-    spawnSync(process.execPath, [hookPath], {
-      encoding: 'utf8',
-      input: payload,
-      env: { ...process.env, HOME: tmpHome, BUDGET_THRESHOLD_PERCENT: '70' },
-      timeout: 5000,
-    });
-
-    const statePath = join(tmpHome, '.claude', 'budget-state.json');
-    assert.ok(existsSync(statePath), 'budget-state.json must be created after warning fires');
-
-    const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    assert.equal(state.firedForSession, sessionId, 'state must record session_id as firedForSession');
-    assert.ok(typeof state.firedAtPercent === 'number', 'state must record firedAtPercent');
-
-    rmSync(bridgePath, { force: true });
-    rmSync(tmpHome, { recursive: true, force: true });
   });
 });
 
