@@ -987,3 +987,79 @@ describe('Phase 23 Plan 02 — bin/install.mjs DX-11/DX-12 wiring', () => {
     );
   });
 });
+
+// ── Phase 23 Plan 02 Task 2 — loop.md bulk prompt (DX-13) ─────────
+
+describe('Phase 23 Plan 02 — lib/install/components.mjs bulk loop.md (DX-13)', () => {
+  const compSrc = readFileSync(join(projectRoot, 'lib', 'install', 'components.mjs'), 'utf8');
+
+  it('installLoopMd contains bulk prompt text for new projects (D-13)', () => {
+    assert.ok(
+      compSrc.includes('Install loop.md for all'),
+      'components.mjs must contain "Install loop.md for all" bulk prompt text',
+    );
+  });
+
+  it('installLoopMd splits into newProjects and installedProjects (DX-13)', () => {
+    assert.ok(
+      compSrc.includes('newProjects'),
+      'components.mjs must define newProjects variable',
+    );
+    assert.ok(
+      compSrc.includes('installedProjects'),
+      'components.mjs must define installedProjects variable',
+    );
+  });
+
+  it('installLoopMd uses only select prompts — no confirm (D-04)', () => {
+    const confirmCount = (compSrc.match(/type:\s*['"]confirm['"]/g) || []).length;
+    assert.strictEqual(
+      confirmCount,
+      0,
+      `installLoopMd must NOT use type: 'confirm' — got ${confirmCount} occurrences (use select per D-04)`,
+    );
+  });
+
+  it('installLoopMd has at least 2 select prompts (bulk + per-project fallback)', () => {
+    const selectCount = (compSrc.match(/type:\s*['"]select['"]/g) || []).length;
+    assert.ok(
+      selectCount >= 2,
+      `installLoopMd must have at least 2 select prompts, got ${selectCount}`,
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 2 — git-conventions bulk prompt (DX-13) ──
+
+describe('Phase 23 Plan 02 — lib/install/git-conventions.mjs bulk prompt (DX-13)', () => {
+  const gcSrc = readFileSync(join(projectRoot, 'lib', 'install', 'git-conventions.mjs'), 'utf8');
+
+  it('contains bulk prompt text for all projects (D-13)', () => {
+    assert.ok(
+      gcSrc.includes('Configure git conventions for all'),
+      'git-conventions.mjs must contain "Configure git conventions for all" bulk prompt text',
+    );
+  });
+
+  it('contains per-project choice value (D-13)', () => {
+    assert.ok(
+      gcSrc.includes("'per-project'") || gcSrc.includes('"per-project"'),
+      "git-conventions.mjs must have 'per-project' choice value",
+    );
+  });
+
+  it('contains skip choice value for bulk skip (D-13)', () => {
+    assert.ok(
+      gcSrc.includes("value: 'skip'") || gcSrc.includes('value: "skip"'),
+      "git-conventions.mjs must have 'skip' choice value for bulk skip",
+    );
+  });
+
+  it('uses configureAll flag for bulk auto-accept (D-13)', () => {
+    const configureAllCount = (gcSrc.match(/configureAll/g) || []).length;
+    assert.ok(
+      configureAllCount >= 3,
+      `git-conventions.mjs must reference configureAll at least 3 times, got ${configureAllCount}`,
+    );
+  });
+});
