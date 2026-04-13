@@ -17,7 +17,7 @@
 - [x] **Phase 10: Bugfixes** — Fix v0.9 migration ADR path resolution, sync stats `undefined` display, and 5 Phase 6 code-review warnings (completed 2026-04-12)
 - [x] **Phase 11: NotebookLM Query API** — `askNotebook()` + `generateArtifact()` in `lib/notebooklm.mjs`, `notebooklm ask` CLI command with optional `--save` to vault (completed 2026-04-12)
 - [x] **Phase 12: Sync Automation + install.mjs Refactor** — Session-end hook triggers background sync; `bin/install.mjs` split from 1287-line monolith into focused modules (completed 2026-04-12)
-- [ ] **Phase 13: GSD Infrastructure** — ADR bridge (decisions auto-populated from `.planning/CONTEXT.md`) + parallel phase execution via TeamCreate
+- [x] **Phase 13: GSD Infrastructure** — ADR bridge (decisions auto-populated from `.planning/CONTEXT.md`) + parallel phase execution via TeamCreate (completed 2026-04-13)
 
 ---
 
@@ -49,8 +49,8 @@ Plans:
   4. User can call `generateArtifact(notebookId, 'report')` (or `mind-map` / `quiz`) from code and get back artifact content or a download path.
 **Plans:** 2 plans
 Plans:
-- [ ] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
-- [ ] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
+- [x] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
+- [x] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
 **UI hint**: no
 
 ---
@@ -81,10 +81,10 @@ Plans:
   2. User can open an existing vault ADR and see it was created by the bridge (via a provenance comment or frontmatter field) rather than being manually authored.
   3. When GSD detects two or more phases with no shared `depends_on` overlap, it presents the user with a parallel execution option and a cost estimate before spawning any subagents — explicit consent is required every time.
   4. If user declines parallel execution, phases run sequentially in their numbered order — existing GSD behavior is fully preserved as the default.
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
-- [ ] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
+- [x] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
+- [x] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
 
 ---
 
@@ -149,7 +149,7 @@ Phase 13 — GSD Infrastructure (LOW risk)
 | 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
 | 11. NotebookLM Query API | 0/? | 2/2 | Complete    | 2026-04-12 |
 | 12. Sync Automation + install.mjs Refactor | 0/3 | 3/3 | Complete    | 2026-04-13 |
-| 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
+| 13. GSD Infrastructure | 0/? | 2/2 | Complete    | 2026-04-13 |
 
 **Total plans (estimated)**: TBD (plan counts filled during `/gsd-plan-phase`)
 **Total tests added (estimated)**: ~55 (406 → ~461)
