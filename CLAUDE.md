@@ -31,7 +31,7 @@ Before starting, ALWAYS read:
 - Do NOT delete code without explicit request
 - On .env change → update .env.example
 - On new dependency → explain in session log
-- **TeamCreate worktrees**: agents in worktrees must NOT modify `.planning/` files (STATE.md, ROADMAP.md, REQUIREMENTS.md). Only commit code (lib/, tests/, hooks/, templates/, skills/, bin/). Team lead updates `.planning/` on main after merge.
+- **TeamCreate worktrees**: agents in worktrees must NOT modify shared `.planning/` root files (STATE.md, ROADMAP.md, REQUIREMENTS.md) — these cause merge conflicts when updated in parallel. Phase-specific dirs (`.planning/phases/{N}-*/`) are fine. Team lead updates shared state on main after merge.
 
 ## References
 - Vault: `/Users/eugenenakoneschniy/vault/`
