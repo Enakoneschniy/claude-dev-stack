@@ -19,6 +19,7 @@ import {
   installSkill,
   detectMainBranch,
   createDefaultConfig,
+  checkPrereqs,
 } from '../lib/git-scopes.mjs';
 
 import { makeTempMonorepo, makeTempGitRepo } from './helpers/fixtures.mjs';
@@ -317,6 +318,46 @@ describe('createDefaultConfig', () => {
     assert.deepEqual(config.scopes, ['core', 'api']);
     assert.equal(config.co_authored_by, false);
     assert.equal(config.main_branch, 'main');
+  });
+});
+
+// ── checkPrereqs tests ───────────────────────────────────────────────────────
+
+describe('checkPrereqs', () => {
+  it('returns ok when git present and .git exists', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-prereq-ok-'));
+    try {
+      mkdirSync(join(tempDir, '.git'), { recursive: true });
+      const result = checkPrereqs(tempDir);
+      assert.equal(result.ok, true);
+      assert.equal(result.missing.length, 0);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns missing not-a-git-repo when no .git dir', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-prereq-nogit-'));
+    try {
+      const result = checkPrereqs(tempDir);
+      // git binary is present in CI, but no .git dir
+      assert.equal(result.ok, false);
+      assert.ok(result.missing.includes('not-a-git-repo'), `expected not-a-git-repo in missing: ${result.missing}`);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('returns { ok, missing } shape', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-prereq-shape-'));
+    try {
+      mkdirSync(join(tempDir, '.git'), { recursive: true });
+      const result = checkPrereqs(tempDir);
+      assert.ok(typeof result.ok === 'boolean', 'ok must be boolean');
+      assert.ok(Array.isArray(result.missing), 'missing must be array');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });
 
