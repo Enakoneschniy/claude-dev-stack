@@ -20,6 +20,8 @@ import {
   detectMainBranch,
   createDefaultConfig,
   checkPrereqs,
+  buildCommitlintYml,
+  parseClauda,
 } from '../lib/git-scopes.mjs';
 
 import { makeTempMonorepo, makeTempGitRepo } from './helpers/fixtures.mjs';
@@ -415,6 +417,94 @@ describe('gitmoji', () => {
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+});
+
+// ── buildCommitlintYml tests ─────────────────────────────────────────────────
+
+describe('buildCommitlintYml', () => {
+  it('returns a string containing name: Commitlint', () => {
+    const yml = buildCommitlintYml({ main_branch: 'main' });
+    assert.equal(typeof yml, 'string');
+    assert.ok(yml.includes('name: Commitlint'), 'must contain name: Commitlint');
+  });
+
+  it('substitutes main_branch into branches list', () => {
+    const yml = buildCommitlintYml({ main_branch: 'develop' });
+    assert.ok(yml.includes('- develop'), `expected "- develop" in yml:\n${yml}`);
+  });
+
+  it('contains actions/checkout@v4 and actions/setup-node@v4', () => {
+    const yml = buildCommitlintYml({ main_branch: 'main' });
+    assert.ok(yml.includes('actions/checkout@v4'), 'must reference checkout action');
+    assert.ok(yml.includes('actions/setup-node@v4'), 'must reference setup-node action');
+  });
+
+  it('contains @commitlint/cli in install line', () => {
+    const yml = buildCommitlintYml({ main_branch: 'main' });
+    assert.ok(yml.includes('@commitlint/cli'), 'must include @commitlint/cli install');
+  });
+});
+
+// ── parseClauda tests ─────────────────────────────────────────────────────────
+
+describe('parseClauda', () => {
+  it('returns empty result for empty input', () => {
+    const result = parseClauda('');
+    assert.deepEqual(result.scopes, []);
+    assert.deepEqual(result.types, []);
+    assert.equal(result.mainBranch, null);
+    assert.equal(result.ticketPrefix, null);
+  });
+
+  it('extracts scopes from bullet list under ## Scopes heading', () => {
+    const content = '## Scopes\n\n- api\n- web\n- shared\n';
+    const result = parseClauda(content);
+    assert.ok(result.scopes.includes('api'), `expected api in ${result.scopes}`);
+    assert.ok(result.scopes.includes('web'), `expected web in ${result.scopes}`);
+    assert.ok(result.scopes.includes('shared'), `expected shared in ${result.scopes}`);
+  });
+
+  it('extracts scopes from ## packages (lowercase) heading', () => {
+    const content = '## packages\n\n- core\n- utils\n';
+    const result = parseClauda(content);
+    assert.ok(result.scopes.includes('core'), `expected core in ${result.scopes}`);
+    assert.ok(result.scopes.includes('utils'), `expected utils in ${result.scopes}`);
+  });
+
+  it('extracts scopes from inline scopes: pattern when no heading found', () => {
+    const content = 'scopes: api, web, shared';
+    const result = parseClauda(content);
+    assert.ok(result.scopes.includes('api'), `expected api in ${result.scopes}`);
+    assert.ok(result.scopes.includes('web'), `expected web in ${result.scopes}`);
+    assert.ok(result.scopes.includes('shared'), `expected shared in ${result.scopes}`);
+  });
+
+  it('deduplicates scope names', () => {
+    const content = '## Scopes\n\n- api\n- api\n- web\n';
+    const result = parseClauda(content);
+    const apiCount = result.scopes.filter(s => s === 'api').length;
+    assert.equal(apiCount, 1, 'api should appear only once');
+  });
+
+  it('lowercases scope names', () => {
+    const content = '## Scopes\n\n- API\n- WEB\n';
+    const result = parseClauda(content);
+    assert.ok(result.scopes.includes('api'), `expected lowercase api in ${result.scopes}`);
+    assert.ok(result.scopes.includes('web'), `expected lowercase web in ${result.scopes}`);
+  });
+
+  it('returns at most 30 scopes', () => {
+    const scopes = Array.from({ length: 40 }, (_, i) => `- scope${i}`).join('\n');
+    const content = `## Scopes\n\n${scopes}\n`;
+    const result = parseClauda(content);
+    assert.ok(result.scopes.length <= 30, `expected max 30 scopes, got ${result.scopes.length}`);
+  });
+
+  it('extracts mainBranch from "Main branch: develop" text', () => {
+    const content = 'Main branch: develop\n';
+    const result = parseClauda(content);
+    assert.equal(result.mainBranch, 'develop');
   });
 });
 
