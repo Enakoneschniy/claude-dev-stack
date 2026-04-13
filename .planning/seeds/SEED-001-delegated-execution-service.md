@@ -103,3 +103,35 @@ Related code and decisions in current codebase:
 - Security is paramount: ephemeral environments, zero credential retention, user's auth only
 - Start with local scheduling (cron) as MVP, add remote execution as paid tier
 - Consider: does GSD's git-based state make this easier than for other tools? All work is in commits → git push/pull is natural sync
+
+## Claude Code Scheduling Primitives (confirmed 2026-04-13)
+
+Source: https://code.claude.com/docs/en/scheduled-tasks
+
+**Three scheduling tiers already exist — we integrate, not build:**
+
+| Tier | Cloud tasks | Desktop tasks | /loop |
+|------|------------|---------------|-------|
+| Machine off | ✓ works | ✗ | ✗ |
+| Session closed | ✓ | ✓ | ✗ |
+| Local file access | ✗ (fresh clone) | ✓ | ✓ |
+| Min interval | 1 hour | 1 minute | 1 minute |
+| Persistent | ✓ | ✓ | ✗ (session-scoped) |
+
+**Implementation plan for claude-dev-stack:**
+1. **Budget detection hook** — GSD skill that monitors `/context` or `/cost` output, warns at configurable threshold (e.g., 70% used)
+2. **4-option continuation prompt** — AskUserQuestion when budget low:
+   - "Remind me later" → one-shot CronCreate reminder
+   - "Auto-continue locally" → Desktop scheduled task with GSD command
+   - "Auto-continue in cloud" → Cloud scheduled task (fresh clone, autonomous)
+   - "Continue now" → proceed, accept extra usage
+3. **`loop.md` template** — installed by wizard, provides GSD-aware maintenance loop (continue unfinished phases, tend PRs, run cleanup)
+4. **Post-reset handoff** — when scheduled task fires, it loads GSD state from `.planning/STATE.md` and continues from `stopped_at` + `resume_file`
+
+**Key insight:** Cloud tasks do a fresh git clone — this means ALL state must be in git (which GSD already guarantees). No local-only state. This is why GSD's commit-everything approach is a perfect fit.
+
+**What we DON'T need to build:**
+- No custom server infrastructure
+- No credential management (Claude handles auth)
+- No sandbox isolation (Cloud tasks run on Anthropic infra)
+- No billing integration (user's existing subscription)
