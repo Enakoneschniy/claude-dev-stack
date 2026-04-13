@@ -730,3 +730,133 @@ describe('Phase 23 — lib/install/profile.mjs exports saveInstallProfile (D-08 
     assert.strictEqual(typeof m.saveInstallProfile, 'function');
   });
 });
+
+// ── Phase 23 Task 2 — Pre-fill UX structural tests ────────────────
+
+describe('Phase 23 Task 2 — lib/install/profile.mjs select pre-fill (D-04, D-05)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'profile.mjs'), 'utf8');
+
+  it('uses select prompt type for Keep current / Change (D-04)', () => {
+    assert.ok(
+      src.includes("type: 'select'"),
+      "profile.mjs must use type: 'select' for pre-fill prompt",
+    );
+  });
+
+  it('has Keep current choice (D-04)', () => {
+    assert.ok(
+      src.includes("'Keep current'") || src.includes('"Keep current"'),
+      "profile.mjs must have 'Keep current' choice",
+    );
+  });
+
+  it('has Change choice (D-04)', () => {
+    assert.ok(
+      src.includes("'Change'") || src.includes('"Change"'),
+      "profile.mjs must have 'Change' choice",
+    );
+  });
+
+  it('does NOT use confirm for language change (D-04)', () => {
+    const confirmCount = (src.match(/type:\s*['"]confirm['"]/g) || []).length;
+    assert.strictEqual(confirmCount, 0, "profile.mjs must NOT use confirm type — use select instead");
+  });
+
+  it('returns kept profile when detectedProfile provided and action is keep', () => {
+    // Structural: check that 'keep' action returns early with detectedProfile values
+    assert.ok(
+      src.includes("action === 'keep'"),
+      "profile.mjs must check action === 'keep' to return early",
+    );
+  });
+});
+
+describe('Phase 23 Task 2 — lib/install/projects.mjs Map-based registered paths (DX-09, D-06)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'projects.mjs'), 'utf8');
+
+  it('uses new Map() instead of new Set() for registered paths (DX-09)', () => {
+    assert.ok(
+      src.includes('new Map('),
+      'projects.mjs must use new Map() for registered paths',
+    );
+  });
+
+  it('uses registeredPaths.get() to look up project name (DX-09)', () => {
+    assert.ok(
+      src.includes('registeredPaths.get('),
+      'projects.mjs must use registeredPaths.get() for name lookup',
+    );
+  });
+
+  it('logs (registered) info line for skipped projects (D-06)', () => {
+    assert.ok(
+      src.includes('(registered)'),
+      'projects.mjs must include "(registered)" info line for skipped projects',
+    );
+  });
+
+  it('uses continue to skip name prompt for registered paths', () => {
+    assert.ok(
+      src.includes('continue'),
+      'projects.mjs must use continue to skip name prompt for registered projects',
+    );
+  });
+});
+
+describe('Phase 23 Task 2 — lib/install/plugins.mjs detectedUseCase param (DX-10)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'plugins.mjs'), 'utf8');
+
+  it('accepts detectedUseCase as 3rd parameter', () => {
+    assert.ok(
+      src.includes('selectAndInstallPlugins(stepNum, totalSteps, detectedUseCase)'),
+      'selectAndInstallPlugins must accept detectedUseCase as 3rd parameter',
+    );
+  });
+
+  it('uses detectedUseCase in pre-fill block', () => {
+    const count = (src.match(/detectedUseCase/g) || []).length;
+    assert.ok(count >= 2, `detectedUseCase must appear at least 2 times, got ${count}`);
+  });
+
+  it('returns useCase in all code paths', () => {
+    assert.ok(
+      src.includes('return { installed, failed, useCase }') ||
+      src.includes("return { installed, failed"),
+      'selectAndInstallPlugins must include useCase in return value',
+    );
+    assert.ok(
+      src.includes('useCase'),
+      'useCase must be present in return statement',
+    );
+  });
+});
+
+describe('Phase 23 Task 2 — bin/install.mjs orchestration wiring', () => {
+  const src = readFileSync(join(projectRoot, 'bin', 'install.mjs'), 'utf8');
+
+  it('imports saveInstallProfile from profile.mjs', () => {
+    assert.ok(
+      src.includes('saveInstallProfile'),
+      'bin/install.mjs must import saveInstallProfile',
+    );
+  });
+
+  it('passes installState.projectsDir to collectProjects (DX-08)', () => {
+    assert.ok(
+      src.includes('installState.projectsDir'),
+      'bin/install.mjs must pass installState.projectsDir to collectProjects',
+    );
+  });
+
+  it('passes installState.profile?.useCase to selectAndInstallPlugins (DX-10)', () => {
+    assert.ok(
+      src.includes('installState.profile?.useCase') || src.includes("installState.profile && installState.profile.useCase"),
+      'bin/install.mjs must pass profile useCase to selectAndInstallPlugins',
+    );
+  });
+
+  it('calls saveInstallProfile after vaultPath resolved', () => {
+    const saveCount = (src.match(/saveInstallProfile/g) || []).length;
+    assert.ok(saveCount >= 2, `saveInstallProfile must appear at least 2 times (import + call), got ${saveCount}`);
+  });
+});

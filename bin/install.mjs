@@ -7,7 +7,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, writeFileSync } from 'fs';
 import { c, ok, warn, info, prompt } from '../lib/shared.mjs';
 import { printHeader, checkPrerequisites } from '../lib/install/prereqs.mjs';
-import { collectProfile } from '../lib/install/profile.mjs';
+import { collectProfile, saveInstallProfile } from '../lib/install/profile.mjs';
 import { collectProjects } from '../lib/install/projects.mjs';
 import { selectComponents, installLoopMd } from '../lib/install/components.mjs';
 import { selectAndInstallPlugins } from '../lib/install/plugins.mjs';
@@ -69,7 +69,7 @@ async function main() {
   const projectsData = await collectProjects(
     earlyTotal,
     installState.projects.length > 0 ? installState.projects : null,
-    null,
+    installState.projectsDir || null,  // DX-08: pre-fill base dir
     installState.vaultPath,
   );
   projectsData._profileName = profile.name;
@@ -82,7 +82,7 @@ async function main() {
   ].filter(Boolean).length;
   const totalSteps = setupSteps + installCount + 2;
 
-  const pluginResults = await selectAndInstallPlugins(5, totalSteps);
+  const pluginResults = await selectAndInstallPlugins(5, totalSteps, installState.profile?.useCase);
 
   // DX-02: Skip/reconfigure vault step if already configured
   let vaultPath;
@@ -106,6 +106,13 @@ async function main() {
   } else {
     vaultPath = await getVaultPath(totalSteps, installState.vaultPath || null);
   }
+
+  // DX-07 / DX-10: Persist profile for next re-install
+  saveInstallProfile(vaultPath, {
+    lang: profile.lang,
+    codeLang: profile.codeLang,
+    useCase: pluginResults.useCase || installState.profile?.useCase || null,
+  });
 
   const installed = [];
   const failed = [];
