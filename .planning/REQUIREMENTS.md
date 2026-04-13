@@ -13,7 +13,7 @@
 ### Bug Fixes (BUG)
 
 - [ ] **BUG-01**: Wizard writes session hooks (SessionStart, Stop) to project-level `.claude/settings.json` instead of global `~/.claude/settings.json`. Hooks only run for projects configured via claude-dev-stack. Existing global hooks preserved for backward compat during migration.
-- [ ] **BUG-02**: Wizard writes `allowedTools` (vault read/write patterns + safe bash commands like `git status`, `git branch -d`, `git remote prune`) to project-level `.claude/settings.json`. Permissions persist across sessions and are not overwritten by other tools.
+- [ ] **BUG-02**: Wizard writes `permissions.allow` (NOT `allowedTools` — v0.11 DX-01 used wrong key) to project-level `.claude/settings.json`. All read operations (Read, Glob, Grep) auto-approved. Safe bash (git status/branch/log/diff/remote, ls, cat, node, npm test). Write for session logs (~/vault/**/sessions/*.md). Read ~/.claude/**. Session-manager works without permission prompts.
 - [ ] **BUG-03**: Re-install wizard (`collectProjects`) pre-selects projects already registered in vault's `project-map.json`. User sees existing projects checked by default and can add/remove.
 - [ ] **BUG-04**: Re-install wizard (`selectComponents`) pre-selects components already installed (vault, skills, hooks detected via `detectInstallState`). Components show "(installed)" indicator.
 - [ ] **BUG-05**: `installGitConventions()` checks for existing `git-scopes.json` per project and skips or offers "(already configured) — reconfigure?" instead of blindly re-initializing.
