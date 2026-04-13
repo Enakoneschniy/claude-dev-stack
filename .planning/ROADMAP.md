@@ -142,7 +142,7 @@ Phase 13 — GSD Infrastructure (LOW risk)
 |-------|---------------|--------|-------------------|-----------|
 | 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
 | 11. NotebookLM Query API | 0/? | 2/2 | Complete    | 2026-04-12 |
-| 12. Sync Automation + install.mjs Refactor | 0/3 | 3/3 | Complete   | 2026-04-12 |
+| 12. Sync Automation + install.mjs Refactor | 0/3 | 3/3 | Complete    | 2026-04-13 |
 | 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
 
 **Total plans (estimated)**: TBD (plan counts filled during `/gsd-plan-phase`)
