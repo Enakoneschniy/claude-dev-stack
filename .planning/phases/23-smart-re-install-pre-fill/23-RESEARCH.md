@@ -460,7 +460,7 @@ All DX-07..DX-13 tests must be written in Wave 0 before implementation. The b2fe
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **DX-13 git-conventions bulk prompt**
    - What we know: `installGitConventions()` loops per-project asking scopes/branch confirmation (multiple prompts per project, not just one y/N)

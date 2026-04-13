@@ -70,10 +70,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   4. User re-running the install wizard sees components already detected as installed marked with "(installed)" in `selectComponents` and pre-selected by default.
   5. User running git-conventions setup on a project that already has `git-scopes.json` is offered "(already configured) — reconfigure?" instead of silent re-initialization.
   6. After `/gsd-update`, transition.md TeamCreate patch is auto-reapplied from package-shipped `patches/` via SessionStart hook. User sees "GSD patches auto-reapplied" message if patch was restored.
-**Plans**: 2 plans
-Plans:
-- [ ] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
-- [ ] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
+**Plans**: TBD
 
 ---
 
@@ -85,10 +82,7 @@ Plans:
   1. When session usage crosses the configurable threshold (default 70%), a warning message appears in the session output including the remaining budget estimate.
   2. The threshold is configurable — user can set a different percentage and the hook respects it on next session start.
   3. Warning fires at most once per threshold crossing — it does not spam on every subsequent message after the threshold is crossed.
-**Plans**: 2 plans
-Plans:
-- [ ] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
-- [ ] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
+**Plans**: TBD
 
 ---
 
@@ -102,10 +96,7 @@ Plans:
   3. Selecting "Auto-continue locally" schedules a Desktop task that runs the GSD resume command when triggered.
   4. Selecting "Auto-continue in cloud" schedules a Cloud task that clones the repo and resumes autonomously.
   5. User running the install wizard can choose to install `loop.md` to their project `.claude/` directory — the template provides a GSD-aware maintenance loop for scheduled/recurring tasks.
-**Plans**: 2 plans
-Plans:
-- [ ] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
-- [ ] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
+**Plans**: TBD
 **UI hint**: yes
 
 ---
@@ -118,10 +109,7 @@ Plans:
   1. When a scheduled task fires, it reads `.planning/STATE.md`, extracts `stopped_at` and `resume_file`, and begins execution from that point — no manual step required.
   2. Handoff works after a fresh git clone — all state is committed to git and the scheduled task operates on a clean checkout without needing previous session artifacts.
   3. If `stopped_at` is missing or STATE.md is absent, the task surfaces a clear error instead of silently executing from the wrong position.
-**Plans**: 2 plans
-Plans:
-- [ ] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
-- [ ] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
+**Plans**: TBD
 
 ---
 
@@ -253,10 +241,7 @@ Plans:
   4. Step counter shows correct total (no "Step 15 of 14").
   5. Detect banner and vault step show consistent project counts from same data source.
   6. All confirmation prompts use consistent select-style (no mixed y/N and select).
-**Plans**: 2 plans
-Plans:
-- [ ] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
-- [ ] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
+**Plans**: TBD
 
 ---
 
