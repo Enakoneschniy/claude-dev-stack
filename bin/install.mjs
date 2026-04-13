@@ -25,6 +25,11 @@ const skillsDir = join(homedir(), '.claude', 'skills');
 const agentsDir = join(homedir(), '.claude', 'agents');
 
 async function main() {
+  process.on('SIGINT', () => {
+    console.log(`\n  ${c.dim}Cancelled. No changes made.${c.reset}\n`);
+    process.exit(0);
+  });
+
   printHeader();
   const { ready } = await prompt({ type: 'confirm', name: 'ready', message: 'Ready to start?', initial: true });
   if (!ready) { console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`); return; }
