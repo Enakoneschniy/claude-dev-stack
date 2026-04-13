@@ -3,20 +3,20 @@ gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
 status: in_progress
-stopped_at: Phase 21 complete — ready to plan Phase 22
+stopped_at: Phase 22 complete — LIMIT-04 post-reset handoff implemented
 last_updated: "2026-04-13"
 last_activity: 2026-04-13
 progress:
   total_phases: 4
-  completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 50
+  completed_phases: 3
+  total_plans: 5
+  completed_plans: 5
+  percent: 75
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-13 — Phase 21 (Continuation Prompt & loop.md) complete. LIMIT-02 and LIMIT-03 satisfied. 613 tests passing.
+**Last updated:** 2026-04-13 — Phase 22 (Post-Reset Handoff) complete. LIMIT-04 satisfied. 668 tests passing.
 
 **Last activity:** 2026-04-13
 
@@ -27,18 +27,18 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Milestone v0.12 — Hooks & Limits
+**Current focus:** Milestone v0.12 — all phases complete
 
 ---
 
 ## Current Position
 
-Phase: 21 complete (Phase 22 next)
+Phase: 22 complete (all v0.12 phases done)
 Plan: —
-Status: Phase 21 done — ready to plan Phase 22 (Post-Reset Handoff)
-Last activity: 2026-04-13 — Phase 21 executed (LIMIT-02 continuation prompt, LIMIT-03 loop.md)
+Status: Phase 22 done — v0.12 milestone complete (pending Phase 19 PR merge)
+Last activity: 2026-04-13 — Phase 22 executed (LIMIT-04 post-reset handoff)
 
-Progress bar: `[x] [x] [ ] [ ]` (2/4 phases, phases 19-20 done by parallel agents)
+Progress bar: `[x] [x] [x] [x]` (4/4 phases complete)
 
 ---
 
@@ -51,6 +51,7 @@ Progress bar: `[x] [x] [ ] [ ]` (2/4 phases, phases 19-20 done by parallel agent
 - Tests: 558
 
 **v0.12 targets:**
+
 - Phases: 4 (19–22)
 - Requirements: 9
 
