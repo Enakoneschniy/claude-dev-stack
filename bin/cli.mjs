@@ -82,6 +82,11 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack git-action${c.reset}             ${c.dim}Generate .github/workflows/commitlint.yml${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack migrate-claude-md${c.reset}      ${c.dim}Migrate prose CLAUDE.md to git-scopes.json${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Budget${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack budget${c.reset}                 ${c.dim}Show budget threshold and warning state${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack budget set <pct>${c.reset}       ${c.dim}Set warning threshold (0–100, default 70)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack budget reset${c.reset}           ${c.dim}Clear warning state (re-arm for next crossing)${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -207,6 +212,13 @@ async function run() {
     case 'stats':
     case 'status': {
       const { main } = await import('../lib/analytics.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Budget ──
+    case 'budget': {
+      const { main } = await import('../lib/budget-cli.mjs');
       await main(args.slice(1));
       break;
     }
