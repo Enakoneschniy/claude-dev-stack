@@ -122,11 +122,11 @@ async function main() {
   if (pluginResults.failed.length > 0) failed.push(`Claude plugins (${pluginResults.failed.length} failed)`);
 
   if (components.vault) installVault(vaultPath, projectsData, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Knowledge Vault') : failed.push('Vault');
-  if (components.gsd) installGSD(stepNum++, totalSteps) ? installed.push('GSD (Get Shit Done)') : failed.push('GSD');
+  if (components.gsd) (await installGSD(stepNum++, totalSteps)) ? installed.push('GSD (Get Shit Done)') : failed.push('GSD');
   if (components.obsidianSkills) installObsidianSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Obsidian Skills (kepano)') : failed.push('Obsidian Skills');
   if (components.customSkills) installCustomSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Custom skills (sessions, projects, router)') : failed.push('Custom skills');
   if (components.deepResearch) installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
-  if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
+  if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps, installState.notebooklmAuthenticated)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
 
   // LIMIT-03: Install loop.md for scheduled tasks (only if GSD selected or already installed)
   if (components.gsd || installState.gsdInstalled) {
