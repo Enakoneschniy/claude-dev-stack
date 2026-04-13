@@ -9,7 +9,7 @@ import { c, ok, warn, info, prompt } from '../lib/shared.mjs';
 import { printHeader, checkPrerequisites } from '../lib/install/prereqs.mjs';
 import { collectProfile } from '../lib/install/profile.mjs';
 import { collectProjects } from '../lib/install/projects.mjs';
-import { selectComponents } from '../lib/install/components.mjs';
+import { selectComponents, installLoopMd } from '../lib/install/components.mjs';
 import { selectAndInstallPlugins } from '../lib/install/plugins.mjs';
 import { getVaultPath, installVault } from '../lib/install/vault.mjs';
 import { installGSD } from '../lib/install/gsd.mjs';
@@ -119,6 +119,11 @@ async function main() {
   if (components.customSkills) installCustomSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Custom skills (sessions, projects, router)') : failed.push('Custom skills');
   if (components.deepResearch) installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
   if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
+
+  // LIMIT-03: Install loop.md for scheduled tasks (only if GSD selected or already installed)
+  if (components.gsd || installState.gsdInstalled) {
+    await installLoopMd(stepNum++, totalSteps, PKG_ROOT, projectsData?.projects || [], installState.loopMdByProject || {});
+  }
 
   const gitConvOk = await installGitConventions(projectsData, stepNum++, totalSteps);
   if (gitConvOk) installed.push('Git conventions'); else failed.push('Git conventions');
