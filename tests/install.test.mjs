@@ -860,3 +860,130 @@ describe('Phase 23 Task 2 — bin/install.mjs orchestration wiring', () => {
     assert.ok(saveCount >= 2, `saveInstallProfile must appear at least 2 times (import + call), got ${saveCount}`);
   });
 });
+
+// ── Phase 23 Plan 02 Task 1 — GSD version check (DX-11) ──────────
+
+describe('Phase 23 Plan 02 — lib/install/gsd.mjs version check (DX-11)', () => {
+  const gsdSource = readFileSync(join(projectRoot, 'lib', 'install', 'gsd.mjs'), 'utf8');
+
+  it('exports installGSD function', async () => {
+    const m = await import('../lib/install/gsd.mjs');
+    assert.strictEqual(typeof m.installGSD, 'function');
+  });
+
+  it('contains _installedGSDVersion helper (D-07, D-08)', () => {
+    assert.ok(
+      gsdSource.includes('_installedGSDVersion'),
+      'gsd.mjs must define _installedGSDVersion helper',
+    );
+  });
+
+  it('contains _latestGSDVersion helper using npm view (D-07)', () => {
+    assert.ok(
+      gsdSource.includes('_latestGSDVersion'),
+      'gsd.mjs must define _latestGSDVersion helper',
+    );
+    assert.ok(
+      /npm.*view.*get-shit-done-cc.*version/.test(gsdSource),
+      'gsd.mjs must call npm view get-shit-done-cc version',
+    );
+  });
+
+  it('reads package.json for installed version detection (D-07)', () => {
+    assert.ok(
+      gsdSource.includes('package.json'),
+      'gsd.mjs must read package.json for installed version',
+    );
+  });
+
+  it('contains select prompt with Update/Skip choices when outdated (D-09)', () => {
+    assert.ok(
+      gsdSource.includes("type: 'select'"),
+      "gsd.mjs must use type: 'select' for Update/Skip prompt",
+    );
+    assert.ok(
+      gsdSource.includes("'Update'") || gsdSource.includes('"Update"'),
+      "gsd.mjs must have 'Update' choice",
+    );
+    assert.ok(
+      gsdSource.includes("'Skip'") || gsdSource.includes('"Skip"'),
+      "gsd.mjs must have 'Skip' choice in update prompt",
+    );
+  });
+
+  it('auto-skips with "up to date" message when versions match (D-08)', () => {
+    assert.ok(
+      gsdSource.includes('up to date'),
+      'gsd.mjs must print "up to date" message when installed === latest',
+    );
+  });
+
+  it('installGSD is async (needed for prompt)', () => {
+    assert.ok(
+      gsdSource.includes('async function installGSD') || gsdSource.includes('export async function installGSD'),
+      'installGSD must be async',
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 1 — NotebookLM auth detection (DX-12) ───
+
+describe('Phase 23 Plan 02 — lib/install/notebooklm.mjs auth detection (DX-12)', () => {
+  const nblmSource = readFileSync(join(projectRoot, 'lib', 'install', 'notebooklm.mjs'), 'utf8');
+
+  it('installNotebookLM accepts 4th parameter alreadyAuthenticated (DX-12)', () => {
+    assert.ok(
+      nblmSource.includes('alreadyAuthenticated'),
+      'installNotebookLM must accept alreadyAuthenticated as 4th parameter',
+    );
+  });
+
+  it('contains select prompt with Skip/Re-login/Run sync choices when authenticated (D-11)', () => {
+    assert.ok(
+      nblmSource.includes("'Re-login'") || nblmSource.includes('"Re-login"'),
+      "notebooklm.mjs must have 'Re-login' choice",
+    );
+    assert.ok(
+      nblmSource.includes("'Run sync now'") || nblmSource.includes('"Run sync now"'),
+      "notebooklm.mjs must have 'Run sync now' choice",
+    );
+    assert.ok(
+      nblmSource.includes("'Skip'") || nblmSource.includes('"Skip"'),
+      "notebooklm.mjs must have 'Skip' choice in auth select",
+    );
+  });
+
+  it('contains "Run sync now?" text replacing "First sync" (D-12)', () => {
+    assert.ok(
+      nblmSource.includes('Run sync now?'),
+      'notebooklm.mjs must contain "Run sync now?" text (D-12)',
+    );
+  });
+
+  it('does NOT contain "Run first NotebookLM sync now?" text (D-12 replaced)', () => {
+    assert.ok(
+      !nblmSource.includes('Run first NotebookLM sync now?'),
+      '"Run first NotebookLM sync now?" must be replaced with "Run sync now?"',
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 1 — bin/install.mjs wiring (DX-11/DX-12) ──
+
+describe('Phase 23 Plan 02 — bin/install.mjs DX-11/DX-12 wiring', () => {
+  const binSrc = readFileSync(join(projectRoot, 'bin', 'install.mjs'), 'utf8');
+
+  it('passes notebooklmAuthenticated to installNotebookLM (DX-12)', () => {
+    assert.ok(
+      binSrc.includes('notebooklmAuthenticated'),
+      'bin/install.mjs must pass notebooklmAuthenticated to installNotebookLM',
+    );
+  });
+
+  it('awaits installGSD with await keyword (DX-11 async)', () => {
+    assert.ok(
+      binSrc.includes('await installGSD'),
+      'bin/install.mjs must await installGSD (now async)',
+    );
+  });
+});
