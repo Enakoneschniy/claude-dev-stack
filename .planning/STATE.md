@@ -2,21 +2,21 @@
 gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
-status: roadmap_ready
-stopped_at: Roadmap created — ready to plan Phase 19
+status: in_progress
+stopped_at: Phase 21 complete — ready to plan Phase 22
 last_updated: "2026-04-13"
 last_activity: 2026-04-13
 progress:
   total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 2
+  total_plans: 4
+  completed_plans: 4
+  percent: 50
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-13 — Roadmap for v0.12 Hooks & Limits created. 4 phases (19–22), 9 requirements mapped.
+**Last updated:** 2026-04-13 — Phase 21 (Continuation Prompt & loop.md) complete. LIMIT-02 and LIMIT-03 satisfied. 613 tests passing.
 
 **Last activity:** 2026-04-13
 
@@ -33,12 +33,12 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 ## Current Position
 
-Phase: Not started (roadmap ready)
+Phase: 21 complete (Phase 22 next)
 Plan: —
-Status: Ready to plan Phase 19
-Last activity: 2026-04-13 — Roadmap created (4 phases, 9 requirements)
+Status: Phase 21 done — ready to plan Phase 22 (Post-Reset Handoff)
+Last activity: 2026-04-13 — Phase 21 executed (LIMIT-02 continuation prompt, LIMIT-03 loop.md)
 
-Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
+Progress bar: `[x] [x] [ ] [ ]` (2/4 phases, phases 19-20 done by parallel agents)
 
 ---
 
