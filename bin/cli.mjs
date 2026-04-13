@@ -67,6 +67,8 @@ function printHelp() {
   console.log(`  ${c.cyan}${c.bold}NotebookLM Sync${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm status${c.reset}   ${c.dim}Show last sync, file count, stale files${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack notebooklm ask${c.reset}      ${c.dim}Ask a question to your NotebookLM notebook${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack notebooklm generate${c.reset} ${c.dim}Generate an artifact (report, quiz, audio, etc.)${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Notion Import${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notion${c.reset}                 ${c.dim}Notion page import (list/add/import)${c.reset}`);

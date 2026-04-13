@@ -12,18 +12,20 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v0.10 — Query, Sync Automation & Quality
+## Current Milestone: v0.10 — Query, Sync Automation & Quality — SHIPPED ✅
 
-**Goal:** Make NotebookLM a two-way tool (upload + query), auto-sync vault on session end, fix v0.9 bugs, and prepare infrastructure for parallel phase execution.
+**Shipped:** 2026-04-13
+**Phases:** 4 (10–13), 9 plans, 483 tests (+77 from baseline 406)
+**Archive:** [`.planning/milestones/v0.10-ROADMAP.md`](milestones/v0.10-ROADMAP.md)
 
-**Target features:**
-- **NotebookLM Query API** — wrap `ask`, `generate` in `lib/notebooklm.mjs`, CLI `notebooklm ask "question"`, save answers to vault. Currently only upload/sync; query exists in notebooklm-py but not in our wrapper.
-- **Auto-sync on session end** — session-end hook triggers `notebooklm sync` silently in background after session log creation. Currently sync is manual-only.
-- **Migration bugfixes** — ADR path resolution (`ADR-NNNN-` prefix → `NNNN-` filename mapping), sync stats `undefined` display fix.
-- **install.mjs refactor** — split 1287-line monolith into focused modules, remove shared.mjs utility duplication.
-- **Code review fixes** — 5 warnings from Phase 6 review (hasCommand shell injection, --full mode bug, Go detector performance, settings.json parse error, withStubBinary async).
-- **ADR bridge** — auto-populate vault/decisions from .planning/CONTEXT.md decisions during GSD workflow. Currently two parallel systems that don't sync.
-- **Parallel Phase Execution via Teams** — GSD orchestrates independent phases through TeamCreate with user consent (cost awareness). Currently phases run strictly sequential even when independent.
+**What shipped in v0.10:**
+- `lib/notebooklm.mjs` — `askNotebook()` + `generateArtifact()` query API (QUERY-01, QUERY-03)
+- `lib/notebooklm-cli.mjs` — CLI `notebooklm ask` + `notebooklm generate` commands (QUERY-02)
+- Session-end sync automation — 3-file hook chain: trigger→runner→detached sync (SYNC-01)
+- `bin/install.mjs` refactored from 1471→108 lines, 13 modules in `lib/install/` (REFACTOR-01)
+- Bugfixes: ADR path resolution, sync stats undefined, 5 Phase 6 code review warnings (FIX-01/02/03)
+- `lib/adr-bridge.mjs` — auto-populate vault/decisions from CONTEXT.md (INFRA-03)
+- GSD parallel phase execution via TeamCreate with consent (INFRA-04)
 
 ## Requirements
 
@@ -52,12 +54,20 @@ Everything else — plugins, templates, MCP catalog, stack detection — is supp
 - ✓ Idempotent CLAUDE.md update — markers `<!-- @claude-dev-stack:start/end -->` for safe re-runs — v0.7.8
 - ✓ Superpowers auto-install, GSD optional — workflow engine shift (GSD off by default) — v0.7.8
 - ✓ Missing project-map entries surfaced instead of silent skip (commit e4a03ad) — v0.7.9 (unreleased)
+- ✓ NotebookLM Query API — askNotebook + generateArtifact + CLI ask/generate — v0.10
+- ✓ Session-end sync automation — hook chain: trigger→runner→detached background sync — v0.10
+- ✓ install.mjs refactored to 108-line orchestrator + 13 lib/install/ modules — v0.10
+- ✓ Bugfixes: ADR path resolution, sync stats undefined, 5 Phase 6 code review warnings — v0.10
+- ✓ ADR bridge — auto-populate vault/decisions from CONTEXT.md decisions during GSD transitions — v0.10
+- ✓ Parallel phase execution via TeamCreate with cost estimate + consent — v0.10
 
 ### Current State
 
-**Last shipped:** v0.8.1 NotebookLM Auto-Sync hotfix (2026-04-11) — SHIPPED ✅
+**Last shipped:** v0.10 Query, Sync Automation & Quality (2026-04-13) — SHIPPED ✅
 
-v0.8.0 + v0.8.1 hotfix: 5 phases, 10 plans, 36/36 requirements, 247 tests (+193 from baseline). Full architecture rationale in 12 ADRs at `~/vault/projects/claude-dev-stack/decisions/`. Milestone archive: [`.planning/milestones/v0.8-ROADMAP.md`](milestones/v0.8-ROADMAP.md).
+v0.10: 4 phases (10–13), 9 plans, 10/10 requirements, 483 tests (+77 from v0.9 baseline 406). Code review fixes applied for both Phase 12 and 13. Milestone archive: [`.planning/milestones/v0.10-ROADMAP.md`](milestones/v0.10-ROADMAP.md).
+
+Previous: v0.8.1 NotebookLM Auto-Sync hotfix (2026-04-11). Archive: [`.planning/milestones/v0.8-ROADMAP.md`](milestones/v0.8-ROADMAP.md).
 
 **What shipped in v0.8 / v0.8.1:**
 - `lib/notebooklm.mjs` — 7-function CLI wrapper over `notebooklm-py` (ADR-0001 pivot), with cp-to-tmp `uploadSource` title workaround (v0.8.1)
