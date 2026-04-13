@@ -38,6 +38,10 @@
 
 - [ ] **ANALYTICS-01**: Analytics dashboard (`claude-dev-stack analytics`) shows NotebookLM sync stats (last sync time, sources count, sync duration) and query usage (questions asked, artifacts generated) alongside existing session/context metrics.
 
+### Bugfixes (FIX)
+
+- [ ] **FIX-04**: `installSessionHook` in `lib/install/hooks.mjs` copies `session-end-check.sh` to `~/.claude/hooks/` but does NOT copy `notebooklm-sync-trigger.mjs`, `notebooklm-sync-runner.mjs`, and `update-context.mjs`. Session-end sync silently fails because `SCRIPT_DIR` resolves to `~/.claude/hooks/` where these files don't exist. Fix: copy all hook files during install, not just the shell script.
+
 ### Phase 11 Code Review (REVIEW)
 
 - [ ] **REVIEW-01**: 4 code review warnings from Phase 11 (WR-01..WR-04: unused tmpdir, missing null check, shell quoting, silent flag discard) fixed in `lib/notebooklm.mjs` and `lib/notebooklm-cli.mjs`.
@@ -64,6 +68,7 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| FIX-04 | Phase 14 | pending |
 | REVIEW-01 | Phase 14 | pending |
 | QUALITY-01 | Phase 14 | pending |
 | DX-01 | Phase 15 | pending |

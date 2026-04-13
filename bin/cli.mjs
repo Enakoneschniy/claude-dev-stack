@@ -79,6 +79,8 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack scopes add <name>${c.reset}      ${c.dim}Add a scope${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack scopes remove <name>${c.reset}   ${c.dim}Remove a scope${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack scopes refresh${c.reset}         ${c.dim}Re-detect scopes from project structure${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack git-action${c.reset}             ${c.dim}Generate .github/workflows/commitlint.yml${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack migrate-claude-md${c.reset}      ${c.dim}Migrate prose CLAUDE.md to git-scopes.json${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
@@ -161,6 +163,16 @@ async function run() {
     case 'scope': {
       const { main } = await import('../lib/git-conventions.mjs');
       await main(args.slice(1));
+      break;
+    }
+    case 'git-action': {
+      const { cmdGitAction } = await import('../lib/git-conventions.mjs');
+      await cmdGitAction(args.slice(1));
+      break;
+    }
+    case 'migrate-claude-md': {
+      const { cmdMigrateClaude } = await import('../lib/git-conventions.mjs');
+      await cmdMigrateClaude(args.slice(1));
       break;
     }
 
