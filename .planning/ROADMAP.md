@@ -49,11 +49,12 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 ## Phases
 
 - [ ] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06)
-- [ ] **Phase 20: Budget Detection** — Monitor session usage and emit warnings at configurable threshold (LIMIT-01)
+- [x] **Phase 20: Budget Detection** — OAuth usage API, SessionStart display, UserPromptSubmit hook (LIMIT-01) (completed 2026-04-14)
 - [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
 - [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
-- [ ] **Phase 23: Smart Re-install Pre-fill** — Wizard re-install pre-fills all steps with existing config (DX-07..DX-13)
+- [x] **Phase 23: Smart Re-install Pre-fill** — Wizard re-install pre-fills all steps with existing config (DX-07..DX-13) (completed 2026-04-13)
 - [ ] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07)
+- [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 
 ---
 
@@ -74,15 +75,18 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 ---
 
-### Phase 20: Budget Detection
-**Goal**: Claude Code sessions emit a visible warning before hitting the context limit, giving users enough time to act before execution stops.
-**Depends on**: Nothing (independent monitoring feature)
+### Phase 20: Budget Detection ✅
+**Goal**: Track real Anthropic plan usage (5h/7d/extra) via OAuth API and display at session start.
+**Depends on**: Nothing
 **Requirements**: LIMIT-01
-**Success Criteria** (what must be TRUE):
-  1. When session usage crosses the configurable threshold (default 70%), a warning message appears in the session output including the remaining budget estimate.
-  2. The threshold is configurable — user can set a different percentage and the hook respects it on next session start.
-  3. Warning fires at most once per threshold crossing — it does not spam on every subsequent message after the threshold is crossed.
-**Plans**: TBD
+**Status**: Completed 2026-04-14 (implemented during Phase 23 session)
+**What was built**:
+  - OAuth usage API integration (`api.anthropic.com/api/oauth/usage`) with Keychain token
+  - SessionStart hook shows plan usage: `⚠ Budget: 5h: 17% | 7d: 71% | extra: 75% | resets: 04:00`
+  - UserPromptSubmit hook fires warning when threshold crossed (agent-visible)
+  - API response cached 60s, threshold configurable via `~/.claude/budget-config.json`
+  - CLI: `claude-dev-stack budget` / `budget set` / `budget reset`
+**Plans**: Inline (no formal plan files — hotfix during Phase 23)
 
 ---
 
@@ -109,6 +113,20 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   1. When a scheduled task fires, it reads `.planning/STATE.md`, extracts `stopped_at` and `resume_file`, and begins execution from that point — no manual step required.
   2. Handoff works after a fresh git clone — all state is committed to git and the scheduled task operates on a clean checkout without needing previous session artifacts.
   3. If `stopped_at` is missing or STATE.md is absent, the task surfaces a clear error instead of silently executing from the wrong position.
+**Plans**: TBD
+
+---
+
+### Phase 25: Budget-Aware Execution Gate
+**Goal**: GSD workflows check plan usage BEFORE starting expensive operations and offer to schedule for later if budget is tight. Statusline shows plan usage in footer.
+**Depends on**: Phase 20 (OAuth usage API must be available)
+**Requirements**: LIMIT-05
+**Success Criteria** (what must be TRUE):
+  1. Before `/gsd-execute-phase`, `/gsd-plan-phase`, or any GSD subagent spawn, system queries plan usage API and estimates if the operation will fit within remaining budget.
+  2. If budget is tight (e.g., 5h utilization > 80%), user sees: "5h limit at 82%, phase execution needs ~12%. Options: Execute now / Schedule after reset (2h) / Cancel"
+  3. Selecting "Schedule after reset" creates a CronCreate/RemoteTrigger task timed for the 5h reset window, with full GSD context (phase, plan, branch).
+  4. Claude Code statusline footer shows real-time plan usage (e.g., `5h:17% 7d:71%`) alongside existing context % display.
+  5. Statusline updates from cached API data (60s TTL), no extra API calls beyond what budget-check already makes.
 **Plans**: TBD
 
 ---
@@ -208,7 +226,7 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 20. Budget Detection | v0.12 | 0/? | Not started | - |
 | 21. Continuation Prompt & loop.md | v0.12 | 0/? | Not started | - |
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
-| 23. Smart Re-install Pre-fill | v0.12 | 0/? | Not started | - |
+| 23. Smart Re-install Pre-fill | v0.12 | 2/2 | Complete   | 2026-04-13 |
 | 24. Wizard UX Polish | v0.12 | 0/? | Not started | - |
 
 ### Phase 23: Smart Re-install Pre-fill
@@ -225,8 +243,8 @@ Phase 22 — Post-Reset Handoff (LOW risk)
   7. Bulk prompts (loop.md, git-conventions) use "Install for all? (Y/n)" or multiselect instead of per-project y/N.
 **Plans**: 2 plans
 Plans:
-- [ ] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
-- [ ] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
+- [x] 23-01-PLAN.md — Profile persistence + pre-fill for language, projects, use case (DX-07..DX-10)
+- [x] 23-02-PLAN.md — GSD version check, NotebookLM auth, bulk prompts (DX-11..DX-13)
 
 ---
 
