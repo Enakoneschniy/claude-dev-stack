@@ -55,6 +55,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [x] **Phase 23: Smart Re-install Pre-fill** — Wizard re-install pre-fills all steps with existing config (DX-07..DX-13) (completed 2026-04-13)
 - [ ] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07)
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
+- [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
 
 ---
 
@@ -127,6 +128,20 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   3. Selecting "Schedule after reset" creates a CronCreate/RemoteTrigger task timed for the 5h reset window, with full GSD context (phase, plan, branch).
   4. Claude Code statusline footer shows real-time plan usage (e.g., `5h:17% 7d:71%`) alongside existing context % display.
   5. Statusline updates from cached API data (60s TTL), no extra API calls beyond what budget-check already makes.
+**Plans**: TBD
+
+---
+
+### Phase 26: Auto-ADR Capture
+**Goal**: Architectural decisions are captured in vault automatically — not only from GSD discuss-phase, but from any session where significant decisions are made (new dependencies, API changes, architecture shifts).
+**Depends on**: Nothing
+**Requirements**: ADR-02
+**Success Criteria** (what must be TRUE):
+  1. Session-end hook scans session transcript for architectural decisions (new dependencies added, API endpoints changed, data model changes, significant refactors) and creates ADR files in `vault/projects/{project}/decisions/`.
+  2. ADR bridge runs on session end in addition to GSD discuss-phase — decisions from any workflow (manual coding, bug fixes, hotfixes) are captured.
+  3. Duplicate detection: if a decision about the same topic already exists, it updates the existing ADR instead of creating a duplicate.
+  4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
+  5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
 **Plans**: TBD
 
 ---
