@@ -47,7 +47,10 @@ Plans:
   2. User running `claude-dev-stack notebooklm ask "what did we decide about auth?"` sees the answer printed in the terminal with citations listed beneath it.
   3. User running the same command with `--save` gets the answer written to `vault/projects/{slug}/docs/notebooklm-answers/{timestamp}-{slug}.md` and sees a confirmation path in the output.
   4. User can call `generateArtifact(notebookId, 'report')` (or `mind-map` / `quiz`) from code and get back artifact content or a download path.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
+- [ ] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
 **UI hint**: no
 
 ---
@@ -78,7 +81,10 @@ Plans:
   2. User can open an existing vault ADR and see it was created by the bridge (via a provenance comment or frontmatter field) rather than being manually authored.
   3. When GSD detects two or more phases with no shared `depends_on` overlap, it presents the user with a parallel execution option and a cost estimate before spawning any subagents — explicit consent is required every time.
   4. If user declines parallel execution, phases run sequentially in their numbered order — existing GSD behavior is fully preserved as the default.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 13-01-PLAN.md — ADR bridge module (lib/adr-bridge.mjs) with TDD
+- [ ] 13-02-PLAN.md — GSD workflow integration (transition.md: bridge step + parallel detection)
 
 ---
 
