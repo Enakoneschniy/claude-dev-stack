@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.10
-milestone_name: milestone
-status: executing
-stopped_at: Phase 13 context gathered
+milestone: v0.11
+milestone_name: DX Polish & Ecosystem
+status: defining_requirements
+stopped_at: Milestone v0.11 started
 last_updated: "2026-04-13T07:54:56.345Z"
 last_activity: 2026-04-13
 progress:
@@ -27,7 +27,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-12)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Phase 10 — bugfixes
+**Current focus:** Defining requirements for v0.11
 
 ---
 

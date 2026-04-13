@@ -12,20 +12,29 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v0.10 — Query, Sync Automation & Quality — SHIPPED ✅
+## Current Milestone: v0.11 — DX Polish & Ecosystem
 
-**Shipped:** 2026-04-13
-**Phases:** 4 (10–13), 9 plans, 483 tests (+77 from baseline 406)
-**Archive:** [`.planning/milestones/v0.10-ROADMAP.md`](milestones/v0.10-ROADMAP.md)
+**Goal:** Improve developer experience with auto-approve for vault operations, idempotent re-install wizard, git-conventions enhancements, NotebookLM cross-notebook search, Notion whole-database import, analytics integration, and path→slug centralization.
 
-**What shipped in v0.10:**
-- `lib/notebooklm.mjs` — `askNotebook()` + `generateArtifact()` query API (QUERY-01, QUERY-03)
-- `lib/notebooklm-cli.mjs` — CLI `notebooklm ask` + `notebooklm generate` commands (QUERY-02)
-- Session-end sync automation — 3-file hook chain: trigger→runner→detached sync (SYNC-01)
-- `bin/install.mjs` refactored from 1471→108 lines, 13 modules in `lib/install/` (REFACTOR-01)
-- Bugfixes: ADR path resolution, sync stats undefined, 5 Phase 6 code review warnings (FIX-01/02/03)
-- `lib/adr-bridge.mjs` — auto-populate vault/decisions from CONTEXT.md (INFRA-03)
-- GSD parallel phase execution via TeamCreate with consent (INFRA-04)
+**Target features:**
+- **Auto-approve vault operations** — session-manager reads/writes vault without confirmation prompts; configurable permission presets
+- **Smart Re-install Wizard** — idempotent wizard that detects existing config, skips completed steps, pre-fills known values
+- **Path→slug centralization** — consolidate 4-file slug mapping into single module
+- **GIT-09 ERROR path** — post-wizard git-conventions error handling
+- **Gitmoji extension** — opt-in emoji prefixes for git-conventions
+- **GitHub Action generation** — commitlint CI enforcement scaffold
+- **Migration helper** — CLAUDE.md → git-scopes.json converter
+- **NotebookLM cross-notebook search** — aggregate query across project notebooks
+- **Notion whole-database import** — full database pages, not just page-list
+- **Analytics NotebookLM integration** — sync stats and query usage in dashboard
+
+<details>
+<summary>v0.10 — Query, Sync Automation & Quality — SHIPPED ✅ (2026-04-13)</summary>
+
+4 phases (10–13), 9 plans, 483 tests (+77 from baseline 406). Archive: [`.planning/milestones/v0.10-ROADMAP.md`](milestones/v0.10-ROADMAP.md).
+
+What shipped: NotebookLM Query API (ask + generate), session-end sync automation, install.mjs refactor (1471→108 lines), bugfixes, ADR bridge, parallel phase execution.
+</details>
 
 ## Requirements
 
