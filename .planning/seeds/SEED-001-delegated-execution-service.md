@@ -7,21 +7,26 @@ trigger_when: after v0.11 ships, when planning v0.12+ scope
 scope: Large
 ---
 
-# SEED-001: Claude Code Delegated Execution Service
+# SEED-001: Smart Limit Management & Execution Delegation
 
-Scheduled remote/local phase execution with session limit awareness. Agent detects budget exhaustion → offers 4 continuation options → work continues unattended → user picks up results.
+Integrate Claude's existing scheduling/delegation primitives (Managed Agents, Dispatch, /schedule) into claude-dev-stack so users get limit-aware execution out of the box. Agent detects budget exhaustion → offers continuation options → work continues unattended → user picks up results.
+
+## Positioning
+
+**claude-dev-stack is an integration layer, not a platform.** The goal is NOT to build a custom execution service — Anthropic already ships Managed Agents, Dispatch, Channels, /schedule. The goal is:
+- **Discovery:** Most users don't know these features exist. Our install wizard + skills surface them automatically.
+- **Configuration:** Set up scheduling, remote execution, limit monitoring as part of `npx claude-dev-stack` setup — zero manual config.
+- **Orchestration:** GSD workflow detects low budget and offers smart continuation using existing primitives. The 4-option UX is our value-add, not the infra.
+- **Works from the box:** Install our package → get limit awareness, scheduled continuation, remote delegation. No reading docs, no manual setup.
 
 ## Why This Matters
 
-Claude Max subscribers hit session limits mid-phase. Current options: wait and restart manually, or pay for extra usage. This creates a "Claude Code as a Service" offering where:
-- Users never lose momentum — work continues while they sleep/commute
-- Paid feature creates revenue stream for coremind s.r.o.
-- Differentiates claude-dev-stack from all competitors (none offer limit-aware scheduling + remote delegation)
+Claude Max subscribers hit session limits mid-phase. Anthropic ships the primitives (Managed Agents, Dispatch, /schedule, CronCreate) but users must discover, configure, and integrate them manually. claude-dev-stack bridges this gap — same philosophy as vault/skills/hooks: powerful features that "just work" after one install command.
 
 The core UX is the **4-option decision point** when budget runs low:
-1. Wait for reset → remind me to continue manually
-2. Wait for reset → auto-continue on local machine (cron/launchd)
-3. Wait for reset → auto-continue on remote server (computer can be off)
+1. Wait for reset → remind me to continue manually (notification)
+2. Wait for reset → auto-continue on local machine (/schedule + CronCreate)
+3. Wait for reset → auto-continue via Managed Agents (computer can be off)
 4. Continue now (accept extra usage)
 
 ## When to Surface
@@ -78,7 +83,7 @@ Deep web research conducted with 45+ sources. Critical findings:
 - **claude-agent-server** — OSS: Claude Agent in E2B sandbox with WebSocket API
 
 ### Key Architecture Decision
-**Build on Managed Agents vs custom sandbox?** Managed Agents handle isolation, checkpointing, and scaling — but lock to Anthropic's pricing. Custom sandbox (E2B/Fly.io) gives pricing control and multi-model flexibility but requires building isolation, state management, and cleanup guarantees.
+**Integrate, don't rebuild.** Managed Agents handle isolation, checkpointing, and scaling. Dispatch handles task routing. /schedule + CronCreate handle local scheduling. claude-dev-stack's role is to wire these together into a seamless UX where the user installs one package and gets limit-aware execution with smart continuation — no manual discovery or configuration of Anthropic's primitives. Custom sandbox only needed if Managed Agents don't cover a specific use case.
 
 ## Breadcrumbs
 
