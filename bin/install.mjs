@@ -7,7 +7,7 @@ import { spawnSync } from 'child_process';
 import { existsSync, writeFileSync } from 'fs';
 import { c, ok, warn, info, prompt } from '../lib/shared.mjs';
 import { printHeader, checkPrerequisites } from '../lib/install/prereqs.mjs';
-import { collectProfile } from '../lib/install/profile.mjs';
+import { collectProfile, saveInstallProfile } from '../lib/install/profile.mjs';
 import { collectProjects } from '../lib/install/projects.mjs';
 import { selectComponents, installLoopMd } from '../lib/install/components.mjs';
 import { selectAndInstallPlugins } from '../lib/install/plugins.mjs';
@@ -69,7 +69,7 @@ async function main() {
   const projectsData = await collectProjects(
     earlyTotal,
     installState.projects.length > 0 ? installState.projects : null,
-    null,
+    installState.projectsDir || null,  // DX-08: pre-fill projects directory
     installState.vaultPath,
   );
   projectsData._profileName = profile.name;
@@ -82,7 +82,8 @@ async function main() {
   ].filter(Boolean).length;
   const totalSteps = setupSteps + installCount + 2;
 
-  const pluginResults = await selectAndInstallPlugins(5, totalSteps);
+  // DX-10: pass detected use case for pre-fill; capture selected for profile save
+  const pluginResults = await selectAndInstallPlugins(5, totalSteps, installState.profile?.useCase);
 
   // DX-02: Skip/reconfigure vault step if already configured
   let vaultPath;
@@ -107,6 +108,9 @@ async function main() {
     vaultPath = await getVaultPath(totalSteps, installState.vaultPath || null);
   }
 
+  // DX-07 / DX-10: Save profile (with useCase) to vault for re-install pre-fill
+  saveInstallProfile(vaultPath, { ...profile, useCase: pluginResults.useCase || null });
+
   const installed = [];
   const failed = [];
   let stepNum = setupSteps + 1;
@@ -119,7 +123,7 @@ async function main() {
   if (components.obsidianSkills) installObsidianSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Obsidian Skills (kepano)') : failed.push('Obsidian Skills');
   if (components.customSkills) installCustomSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Custom skills (sessions, projects, router)') : failed.push('Custom skills');
   if (components.deepResearch) installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
-  if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
+  if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps, installState.notebooklmAuthenticated)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
 
   // LIMIT-03: Install loop.md for scheduled tasks (only if GSD selected or already installed)
   if (components.gsd || installState.gsdInstalled) {
