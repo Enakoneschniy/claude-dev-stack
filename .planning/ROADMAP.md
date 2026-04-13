@@ -16,7 +16,7 @@
 
 - [x] **Phase 10: Bugfixes** — Fix v0.9 migration ADR path resolution, sync stats `undefined` display, and 5 Phase 6 code-review warnings (completed 2026-04-12)
 - [x] **Phase 11: NotebookLM Query API** — `askNotebook()` + `generateArtifact()` in `lib/notebooklm.mjs`, `notebooklm ask` CLI command with optional `--save` to vault (completed 2026-04-12)
-- [ ] **Phase 12: Sync Automation + install.mjs Refactor** — Session-end hook triggers background sync; `bin/install.mjs` split from 1287-line monolith into focused modules
+- [x] **Phase 12: Sync Automation + install.mjs Refactor** — Session-end hook triggers background sync; `bin/install.mjs` split from 1287-line monolith into focused modules (completed 2026-04-12)
 - [ ] **Phase 13: GSD Infrastructure** — ADR bridge (decisions auto-populated from `.planning/CONTEXT.md`) + parallel phase execution via TeamCreate
 
 ---
@@ -61,11 +61,11 @@ Plans:
   2. If sync fails during session end, the session-end hook exits 0 (non-blocking) and a warn-level message appears in the log — Claude's session end is never interrupted by a sync failure.
   3. `bin/install.mjs` wizard runs identically before and after the refactor — all existing interactive flows, prompts, and defaults are preserved. No wizard behavior changes.
   4. Each wizard section extracted from `bin/install.mjs` is a separately importable function in its own module — utility functions duplicated from `lib/shared.mjs` are removed from install.mjs and the shared version is imported instead.
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 Plans:
-- [ ] 12-01-PLAN.md — SYNC-01 verification + structural regression tests
-- [ ] 12-02-PLAN.md — Extract 13 wizard modules from install.mjs into lib/install/
-- [ ] 12-03-PLAN.md — Rewrite bin/install.mjs as thin orchestrator + update tests
+- [x] 12-01-PLAN.md — SYNC-01 verification + structural regression tests
+- [x] 12-02-PLAN.md — Extract 13 wizard modules from install.mjs into lib/install/
+- [x] 12-03-PLAN.md — Rewrite bin/install.mjs as thin orchestrator + update tests
 
 ---
 
@@ -142,11 +142,24 @@ Phase 13 — GSD Infrastructure (LOW risk)
 |-------|---------------|--------|-------------------|-----------|
 | 10. Bugfixes | 0/2 | 2/2 | Complete    | 2026-04-12 |
 | 11. NotebookLM Query API | 0/? | 2/2 | Complete    | 2026-04-12 |
-| 12. Sync Automation + install.mjs Refactor | 0/3 | Not started | ~15 (~436 → ~451) | — |
+| 12. Sync Automation + install.mjs Refactor | 0/3 | 3/3 | Complete   | 2026-04-12 |
 | 13. GSD Infrastructure | 0/? | Not started | ~10 (~451 → ~461) | — |
 
 **Total plans (estimated)**: TBD (plan counts filled during `/gsd-plan-phase`)
 **Total tests added (estimated)**: ~55 (406 → ~461)
+
+---
+
+## Backlog
+
+### Phase 999.1: Smart Re-install Wizard (BACKLOG)
+
+**Goal:** Make the install wizard idempotent — detect existing vault/config, skip completed steps, pre-fill known values (git remote, profile, projects). Running wizard twice should not re-ask for info it already has. Needs global config or vault-based state to remember what was installed. User-reported friction: vault found but git sync still asks for remote URL that's already configured. Scope to be detailed after v0.10 release — likely more issues than initially listed.
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
 
 ---
 
