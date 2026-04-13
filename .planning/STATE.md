@@ -1,22 +1,22 @@
 ---
 gsd_state_version: 1.0
-milestone: v0.11
-milestone_name: DX Polish & Ecosystem
-status: executing
-stopped_at: v0.11 roadmap written — ROADMAP.md, STATE.md, REQUIREMENTS.md traceability updated
-last_updated: "2026-04-13T12:40:43.258Z"
+milestone: v0.12
+milestone_name: Hooks & Limits
+status: defining_requirements
+stopped_at: Milestone v0.12 started — defining requirements
+last_updated: "2026-04-13"
 last_activity: 2026-04-13
 progress:
-  total_phases: 6
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 11
-  percent: 92
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-13 — v0.11 roadmap generated. 5 phases (14–18), 11 requirements mapped.
+**Last updated:** 2026-04-13 — Milestone v0.12 started, defining requirements.
 
 **Last activity:** 2026-04-13
 
@@ -27,43 +27,26 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Phase 18.1 — always-on-teamcreate-execution
+**Current focus:** Milestone v0.12 — Hooks & Limits
 
 ---
 
 ## Current Position
 
-Phase: 18.1
-Plan: Not started
-Status: Executing Phase 18.1
-Last activity: 2026-04-13 -- Phase 18.1 execution started
-
-Progress: [░░░░░░░░░░] 0%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-13 — Milestone v0.12 started
 
 ---
 
 ## Performance Metrics
 
-**Velocity (v0.10 baseline):**
+**Velocity (v0.11 baseline):**
 
-- Total plans completed (v0.10): 9
-- Average duration: —
-- Total execution time: —
-
-**By Phase (v0.10):**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 10 | 2 | - | - |
-| 11 | 2 | - | - |
-| 12 | 3 | - | - |
-| 13 | 2 | - | - |
-| 14 | 2 | - | - |
-| 15 | 2 | - | - |
-| 16 | 2 | - | - |
-| 17 | 2 | - | - |
-| 18 | 2 | - | - |
-| 18.1 | 1 | - | - |
+- Total plans completed (v0.11): 12
+- Phases: 6 (14–18.1)
+- Tests: 558
 
 *Updated after each plan completion*
 
@@ -74,10 +57,12 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 - **Single-dep constraint preserved**: `prompts@^2.4.2` only — no new JS deps.
-- **NotebookLM via `notebooklm-py` CLI wrapper** — ADR-0001. Query API ships in Phase 11.
+- **NotebookLM via `notebooklm-py` CLI wrapper** — ADR-0001.
 - **Auth delegated to `notebooklm-py`** — claude-dev-stack never stores credentials.
 - **Branching strategy**: `phase` → `gsd/phase-{phase}-{slug}` branches.
-- **Test baseline**: 483 (v0.10.0). Every new `lib/*.mjs` needs matching `tests/*.test.mjs`.
+- **Test baseline**: 558 (v0.11.0). Every new `lib/*.mjs` needs matching `tests/*.test.mjs`.
+- **SEED-001**: Integrate Claude primitives (Managed Agents, Dispatch, /schedule, CronCreate), don't build custom infra.
+- **Hooks architecture**: Must be project-level `.claude/settings.json`, not global `~/.claude/settings.json`.
 
 ### Pending Todos
 
@@ -85,13 +70,14 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 15 (DX-02 smart re-install) is the largest feature in v0.11 — wizard touches `bin/install.mjs`, which was just refactored in Phase 12. Proceed carefully during planning to avoid re-introducing monolith patterns.
-- Phase 16 GIT-04 (migrate-claude-md) requires Claude to parse prose CLAUDE.md — scope should be conservative (regex/heuristic, not AI parsing) to keep it predictable.
+- Hooks currently global — affects all projects including non-claude-dev-stack ones. Priority fix.
+- allowedTools written to global settings but missing — either overwritten or never persisted.
+- 3 wizard UAT bugs from v0.11 (pre-select, components, git-conventions).
 
 ---
 
 ## Session Continuity
 
 Last session: 2026-04-13
-Stopped at: v0.11 roadmap written — ROADMAP.md, STATE.md, REQUIREMENTS.md traceability updated
-Resume file: None — start with `/gsd-plan-phase 14`
+Stopped at: Milestone v0.12 started — defining requirements
+Resume file: None — continue with requirements definition

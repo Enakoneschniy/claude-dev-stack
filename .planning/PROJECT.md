@@ -12,21 +12,27 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v0.11 — DX Polish & Ecosystem
+## Current Milestone: v0.12 — Hooks & Limits
 
-**Goal:** Improve developer experience with auto-approve for vault operations, idempotent re-install wizard, git-conventions enhancements, NotebookLM cross-notebook search, Notion whole-database import, analytics integration, and path→slug centralization.
+**Goal:** Fix global hooks architecture (move to project-level), fix wizard UAT bugs, and integrate Claude Code's scheduling primitives for limit-aware execution.
 
 **Target features:**
-- **Auto-approve vault operations** — session-manager reads/writes vault without confirmation prompts; configurable permission presets
-- **Smart Re-install Wizard** — idempotent wizard that detects existing config, skips completed steps, pre-fills known values
-- **Path→slug centralization** — consolidate 4-file slug mapping into single module
-- **GIT-09 ERROR path** — post-wizard git-conventions error handling
-- **Gitmoji extension** — opt-in emoji prefixes for git-conventions
-- **GitHub Action generation** — commitlint CI enforcement scaffold
-- **Migration helper** — CLAUDE.md → git-scopes.json converter
-- **NotebookLM cross-notebook search** — aggregate query across project notebooks
-- **Notion whole-database import** — full database pages, not just page-list
-- **Analytics NotebookLM integration** — sync stats and query usage in dashboard
+- **Project-level hooks** — move session hooks from global `~/.claude/settings.json` to project `.claude/settings.json`
+- **Project-level allowedTools** — auto-approve vault reads/writes + safe bash commands per project
+- **Wizard pre-select bugs** — collectProjects and selectComponents should pre-select existing state
+- **git-conventions skip existing** — don't re-init projects with existing `git-scopes.json`
+- **Budget detection hook** — monitor session limits, warn at configurable threshold
+- **4-option continuation prompt** — remind/local-schedule/cloud-schedule/continue-now when budget low
+- **`loop.md` template** — GSD-aware maintenance loop for scheduled tasks
+- **Post-reset handoff** — load STATE.md and continue from `stopped_at` after scheduled resume
+
+<details>
+<summary>v0.11 — DX Polish & Ecosystem — SHIPPED ✅ (2026-04-13)</summary>
+
+6 phases (14–18.1), 12 plans, 558 tests. Archive: [`.planning/milestones/v0.11-ROADMAP.md`](milestones/v0.11-ROADMAP.md).
+
+What shipped: Auto-approve vault ops, smart re-install wizard, path→slug centralization, git-conventions (gitmoji, GitHub Action, migration helper), NotebookLM cross-notebook search, Notion database import, analytics integration, always-on TeamCreate parallel execution.
+</details>
 
 <details>
 <summary>v0.10 — Query, Sync Automation & Quality — SHIPPED ✅ (2026-04-13)</summary>
@@ -98,9 +104,9 @@ Test count after cleanup: **264** (247 + 17 from cleanup PRs).
 
 ### Active
 
-<!-- v0.9 milestone active — see Current Milestone section above for goal and target features. -->
+<!-- v0.12 milestone active — see Current Milestone section above for goal and target features. -->
 
-**Milestone v0.9 in progress.** See "Current Milestone: v0.9" section above for goal and target features. Phase numbering starts at **Phase 6** (continues from v0.8 which ended at Phase 5). Branching strategy is `none` — each phase will be on a feature branch + PR + CI → merge to main, like the 4 cleanup PRs above.
+**Milestone v0.12 in progress.** See "Current Milestone: v0.12" section above for goal and target features. Phase numbering continues from v0.11 (ended at Phase 18.1). Branching strategy is `phase` — `gsd/phase-{N}-{slug}` branches.
 
 ### Out of Scope
 
@@ -189,4 +195,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-11 — milestone v0.9 (Git Conventions & NotebookLM Per-Project) initiated via `/gsd-new-milestone`. Added Current Milestone section, refreshed Current State with v0.8.1 hotfix and 4 post-v0.8 cleanup PRs (#17/#18/#19/#20), Out of Scope reorganized into "now in v0.9", "still deferred to v0.10+", and "carried forward from v0.8". Phase numbering continues from Phase 6.*
+*Last updated: 2026-04-13 — milestone v0.12 (Hooks & Limits) initiated via `/gsd-new-milestone`. Updated Current Milestone, collapsed v0.11 to details. SEED-001 delegated execution integrated into scope. Phase numbering continues from Phase 19.*
