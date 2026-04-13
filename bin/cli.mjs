@@ -87,6 +87,9 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack budget set <pct>${c.reset}       ${c.dim}Set warning threshold (0–100, default 70)${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack budget reset${c.reset}           ${c.dim}Clear warning state (re-arm for next crossing)${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Handoff${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack handoff status${c.reset}         ${c.dim}Check if there is stopped work to resume (exit 0/1)${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -219,6 +222,13 @@ async function run() {
     // ── Budget ──
     case 'budget': {
       const { main } = await import('../lib/budget-cli.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Handoff ──
+    case 'handoff': {
+      const { main } = await import('../lib/handoff-cli.mjs');
       await main(args.slice(1));
       break;
     }
