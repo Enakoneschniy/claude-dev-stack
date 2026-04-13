@@ -361,6 +361,63 @@ describe('checkPrereqs', () => {
   });
 });
 
+// ── gitmoji tests ────────────────────────────────────────────────────────────
+
+describe('gitmoji', () => {
+  it('installSkill renders gitmoji section when config.gitmoji set', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-gitmoji-on-'));
+    try {
+      const config = {
+        scopes: ['core'],
+        main_branch: 'main',
+        ticket_prefix: '',
+        co_authored_by: false,
+        gitmoji: { feat: '✨', fix: '🐛', chore: '🔧' },
+      };
+      installSkill(tempDir, config);
+      const skillPath = join(tempDir, '.claude', 'skills', 'git-conventions', 'SKILL.md');
+      const content = readFileSync(skillPath, 'utf8');
+      assert.ok(content.includes('feat → ✨'), `expected gitmoji line in SKILL.md, got: ${content.slice(0, 200)}`);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('installSkill renders empty string when config.gitmoji absent', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-gitmoji-off-'));
+    try {
+      const config = {
+        scopes: ['core'],
+        main_branch: 'main',
+        ticket_prefix: '',
+        co_authored_by: false,
+      };
+      installSkill(tempDir, config);
+      const skillPath = join(tempDir, '.claude', 'skills', 'git-conventions', 'SKILL.md');
+      const content = readFileSync(skillPath, 'utf8');
+      assert.ok(!content.includes('GITMOJI_SECTION'), 'GITMOJI_SECTION token must not remain in SKILL.md');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('installSkill does not throw with gitmoji: false', () => {
+    const tempDir = mkdtempSync(join(tmpdir(), 'cds-gitmoji-false-'));
+    try {
+      const config = {
+        scopes: ['core'],
+        main_branch: 'main',
+        ticket_prefix: '',
+        co_authored_by: false,
+        gitmoji: false,
+      };
+      assert.doesNotThrow(() => installSkill(tempDir, config));
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+});
+
 // ── WR-03: Go detector directory filter ─────────────────────────────────────
 
 describe('detectStack — Go detector skips heavy directories (WR-03)', () => {
