@@ -1,6 +1,6 @@
 {
   "name": "claude-dev-stack",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "One command to set up a complete AI-powered development workflow with Claude Code. Persistent memory, session management, 35+ CLI tools.",
   "keywords": [
     "claude-code",
