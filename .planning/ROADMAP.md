@@ -120,7 +120,10 @@ Plans:
   2. User running `claude-dev-stack analytics` sees NotebookLM sync stats (last sync time, source count, sync duration) in the dashboard output alongside existing session and context quality metrics.
   3. User running `claude-dev-stack analytics` sees query usage stats (questions asked, artifacts generated) — these counts update after each `notebooklm ask` or `notebooklm generate` call.
   4. User with no NotebookLM configured sees analytics dashboard without errors — NotebookLM section shows "not configured" instead of crashing or showing undefined values.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 18-01-PLAN.md — Notion database import: importDatabase() in lib/notion-import.mjs + --database routing in lib/notion-cli.mjs
+- [ ] 18-02-PLAN.md — Analytics integration: lib/notebooklm-stats.mjs + NotebookLM section in lib/analytics.mjs
 
 ---
 
@@ -179,7 +182,7 @@ Phase 17 — NotebookLM Cross-Notebook Search (LOW-MEDIUM risk)
 Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
   ├─ depends on Phase 14: slug module for file naming
   ├─ independent of Phases 15, 16, 17 — can run in parallel with them
-  └─ ANALYTICS-01 extends lib/analytics.mjs; NOTION-01 extends lib/docs.mjs
+  └─ ANALYTICS-01 extends lib/analytics.mjs; NOTION-01 extends lib/notion-import.mjs
 ```
 
 **Parallel opportunities** (after Phase 14):
@@ -201,8 +204,8 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 | 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/? | Not started | - |
 | 16. Git Conventions Ecosystem | v0.11 | 0/? | Not started | - |
 | 17. NotebookLM Cross-Notebook Search | v0.11 | 0/2 | Not started | - |
-| 18. Notion Database Import + Analytics Integration | v0.11 | 0/? | Not started | - |
+| 18. Notion Database Import + Analytics Integration | v0.11 | 0/2 | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-04-13 — Phase 17 planned: 2 plans, 2 waves (sequential). NBLM-01 fully covered.*
+*Roadmap updated: 2026-04-13 — Phase 18 planned: 2 plans, 1 wave (parallel). NOTION-01 + ANALYTICS-01 fully covered.*
