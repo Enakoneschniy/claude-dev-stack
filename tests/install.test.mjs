@@ -565,3 +565,264 @@ describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06
     );
   });
 });
+
+// ── Phase 23: DX-07 — profile pre-fill structural ────────────────
+
+describe('lib/install/profile.mjs — language pre-fill (DX-07)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'profile.mjs'), 'utf8');
+
+  it('exports saveInstallProfile function', () => {
+    assert.ok(src.includes('export function saveInstallProfile'), 'saveInstallProfile must be exported');
+  });
+
+  it('saveInstallProfile writes to vault/meta/install-profile.json', () => {
+    assert.ok(src.includes('install-profile.json'), 'must write to install-profile.json');
+  });
+
+  it('collectProfile shows current lang and offers change prompt when detectedProfile present', () => {
+    assert.ok(src.includes('Change language settings?'), 'must show change prompt when profile detected');
+  });
+
+  it('collectProfile uses detectedProfile.lang as initial value', () => {
+    assert.ok(src.includes('detectedProfile?.lang'), 'must use detectedProfile.lang as initial');
+  });
+});
+
+// ── Phase 23: DX-07 — detect reads install-profile.json ──────────
+
+describe('lib/install/detect.mjs — readInstallProfile (DX-07)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'detect.mjs'), 'utf8');
+
+  it('exports readInstallProfile function', () => {
+    assert.ok(src.includes('export function readInstallProfile'), 'readInstallProfile must be exported');
+  });
+
+  it('reads install-profile.json from vault/meta/', () => {
+    assert.ok(src.includes('install-profile.json'), 'must reference install-profile.json');
+  });
+
+  it('detectInstallState returns profile field (not always null)', () => {
+    assert.ok(
+      src.includes('const profile = readInstallProfile(vaultPath)'),
+      'profile must be populated from readInstallProfile',
+    );
+  });
+});
+
+// ── Phase 23: DX-08 — projects directory pre-fill structural ─────
+
+describe('lib/install/detect.mjs — detectProjectsDir (DX-08)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'detect.mjs'), 'utf8');
+
+  it('exports detectProjectsDir function', () => {
+    assert.ok(src.includes('export function detectProjectsDir'), 'detectProjectsDir must be exported');
+  });
+
+  it('derives common prefix from project-map.json paths', () => {
+    assert.ok(src.includes('project-map.json'), 'must read project-map.json');
+    assert.ok(src.includes('common'), 'must compute common path prefix');
+  });
+
+  it('detectInstallState returns projectsDir field', () => {
+    assert.ok(src.includes('projectsDir'), 'detectInstallState must return projectsDir');
+  });
+});
+
+// ── Phase 23: DX-08 — projects.mjs uses projectsDir pre-fill ─────
+
+describe('lib/install/projects.mjs — projects dir pre-fill (DX-08)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'projects.mjs'), 'utf8');
+
+  it('collectProjects accepts detectedBaseDir as 3rd argument', () => {
+    assert.ok(
+      src.includes('detectedBaseDir'),
+      'collectProjects must accept detectedBaseDir parameter',
+    );
+  });
+
+  it('passes detectedBaseDir as default to askPath', () => {
+    assert.ok(
+      src.includes('detectedBaseDir ||'),
+      'must use detectedBaseDir as fallback for askPath',
+    );
+  });
+});
+
+// ── Phase 23: DX-09 — already-registered projects skip name prompt
+
+describe('lib/install/projects.mjs — skip name prompt for registered projects (DX-09)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'projects.mjs'), 'utf8');
+
+  it('checks registeredPaths.has(dirPath) to skip name prompt', () => {
+    assert.ok(
+      src.includes('registeredPaths.has(dirPath)'),
+      'must check registeredPaths.has(dirPath) for already-registered projects',
+    );
+  });
+
+  it('uses registeredPaths.get(dirPath) to retrieve existing name', () => {
+    assert.ok(
+      src.includes('registeredPaths.get(dirPath)'),
+      'must use registeredPaths.get(dirPath) to retrieve existing name',
+    );
+  });
+
+  it('shows (already registered) indicator for skipped projects', () => {
+    assert.ok(
+      src.includes('already registered'),
+      'must show already registered indicator',
+    );
+  });
+});
+
+// ── Phase 23: DX-10 — use case pre-fill structural ───────────────
+
+describe('lib/install/plugins.mjs — use case pre-fill (DX-10)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'plugins.mjs'), 'utf8');
+
+  it('selectAndInstallPlugins accepts detectedUseCase as 3rd argument', () => {
+    assert.ok(
+      src.includes('selectAndInstallPlugins(stepNum, totalSteps, detectedUseCase)'),
+      'must accept detectedUseCase parameter',
+    );
+  });
+
+  it('uses detectedUseCase to set initial selection index', () => {
+    assert.ok(src.includes('initialUseCaseIdx'), 'must compute initialUseCaseIdx from detectedUseCase');
+    assert.ok(src.includes('detectedUseCase'), 'must reference detectedUseCase');
+  });
+
+  it('returns useCase in result object', () => {
+    assert.ok(src.includes('useCase }'), 'must return useCase in result');
+  });
+});
+
+// ── Phase 23: DX-11 — GSD version check structural ───────────────
+
+describe('lib/install/gsd.mjs — version check before install (DX-11)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'gsd.mjs'), 'utf8');
+
+  it('checks installed GSD version from package.json', () => {
+    assert.ok(src.includes('package.json'), 'must read package.json for installed version');
+    assert.ok(src.includes('_installedGSDVersion'), 'must have _installedGSDVersion helper');
+  });
+
+  it('queries latest version from npm registry', () => {
+    assert.ok(src.includes('npm'), 'must query npm for latest version');
+    assert.ok(src.includes('_latestGSDVersion'), 'must have _latestGSDVersion helper');
+  });
+
+  it('skips install when installed version equals latest', () => {
+    assert.ok(
+      src.includes('up to date'),
+      'must print "up to date" message when skipping',
+    );
+  });
+});
+
+// ── Phase 23: DX-12 — NotebookLM skip login structural ───────────
+
+describe('lib/install/notebooklm.mjs — skip login if authenticated (DX-12)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'notebooklm.mjs'), 'utf8');
+
+  it('installNotebookLM accepts alreadyAuthenticated as 4th argument', () => {
+    assert.ok(
+      src.includes('installNotebookLM(pipCmd, stepNum, totalSteps, alreadyAuthenticated)'),
+      'must accept alreadyAuthenticated parameter',
+    );
+  });
+
+  it('skips login when alreadyAuthenticated is true', () => {
+    assert.ok(
+      src.includes('alreadyAuthenticated'),
+      'must branch on alreadyAuthenticated',
+    );
+    assert.ok(
+      src.includes('skipping login'),
+      'must print skipping login message',
+    );
+  });
+
+  it('uses Run sync now? prompt for re-installs', () => {
+    assert.ok(src.includes('Run sync now?'), 'must use Run sync now? for re-installs');
+  });
+});
+
+// ── Phase 23: DX-12 — detect.mjs checks notebooklm auth ─────────
+
+describe('lib/install/detect.mjs — notebooklmAuthenticated (DX-12)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'detect.mjs'), 'utf8');
+
+  it('detectInstallState returns notebooklmAuthenticated field', () => {
+    assert.ok(src.includes('notebooklmAuthenticated'), 'must return notebooklmAuthenticated');
+  });
+
+  it('checks .notebooklm directory for auth state', () => {
+    assert.ok(src.includes('.notebooklm'), 'must check .notebooklm directory');
+  });
+});
+
+// ── Phase 23: DX-13 — bulk loop.md install structural ────────────
+
+describe('lib/install/components.mjs — bulk loop.md install (DX-13)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'components.mjs'), 'utf8');
+
+  it('uses bulk prompt when multiple new projects present', () => {
+    assert.ok(
+      src.includes('Install for all'),
+      'must use "Install for all N projects?" bulk prompt',
+    );
+  });
+
+  it('uses bulk prompt when multiple already-installed projects present', () => {
+    assert.ok(
+      src.includes('overwrite all?'),
+      'must use "overwrite all?" bulk prompt for already-installed',
+    );
+  });
+
+  it('still handles single-project case individually', () => {
+    assert.ok(
+      src.includes("Install loop.md for ${project.name}?"),
+      'must handle single project individually',
+    );
+  });
+});
+
+// ── Phase 23: DX-07/DX-10 — install.mjs wires profile save ──────
+
+describe('bin/install.mjs — profile save and useCase threading (DX-07, DX-10)', () => {
+  const src = readFileSync(join(projectRoot, 'bin', 'install.mjs'), 'utf8');
+
+  it('imports saveInstallProfile from profile.mjs', () => {
+    assert.ok(src.includes('saveInstallProfile'), 'must import saveInstallProfile');
+  });
+
+  it('calls saveInstallProfile with vaultPath and profile', () => {
+    assert.ok(
+      src.includes('saveInstallProfile(vaultPath,'),
+      'must call saveInstallProfile(vaultPath, ...)',
+    );
+  });
+
+  it('passes installState.profile?.useCase to selectAndInstallPlugins', () => {
+    assert.ok(
+      src.includes('installState.profile?.useCase'),
+      'must pass profile useCase to selectAndInstallPlugins',
+    );
+  });
+
+  it('passes installState.projectsDir to collectProjects', () => {
+    assert.ok(
+      src.includes('installState.projectsDir'),
+      'must pass projectsDir to collectProjects',
+    );
+  });
+
+  it('passes installState.notebooklmAuthenticated to installNotebookLM', () => {
+    assert.ok(
+      src.includes('installState.notebooklmAuthenticated'),
+      'must pass notebooklmAuthenticated to installNotebookLM',
+    );
+  });
+});
