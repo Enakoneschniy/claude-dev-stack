@@ -26,6 +26,8 @@
 - [ ] **LIMIT-03**: Install wizard offers a `loop.md` template that provides GSD-aware maintenance loop for scheduled/recurring tasks — continue unfinished phases, tend PRs, run cleanup. Template installed to project `.claude/` directory.
 - [ ] **LIMIT-04**: When a scheduled task fires (local or cloud), it loads GSD state from `.planning/STATE.md`, reads `stopped_at` + `resume_file`, and continues execution from where it left off. Works with fresh git clone (cloud tasks) because all state is in git.
 
+- [ ] **BUG-07**: `lib/install/claude-md.mjs` overwrites entire CLAUDE.md from template (`writeFileSync`) instead of using idempotent `updateProjectClaudeMd()` from `project-setup.mjs` which preserves user content outside markers. Must merge template with existing content, not replace.
+
 ### Smart Re-install (DX)
 
 - [ ] **DX-07**: Re-install wizard pre-fills communication language and code language from vault profile. Shows "Language: ru (change? y/N)" instead of blank prompt.
