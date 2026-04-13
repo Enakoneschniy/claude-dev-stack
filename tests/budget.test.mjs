@@ -149,6 +149,11 @@ describe('lib/budget.mjs', async () => {
       const msg = formatWarning(80, 70, 8000, 10000);
       assert.ok(typeof msg === 'string' && msg.length > 0);
     });
+
+    it('includes continue suggestion line', () => {
+      const w = formatWarning(75, 70, 150000, 200000);
+      assert.ok(w.includes('claude-dev-stack budget continue'), 'should include continue suggestion');
+    });
   });
 
   describe('currentSessionId', () => {
