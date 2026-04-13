@@ -43,9 +43,9 @@ Archive: `.planning/milestones/v0.10-ROADMAP.md`
 
 - [x] **Phase 14: Code Review Fixes + Quality Refactor** — Fix 4 Phase 11 code review warnings and consolidate path-to-slug mapping into a single module (completed 2026-04-13)
 - [x] **Phase 15: DX — Auto-Approve & Smart Re-install** — Configure auto-approve for vault operations and make the install wizard idempotent with pre-filled values (completed 2026-04-13)
-- [ ] **Phase 16: Git Conventions Ecosystem** — Add error handling, gitmoji support, GitHub Action generation, and CLAUDE.md migration helper to git-conventions
-- [ ] **Phase 17: NotebookLM Cross-Notebook Search** — Enable querying across all project notebooks simultaneously from a single CLI command
-- [ ] **Phase 18: Notion Database Import + Analytics Integration** — Import full Notion databases into vault and surface NotebookLM sync stats in the analytics dashboard
+- [x] **Phase 16: Git Conventions Ecosystem** — Add error handling, gitmoji support, GitHub Action generation, and CLAUDE.md migration helper to git-conventions (completed 2026-04-13)
+- [x] **Phase 17: NotebookLM Cross-Notebook Search** — Enable querying across all project notebooks simultaneously from a single CLI command (completed 2026-04-13)
+- [x] **Phase 18: Notion Database Import + Analytics Integration** — Import full Notion databases into vault and surface NotebookLM sync stats in the analytics dashboard (completed 2026-04-13)
 
 ---
 
@@ -94,10 +94,10 @@ Plans:
   2. User who ran `scopes init --gitmoji` (or selected gitmoji in the interactive prompt) sees emoji prefixes applied to their commits — the mapping is stored in `git-scopes.json` and the skill reads it.
   3. User running `claude-dev-stack git-action` gets a `.github/workflows/commitlint.yml` file written to their project — the file is valid YAML that runs commitlint on every PR.
   4. User running `claude-dev-stack migrate-claude-md` sees an interactive review of extracted scopes/conventions before any file is written — they can accept, edit, or cancel before `git-scopes.json` is created.
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 16-01-PLAN.md — Add checkPrereqs (GIT-01) and gitmoji opt-in support (GIT-02) to git-scopes.mjs and cmdInit
-- [ ] 16-02-PLAN.md — Add cmdGitAction (GIT-03) and cmdMigrateClaude (GIT-04) with bin/cli.mjs routing
+- [x] 16-01-PLAN.md — Add checkPrereqs (GIT-01) and gitmoji opt-in support (GIT-02) to git-scopes.mjs and cmdInit
+- [x] 16-02-PLAN.md — Add cmdGitAction (GIT-03) and cmdMigrateClaude (GIT-04) with bin/cli.mjs routing
 
 ---
 
@@ -110,10 +110,10 @@ Plans:
   2. Search runs notebooks in parallel — a query to 5 notebooks does not take 5× longer than a single-notebook query.
   3. If one notebook query fails, the command still returns results from the other notebooks — partial results are shown with a warning for the failed project.
   4. User with zero configured notebooks sees a clear message ("no notebooks configured") instead of an empty result or an error.
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 17-01-PLAN.md — Implement runSearch() in lib/notebooklm-cli.mjs (parallel fan-out, --json flag, partial results)
-- [ ] 17-02-PLAN.md — Test suite for runSearch in tests/notebooklm-search.test.mjs (5 cases with injectable deps)
+- [x] 17-01-PLAN.md — Implement runSearch() in lib/notebooklm-cli.mjs (parallel fan-out, --json flag, partial results)
+- [x] 17-02-PLAN.md — Test suite for runSearch in tests/notebooklm-search.test.mjs (5 cases with injectable deps)
 
 ---
 
@@ -126,10 +126,10 @@ Plans:
   2. User running `claude-dev-stack analytics` sees NotebookLM sync stats (last sync time, source count, sync duration) in the dashboard output alongside existing session and context quality metrics.
   3. User running `claude-dev-stack analytics` sees query usage stats (questions asked, artifacts generated) — these counts update after each `notebooklm ask` or `notebooklm generate` call.
   4. User with no NotebookLM configured sees analytics dashboard without errors — NotebookLM section shows "not configured" instead of crashing or showing undefined values.
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 18-01-PLAN.md — Notion database import: importDatabase() in lib/notion-import.mjs + --database routing in lib/notion-cli.mjs
-- [ ] 18-02-PLAN.md — Analytics integration: lib/notebooklm-stats.mjs + NotebookLM section in lib/analytics.mjs
+- [x] 18-01-PLAN.md — Notion database import: importDatabase() in lib/notion-import.mjs + --database routing in lib/notion-cli.mjs
+- [x] 18-02-PLAN.md — Analytics integration: lib/notebooklm-stats.mjs + NotebookLM section in lib/analytics.mjs
 
 ---
 
@@ -208,9 +208,9 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 | 13. GSD Infrastructure | v0.10 | 2/2 | Complete | 2026-04-13 |
 | 14. Code Review Fixes + Quality Refactor | v0.11 | 2/2 | Complete    | 2026-04-13 |
 | 15. DX — Auto-Approve & Smart Re-install | v0.11 | 2/3 | Complete    | 2026-04-13 |
-| 16. Git Conventions Ecosystem | v0.11 | 0/2 | Not started | - |
-| 17. NotebookLM Cross-Notebook Search | v0.11 | 0/2 | Not started | - |
-| 18. Notion Database Import + Analytics Integration | v0.11 | 0/2 | Not started | - |
+| 16. Git Conventions Ecosystem | v0.11 | 2/2 | Complete    | 2026-04-13 |
+| 17. NotebookLM Cross-Notebook Search | v0.11 | 2/2 | Complete    | 2026-04-13 |
+| 18. Notion Database Import + Analytics Integration | v0.11 | 2/2 | Complete    | 2026-04-13 |
 
 ---
 
