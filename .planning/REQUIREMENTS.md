@@ -47,12 +47,12 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| BUG-01 | — | — | pending |
-| BUG-02 | — | — | pending |
-| BUG-03 | — | — | pending |
-| BUG-04 | — | — | pending |
-| BUG-05 | — | — | pending |
-| LIMIT-01 | — | — | pending |
-| LIMIT-02 | — | — | pending |
-| LIMIT-03 | — | — | pending |
-| LIMIT-04 | — | — | pending |
+| BUG-01 | 19 | — | pending |
+| BUG-02 | 19 | — | pending |
+| BUG-03 | 19 | — | pending |
+| BUG-04 | 19 | — | pending |
+| BUG-05 | 19 | — | pending |
+| LIMIT-01 | 20 | — | pending |
+| LIMIT-02 | 21 | — | pending |
+| LIMIT-03 | 21 | — | pending |
+| LIMIT-04 | 22 | — | pending |
