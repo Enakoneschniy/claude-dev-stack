@@ -2,9 +2,37 @@
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = join(__dirname, '..');
+const detectMjsPath = join(projectRoot, 'lib', 'install', 'detect.mjs');
+
+// Helper: run detectInstallState() in a child process with controlled HOME
+function runDetect(fakeHome) {
+  const runnerScript = `
+    import { detectInstallState } from '${detectMjsPath}';
+    const s = detectInstallState();
+    process.stdout.write(JSON.stringify(s));
+  `;
+  const tmpDir = mkdtempSync(join(tmpdir(), 'detect-runner-'));
+  const runnerPath = join(tmpDir, 'runner.mjs');
+  writeFileSync(runnerPath, runnerScript);
+  const result = spawnSync(process.execPath, [runnerPath], {
+    encoding: 'utf8',
+    env: { ...process.env, HOME: fakeHome },
+    timeout: 10000,
+  });
+  rmSync(tmpDir, { recursive: true, force: true });
+  if (result.status !== 0) {
+    throw new Error(`runner failed: ${result.stderr}`);
+  }
+  return JSON.parse(result.stdout);
+}
 
 // Path to the module under test
 import { detectInstallState } from '../lib/install/detect.mjs';
@@ -137,5 +165,156 @@ describe('detectInstallState() — hooksInstalled detection (D-16)', () => {
     // We can't assert the exact value without controlling settings.json, so we verify the invariant:
     // hooksInstalled = true implies the function found the pattern in settings.json
     assert.ok(typeof state.hooksInstalled === 'boolean', 'hooksInstalled must always be boolean');
+  });
+});
+
+// ── Functional tests using child process with controlled HOME ────────────────
+
+describe('detectInstallState() — functional: no vault (isolated HOME)', () => {
+  let fakeHome;
+
+  before(() => {
+    fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-novault-'));
+  });
+
+  after(() => {
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  it('returns vaultExists: false when HOME has no vault dir', () => {
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.vaultExists, false, 'vaultExists must be false');
+  });
+
+  it('returns vaultPath: null when no vault found', () => {
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.vaultPath, null, 'vaultPath must be null');
+  });
+
+  it('returns profile: null always', () => {
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.profile, null, 'profile must always be null');
+  });
+});
+
+describe('detectInstallState() — functional: vault present (isolated HOME)', () => {
+  let fakeHome;
+
+  before(() => {
+    fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-vault-'));
+    // Create valid vault structure at ~/vault
+    mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
+    mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
+  });
+
+  after(() => {
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  it('returns vaultExists: true when vault/meta and vault/projects exist', () => {
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.vaultExists, true, 'vaultExists must be true');
+  });
+
+  it('returns vaultPath ending with /vault', () => {
+    const state = runDetect(fakeHome);
+    assert.ok(state.vaultPath && state.vaultPath.endsWith('/vault'), `vaultPath must end with /vault, got: ${state.vaultPath}`);
+  });
+
+  it('returns gitRemote: null when vault has no .git dir', () => {
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.gitRemote, null, 'gitRemote must be null when no .git');
+  });
+
+  it('returns projects: [] when project-registry.md is missing', () => {
+    const state = runDetect(fakeHome);
+    assert.deepStrictEqual(state.projects, [], 'projects must be empty array');
+  });
+});
+
+describe('detectInstallState() — functional: hooks detection (isolated HOME)', () => {
+  let fakeHome;
+
+  before(() => {
+    fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-hooks-'));
+    mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
+    mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
+    mkdirSync(join(fakeHome, '.claude'), { recursive: true });
+  });
+
+  after(() => {
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  it('returns hooksInstalled: false when settings.json has empty hooks', () => {
+    writeFileSync(
+      join(fakeHome, '.claude', 'settings.json'),
+      JSON.stringify({ hooks: { SessionStart: [] } }, null, 2),
+    );
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.hooksInstalled, false, 'hooksInstalled must be false with empty hooks');
+  });
+
+  it('returns hooksInstalled: true when settings.json has session-start-context hook', () => {
+    writeFileSync(
+      join(fakeHome, '.claude', 'settings.json'),
+      JSON.stringify({
+        hooks: {
+          SessionStart: [
+            { hooks: [{ type: 'command', command: 'bash /home/user/.claude/hooks/session-start-context.sh' }] },
+          ],
+        },
+      }, null, 2),
+    );
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.hooksInstalled, true, 'hooksInstalled must be true when hook present');
+  });
+
+  it('returns hooksInstalled: false when settings.json is corrupt JSON (no throw)', () => {
+    writeFileSync(join(fakeHome, '.claude', 'settings.json'), '{ invalid json !!!');
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.hooksInstalled, false, 'hooksInstalled must be false on corrupt JSON');
+  });
+});
+
+describe('detectInstallState() — functional: projects parsing (isolated HOME)', () => {
+  let fakeHome;
+
+  before(() => {
+    fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-projects-'));
+    mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
+    mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
+
+    // Write a project-registry.md with a markdown table
+    const registryContent = `# Project Registry
+
+| name | status | path |
+|------|--------|------|
+| myapp | active | /home/user/myapp |
+| backend | active | /home/user/backend |
+`;
+    writeFileSync(join(fakeHome, 'vault', 'meta', 'project-registry.md'), registryContent);
+  });
+
+  after(() => {
+    rmSync(fakeHome, { recursive: true, force: true });
+  });
+
+  it('parses project name from markdown table row', () => {
+    const state = runDetect(fakeHome);
+    assert.ok(state.projects.length >= 1, 'must parse at least one project');
+    assert.strictEqual(state.projects[0].name, 'myapp', 'first project name must be myapp');
+  });
+
+  it('parses project path from markdown table row', () => {
+    const state = runDetect(fakeHome);
+    assert.ok(state.projects.length >= 1, 'must parse at least one project');
+    assert.strictEqual(state.projects[0].path, '/home/user/myapp', 'first project path must match');
+  });
+
+  it('parses multiple projects from registry', () => {
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.projects.length, 2, 'must parse 2 projects');
+    assert.strictEqual(state.projects[1].name, 'backend');
   });
 });
