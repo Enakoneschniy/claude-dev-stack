@@ -94,7 +94,10 @@ Plans:
   2. User who ran `scopes init --gitmoji` (or selected gitmoji in the interactive prompt) sees emoji prefixes applied to their commits — the mapping is stored in `git-scopes.json` and the skill reads it.
   3. User running `claude-dev-stack git-action` gets a `.github/workflows/commitlint.yml` file written to their project — the file is valid YAML that runs commitlint on every PR.
   4. User running `claude-dev-stack migrate-claude-md` sees an interactive review of extracted scopes/conventions before any file is written — they can accept, edit, or cancel before `git-scopes.json` is created.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 16-01-PLAN.md — Add checkPrereqs (GIT-01) and gitmoji opt-in support (GIT-02) to git-scopes.mjs and cmdInit
+- [ ] 16-02-PLAN.md — Add cmdGitAction (GIT-03) and cmdMigrateClaude (GIT-04) with bin/cli.mjs routing
 
 ---
 
@@ -205,10 +208,10 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 | 13. GSD Infrastructure | v0.10 | 2/2 | Complete | 2026-04-13 |
 | 14. Code Review Fixes + Quality Refactor | v0.11 | 2/2 | Complete    | 2026-04-13 |
 | 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/3 | Not started | - |
-| 16. Git Conventions Ecosystem | v0.11 | 0/? | Not started | - |
+| 16. Git Conventions Ecosystem | v0.11 | 0/2 | Not started | - |
 | 17. NotebookLM Cross-Notebook Search | v0.11 | 0/2 | Not started | - |
 | 18. Notion Database Import + Analytics Integration | v0.11 | 0/2 | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-04-13 — Phase 15 planned: 3 plans, 2 waves. DX-01 + DX-02 fully covered.*
+*Roadmap updated: 2026-04-13 — Phase 16 planned: 2 plans, 2 waves. GIT-01, GIT-02, GIT-03, GIT-04 fully covered.*
