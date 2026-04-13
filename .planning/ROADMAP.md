@@ -189,6 +189,20 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 21. Continuation Prompt & loop.md | v0.12 | 0/? | Not started | - |
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
 
+### Phase 23: Smart Re-install Pre-fill
+**Goal**: Wizard re-install skips or pre-fills all steps that have existing configuration — no redundant prompts for already-configured values.
+**Depends on**: Phase 19 (hooks architecture must be in place)
+**Requirements**: DX-07, DX-08, DX-09, DX-10, DX-11, DX-12, DX-13
+**Success Criteria** (what must be TRUE):
+  1. User re-running wizard sees pre-filled language (e.g., "Language: ru (change? y/N)") — no blank prompt.
+  2. User re-running wizard sees pre-filled projects directory — no re-entry of known path.
+  3. Already-registered project names are skipped entirely — wizard only asks names for NEW projects.
+  4. Use case pre-filled from previous selection — skip or show current with change option.
+  5. GSD install checks version — if already latest, shows "GSD: up to date (v1.34.2)" and skips.
+  6. NotebookLM login checks `storage_state.json` — if valid, shows "NotebookLM: authenticated" and skips browser login.
+  7. Bulk prompts (loop.md, git-conventions) use "Install for all? (Y/n)" or multiselect instead of per-project y/N.
+**Plans**: TBD
+
 ---
 
 *Roadmap updated: 2026-04-13 — v0.12 Hooks & Limits milestone added. 4 phases (19–22), 9 requirements, 100% coverage.*

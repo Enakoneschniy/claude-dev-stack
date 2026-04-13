@@ -26,6 +26,16 @@
 - [ ] **LIMIT-03**: Install wizard offers a `loop.md` template that provides GSD-aware maintenance loop for scheduled/recurring tasks — continue unfinished phases, tend PRs, run cleanup. Template installed to project `.claude/` directory.
 - [ ] **LIMIT-04**: When a scheduled task fires (local or cloud), it loads GSD state from `.planning/STATE.md`, reads `stopped_at` + `resume_file`, and continues execution from where it left off. Works with fresh git clone (cloud tasks) because all state is in git.
 
+### Smart Re-install (DX)
+
+- [ ] **DX-07**: Re-install wizard pre-fills communication language and code language from vault profile. Shows "Language: ru (change? y/N)" instead of blank prompt.
+- [ ] **DX-08**: Re-install wizard pre-fills projects directory from existing `project-map.json`. Shows "Projects directory: ~/Projects/ (change? y/N)" instead of re-asking.
+- [ ] **DX-09**: Already-registered projects (in `project-map.json`) skip the "Project name for X" prompt entirely. Wizard only asks names for newly selected projects.
+- [ ] **DX-10**: Use case selection pre-filled from previous install. Shows current value with change option instead of blank selector.
+- [ ] **DX-11**: GSD install checks installed version against latest — skips `npx get-shit-done-cc@latest` if already up to date. Same for Obsidian Skills.
+- [ ] **DX-12**: NotebookLM login checks `~/.notebooklm/storage_state.json` existence — skips browser OAuth if already authenticated. "First sync" text replaced with "Run sync now?" for re-installs.
+- [ ] **DX-13**: Bulk prompts (loop.md per project, git-conventions per project) use "Install for all N projects? (Y/n)" or multiselect instead of N individual y/N prompts.
+
 ---
 
 ## Future Requirements
@@ -58,3 +68,10 @@
 | LIMIT-02 | 21 | — | pending |
 | LIMIT-03 | 21 | — | pending |
 | LIMIT-04 | 22 | — | pending |
+| DX-07 | 23 | — | pending |
+| DX-08 | 23 | — | pending |
+| DX-09 | 23 | — | pending |
+| DX-10 | 23 | — | pending |
+| DX-11 | 23 | — | pending |
+| DX-12 | 23 | — | pending |
+| DX-13 | 23 | — | pending |
