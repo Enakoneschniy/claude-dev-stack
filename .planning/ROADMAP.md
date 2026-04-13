@@ -104,7 +104,10 @@ Plans:
   2. Search runs notebooks in parallel — a query to 5 notebooks does not take 5× longer than a single-notebook query.
   3. If one notebook query fails, the command still returns results from the other notebooks — partial results are shown with a warning for the failed project.
   4. User with zero configured notebooks sees a clear message ("no notebooks configured") instead of an empty result or an error.
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 17-01-PLAN.md — Implement runSearch() in lib/notebooklm-cli.mjs (parallel fan-out, --json flag, partial results)
+- [ ] 17-02-PLAN.md — Test suite for runSearch in tests/notebooklm-search.test.mjs (5 cases with injectable deps)
 
 ---
 
@@ -197,9 +200,9 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 | 14. Code Review Fixes + Quality Refactor | v0.11 | 2/2 | Complete    | 2026-04-13 |
 | 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/? | Not started | - |
 | 16. Git Conventions Ecosystem | v0.11 | 0/? | Not started | - |
-| 17. NotebookLM Cross-Notebook Search | v0.11 | 0/? | Not started | - |
+| 17. NotebookLM Cross-Notebook Search | v0.11 | 0/2 | Not started | - |
 | 18. Notion Database Import + Analytics Integration | v0.11 | 0/? | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-04-13 — Phase 14 planned: 2 plans, 1 wave (parallel). v0.11 phases 14–18, 11/11 v1 requirements mapped, 0 orphaned.*
+*Roadmap updated: 2026-04-13 — Phase 17 planned: 2 plans, 2 waves (sequential). NBLM-01 fully covered.*
