@@ -77,8 +77,11 @@ Plans:
   3. User who selects "reconfigure" on a completed section sees the wizard re-run that section with existing values as defaults (not blank fields).
   4. Session-manager reads `context.md` and writes session logs without triggering permission prompts — `allowedTools` patterns are added to `.claude/settings.json` covering vault read/write paths.
   5. User can inspect `.claude/settings.json` and see the auto-approve allowlist patterns that were written during wizard setup.
-**Plans**: TBD
-**UI hint**: yes
+**Plans:** 3 plans
+Plans:
+- [ ] 15-01-PLAN.md — Create lib/install/detect.mjs (detectInstallState) and add allowedTools to lib/install/hooks.mjs (DX-01)
+- [ ] 15-02-PLAN.md — Extend vault.mjs, profile.mjs, projects.mjs with optional detected-state params (DX-02 pre-fill)
+- [ ] 15-03-PLAN.md — Wire detection + skip-aware flow into bin/install.mjs and write tests/detect.test.mjs
 
 ---
 
@@ -201,11 +204,11 @@ Phase 18 — Notion Database Import + Analytics Integration (LOW risk)
 | 12. Sync Automation + install.mjs Refactor | v0.10 | 3/3 | Complete | 2026-04-13 |
 | 13. GSD Infrastructure | v0.10 | 2/2 | Complete | 2026-04-13 |
 | 14. Code Review Fixes + Quality Refactor | v0.11 | 2/2 | Complete    | 2026-04-13 |
-| 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/? | Not started | - |
+| 15. DX — Auto-Approve & Smart Re-install | v0.11 | 0/3 | Not started | - |
 | 16. Git Conventions Ecosystem | v0.11 | 0/? | Not started | - |
 | 17. NotebookLM Cross-Notebook Search | v0.11 | 0/2 | Not started | - |
 | 18. Notion Database Import + Analytics Integration | v0.11 | 0/2 | Not started | - |
 
 ---
 
-*Roadmap updated: 2026-04-13 — Phase 18 planned: 2 plans, 1 wave (parallel). NOTION-01 + ANALYTICS-01 fully covered.*
+*Roadmap updated: 2026-04-13 — Phase 15 planned: 3 plans, 2 waves. DX-01 + DX-02 fully covered.*
