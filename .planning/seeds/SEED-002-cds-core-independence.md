@@ -152,6 +152,70 @@ Files relevant to this seed in current codebase:
 - `CLAUDE.md` (project) — branching_strategy + GSD multi-phase workflow rules
 - Upstream: `https://github.com/gsd-build/get-shit-done` (MIT, 52k stars, active)
 
+## GSD-2 and Pi SDK — Studied, NOT Adopted (decided 2026-04-14)
+
+After the vendored-fork decision, user asked about `gsd-build/gsd-2` (https://github.com/gsd-build/gsd-2). Analysis recorded here so this decision does not need re-litigation.
+
+### What GSD-2 is
+- **Complete rewrite** of original GSD by the same team
+- Standalone CLI (`gsd-pi` on npm), built on Pi SDK (`badlogic/pi-mono`)
+- Direct TypeScript access to agent harness — no longer prompt-injection-via-slash-commands
+- Solves architectural problems we wanted to solve ourselves: context clearing between tasks, exact file injection at dispatch, git branch management, cost/token tracking, stuck-loop detection, crash recovery, auto-advance through full milestone unattended
+
+### Why we did NOT adopt as dependency
+
+**Maturity / volatility (critical):**
+- Created **2026-03-11** — only ~1 month old at time of evaluation
+- 5,787 stars / 598 forks already (explosive hype-driven growth)
+- **290 open issues in 30 days** (vs GSD-1 = 45 issues over years)
+- Currently at v2.71 — that's **~71 releases / month, ~2 per day**
+- pinned-version-instantly-stale dynamic; hooks would break weekly
+
+**Red flags:**
+- **Crypto token `$GSD` on Solana / Dexscreener** — for serious dev infrastructure this is a major signal of misaligned incentives and possible pivot risk
+- RTK managed binary force-installed by default (escapable via `GSD_RTK_DISABLED=1`, but defaults reveal philosophy)
+- Telemetry forced-disabled hints at upstream telemetry concerns
+
+**Strategic:**
+- Adopting GSD-2 = swapping known-risk dependency (GSD-1) for unknown-risk dependency (GSD-2) — defeats the purpose of fork
+- Full re-architecture means our existing 28+ phases and pipeline would need rewrite anyway — same effort as building our own from GSD-1 base
+- Same single-vendor lock-in problem, just with newer vendor
+
+### How GSD-2 IS valuable to us (input, not dependency)
+
+**Architectural inspiration source.** When building CDS-Core refactors, study:
+- How GSD-2 implements context clearing between tasks
+- How they handle exact file injection at dispatch time
+- Git branch management approach (relevant to Target Refactor #2)
+- Cost/token tracking (relevant to Phase 25 budget gate work)
+- Stuck-loop detection patterns
+- Crash recovery mechanism
+- Auto-advance state machine
+
+**Re-evaluation trigger.** Revisit GSD-2 in **6 months (around 2026-10)**. By then either:
+- (a) Stabilized — issue count down, release cadence normalized, crypto-token gone or irrelevant → reconsider as input or partial dependency
+- (b) Died/abandoned — common fate of hype-driven projects → confirms our independence decision was right
+- (c) Continued chaos — confirms continued avoidance
+
+### Pi SDK (`badlogic/pi-mono`) — separately interesting
+
+Standalone evaluation, independent of GSD-2:
+- 35,556 stars, MIT, TypeScript, created 2025-08-09 (~8 months at eval time)
+- Description: "AI agent toolkit: coding agent CLI, unified LLM API, TUI & web UI libraries, Slack bot, vLLM pods"
+- 55 open issues — much healthier ratio than GSD-2
+- Older and more mature than GSD-2 (which is built on top of Pi SDK)
+
+**Why interesting for CDS:**
+- Direct harness access in TypeScript (same capability that makes GSD-2 powerful)
+- Could be useful for CDS even WITHOUT GSD-2 wrapper
+- If we're vendoring/forking anyway, building parts of CDS-Core on Pi SDK gives us the same architectural advantages GSD-2 has
+- Author (`badlogic` = Mario Zechner, ex-libGDX) has a long open-source track record — different trust profile from GSD-2 author
+
+**Action item for CDS-Core milestone planning:**
+- Study Pi SDK API surface during Phase B audit
+- Decide if any CDS-Core refactors should be built ON Pi SDK (e.g., teams parallelization, context clearing)
+- Pi SDK as direct dependency has different risk profile than GSD-2 — older, more focused, no tokenomics
+
 ## Notes
 
 This seed captures the strategic decision made in conversation on 2026-04-14 between user and Claude. The full conversation transcript (in `~/.claude/projects/-Users-eugenenakoneschniy-Projects-claude-dev-stack/`) contains the reasoning chain — consult if uncertain about any decision recorded here.
