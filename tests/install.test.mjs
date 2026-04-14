@@ -404,6 +404,80 @@ describe('lib/install/hooks.mjs — project-level hooks (BUG-01/BUG-02)', () => 
       'gsd-auto-reapply-patches.sh must be copied to hooksDir',
     );
   });
+
+  // BUG-01 (1c): global settings.json must NOT be modified when projects are provided
+  it('installSessionHook does NOT write to ~/.claude/settings.json when projects provided (BUG-01)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-bug01-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-bug01-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-bug01-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+
+      // Pre-create a global settings.json with a known marker
+      const claudeDir = join(tmpHome, '.claude');
+      mkdirSync(claudeDir, { recursive: true });
+      const globalSettingsPath = join(claudeDir, 'settings.json');
+      const markerContent = JSON.stringify({ preserved: true });
+      writeFileSync(globalSettingsPath, markerContent);
+
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      // Global settings.json must be byte-identical to the marker (untouched)
+      const after = readFileSync(globalSettingsPath, 'utf8');
+      assert.equal(
+        after,
+        markerContent,
+        'global ~/.claude/settings.json must be untouched when projects are provided',
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  // BUG-02 (2c): permissions.allow must be idempotent — no duplicates across reruns
+  it('installSessionHook permissions.allow is idempotent across reruns (BUG-02)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-bug02-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-bug02-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-bug02-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      // Call wizard twice with same inputs
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      const settingsPath = join(tmpProjectPath, '.claude', 'settings.json');
+      assert.ok(existsSync(settingsPath), 'project settings.json must exist');
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      const allow = settings?.permissions?.allow || [];
+
+      // 'Bash(git status)' must appear exactly once (no duplicates)
+      const gitStatusCount = allow.filter(p => p === 'Bash(git status)').length;
+      assert.equal(
+        gitStatusCount,
+        1,
+        `'Bash(git status)' must appear exactly once, found ${gitStatusCount}`,
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
 });
 
 // ── Phase 19: BUG-03 — collectProjects pre-select structural ─────
