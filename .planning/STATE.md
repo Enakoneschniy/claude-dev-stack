@@ -71,6 +71,10 @@ Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
 - **SEED-001**: Integrate Claude primitives (Managed Agents, Dispatch, /schedule, CronCreate), don't build custom infra.
 - **Hooks architecture**: Must be project-level `.claude/settings.json`, not global `~/.claude/settings.json`.
 
+### Roadmap Evolution
+
+- Phase 28 added: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
+
 ### Pending Todos
 
 None — roadmap defined, ready to start Phase 19 planning.

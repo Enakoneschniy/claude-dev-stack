@@ -293,6 +293,16 @@ Plans:
   6. All confirmation prompts use consistent select-style (no mixed y/N and select).
 **Plans**: TBD
 
+### Phase 28: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 27
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 28 to break down)
+
 ---
 
 *Roadmap updated: 2026-04-13 — Phase 24 (Wizard UX Polish) added. v0.12 now 6 phases (19–24), 17 requirements + BUG-07.*
