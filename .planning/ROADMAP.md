@@ -48,7 +48,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 ## Phases
 
-- [ ] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06)
+- [x] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06) (completed 2026-04-14)
 - [x] **Phase 20: Budget Detection** — OAuth usage API, SessionStart display, UserPromptSubmit hook (LIMIT-01) (completed 2026-04-14)
 - [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
 - [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
@@ -75,7 +75,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   6. After `/gsd-update`, transition.md TeamCreate patch is auto-reapplied from package-shipped `patches/` via SessionStart hook. User sees "GSD patches auto-reapplied" message if patch was restored.
 **Plans**: 1 plan
 Plans:
-- [ ] 19-01-PLAN.md — BUG-06 D-07 (wizard copy + hook precedence) + BUG-01/02 audit
+- [x] 19-01-PLAN.md — BUG-06 D-07 (wizard copy + hook precedence) + BUG-01/02 audit
 
 ---
 
@@ -104,8 +104,12 @@ Plans:
   3. Selecting "Auto-continue locally" schedules a Desktop task that runs the GSD resume command when triggered.
   4. Selecting "Auto-continue in cloud" schedules a Cloud task that clones the repo and resumes autonomously.
   5. User running the install wizard can choose to install `loop.md` to their project `.claude/` directory — the template provides a GSD-aware maintenance loop for scheduled/recurring tasks.
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 21-01-PLAN.md — Budget hook hint line + test assertions (LIMIT-02 hook side)
+- [ ] 21-02-PLAN.md — SKILL.md rewrite for direct tool invocation + LIMIT-03 UAT verification
 
 ---
 
@@ -256,7 +260,7 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 17. NotebookLM Cross-Notebook Search | v0.11 | 2/2 | Complete | 2026-04-13 |
 | 18. Notion Database Import + Analytics Integration | v0.11 | 2/2 | Complete | 2026-04-13 |
 | 18.1. Always-on TeamCreate execution | v0.11 | 1/1 | Complete | 2026-04-13 |
-| 19. Project-Level Hooks & Wizard Bug Fixes | v0.12 | 0/? | Not started | - |
+| 19. Project-Level Hooks & Wizard Bug Fixes | v0.12 | 1/1 | Complete   | 2026-04-14 |
 | 20. Budget Detection | v0.12 | 0/? | Not started | - |
 | 21. Continuation Prompt & loop.md | v0.12 | 0/? | Not started | - |
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
@@ -300,7 +304,7 @@ Plans:
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 27
-**Plans:** 0 plans
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 28 to break down)
