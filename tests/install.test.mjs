@@ -564,6 +564,51 @@ describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06
       'session-start-context.sh must invoke gsd-auto-reapply-patches.sh',
     );
   });
+
+  // D-07: installSessionHook must copy patches/ to ~/.claude/gsd-local-patches/
+  it('installSessionHook copies patches/ to ~/.claude/gsd-local-patches/ (BUG-06 D-07)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const nonce = `TEST_PATCH_MARKER_${Date.now()}`;
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-d07-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-d07-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-d07-proj-'));
+    const patchesSrcDir = join(tmpPkgRoot, 'patches');
+    mkdirSync(patchesSrcDir, { recursive: true });
+    writeFileSync(join(patchesSrcDir, 'transition.md'), nonce);
+
+    const vaultPath = join(tmpHome, 'vault');
+    const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+
+      // First call: wizard copies patches to ~/.claude/gsd-local-patches/
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      const destFile = join(tmpHome, '.claude', 'gsd-local-patches', 'transition.md');
+      assert.ok(existsSync(destFile), `~/.claude/gsd-local-patches/transition.md must exist after wizard run`);
+      assert.equal(
+        readFileSync(destFile, 'utf8'),
+        nonce,
+        'gsd-local-patches/transition.md must match source byte-for-byte',
+      );
+
+      // Second call: idempotent — file still matches source, no throw
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      assert.ok(existsSync(destFile), 'gsd-local-patches/transition.md must still exist after second call');
+      assert.equal(
+        readFileSync(destFile, 'utf8'),
+        nonce,
+        'gsd-local-patches/transition.md must still match source after idempotent run',
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
 });
 
 // ── Phase 23 — Smart Re-install Pre-fill ─────────────────────────
