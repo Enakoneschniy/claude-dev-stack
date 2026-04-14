@@ -382,13 +382,16 @@ Plans:
 
 ### Phase 31: Skills to Hooks Migration — replace deterministic skills (dev-router, session-manager start, project-switcher detection, git-conventions) with Claude Code hooks for silent UX and token savings. Scope: (1) dev-router → UserPromptSubmit regex hook with additionalContext; (2) session-manager context loading → fully in SessionStart hook (skill remains only for /end logging); (3) project-switcher detection → UserPromptSubmit regex against vault/meta/project-registry.md; (4) git-conventions → PreToolUse on Bash(git commit*) with conventional commits validation. Out of scope: gsd-* skills (third-party), research-*, notebooklm, obsidian — require LLM. Deliverable: candidate skills deactivated/removed, corresponding hooks added to ~/.claude/settings.json, documented in vault/shared/patterns.md.
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 30
-**Plans:** 2/2 plans complete
+**Goal:** Replace 4 deterministic skills (dev-router, session-manager start-path, project-switcher, git-conventions) with Claude Code hooks for silent UX and token savings. After this phase, prompt routing happens via UserPromptSubmit regex hooks (no skill activation cost), session context loads silently at SessionStart, project-switching is hinted by regex against vault/project-map.json, and conventional commits are enforced (warn-only by default) via PreToolUse Bash(git commit*) hook.
+**Requirements**: SKL-01, SKL-02, SKL-03, SKL-04 (backfilled into REQUIREMENTS.md by Plan 04)
+**Depends on:** Phase 28 (SessionStart marker + greeting trigger removal — required before deleting session-manager start-path body) + Phase 30 (CLAUDE.md idempotent merge — recommended so hook-written updates do not clobber user content)
+**Plans:** 4 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 31 to break down)
+- [ ] 31-01-PLAN.md — TDD: 3 new hook scripts (dev-router.mjs, project-switcher.mjs, git-conventions-check.mjs) + tests (SKL-01/03/04)
+- [ ] 31-02-PLAN.md — lib/install/hooks.mjs registration (UserPromptSubmit + PreToolUse Bash) + lib/install/skills.mjs cleanup + delete deprecated skill files (SKL-01/03/04)
+- [ ] 31-03-PLAN.md — session-manager SKILL.md trim (D-04/D-05/D-06) + vault/shared/patterns.md Skills-vs-Hooks doc (SKL-02 / D-18)
+- [ ] 31-04-PLAN.md — Backfill SKL-01..04 into REQUIREMENTS.md + Traceability rows (D-20)
 
 ---
 
