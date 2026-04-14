@@ -57,6 +57,8 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
 - [ ] **Phase 27: GSD Workflow Customization via Patches** — Per-project GSD overrides for branching, push/PR behavior, agent prompts; survives /gsd-update (GSD-01)
+- [ ] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01)
+- [ ] **Phase 30: CLAUDE.md Idempotent Merge** — Wizard preserves user content in CLAUDE.md; claude-dev-stack section lives between markers, re-install updates only that section (BUG-07)
 
 ---
 
@@ -121,7 +123,11 @@ Plans:
   1. When a scheduled task fires, it reads `.planning/STATE.md`, extracts `stopped_at` and `resume_file`, and begins execution from that point — no manual step required.
   2. Handoff works after a fresh git clone — all state is committed to git and the scheduled task operates on a clean checkout without needing previous session artifacts.
   3. If `stopped_at` is missing or STATE.md is absent, the task surfaces a clear error instead of silently executing from the wrong position.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Zero-dep handoff-check.mjs script + wizard copy (D-01/D-02)
+- [ ] 22-02-PLAN.md — loop.md rewrite + patches/gsd-resume-work.md + session-manager /end extension (D-03..D-07)
 
 ---
 
@@ -297,7 +303,11 @@ Plans:
   4. Step counter shows correct total (no "Step 15 of 14").
   5. Detect banner and vault step show consistent project counts from same data source.
   6. All confirmation prompts use consistent select-style (no mixed y/N and select).
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — Git sync detection + dynamic step counter + unified project count + confirm-to-select sweep (UX-01, UX-04, UX-05, UX-06, UX-07)
+- [ ] 24-02-PLAN.md — UAT scaffold + full wizard verification for UX-02, UX-03 and regression coverage of UX-01/04/05/06/07
 
 ### Phase 28: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
 
@@ -309,6 +319,33 @@ Plans:
 Plans:
 - [ ] TBD (run /gsd-plan-phase 28 to break down)
 
+### Phase 29: GSD Workflow Enforcer Hook
+**Goal**: After `/gsd-plan-phase` completes, a hook automatically surfaces next-step guidance that prevents Claude from suggesting `/gsd-execute-phase` when more pending phases remain — enforcing the discuss+plan+manager batching design by default.
+**Depends on**: Nothing (hook can be added anytime)
+**Requirements**: WF-01
+**Success Criteria** (what must be TRUE):
+  1. Hook fires after `/gsd-plan-phase N` completes (PostToolUse on Skill tool).
+  2. Hook reads `.planning/ROADMAP.md` / `.planning/STATE.md` to count remaining pending phases.
+  3. If 2+ pending phases remain: hook outputs `NEXT: /gsd-discuss-phase M — do NOT run /gsd-execute-phase; use /gsd-manager only after all pending phases are planned` to session context.
+  4. If 0–1 pending phase: hook stays silent (normal `/gsd-execute-phase` or completion flow unaffected).
+  5. Hook fails silently (exit 0, no output) when `.planning/ROADMAP.md` is absent — does not break non-GSD projects.
+  6. Wizard installs this hook into project `.claude/settings.json` (PostToolUse) alongside existing session hooks (BUG-01 compliant).
+**Plans**: TBD
+
+### Phase 30: CLAUDE.md Idempotent Merge
+**Goal**: User-written CLAUDE.md content is preserved across wizard runs. Claude-dev-stack instructions live in a clearly delimited section between markers; re-install only updates the managed section, never touches user content.
+**Depends on**: Nothing (hot-fixable at any time)
+**Requirements**: BUG-07
+**Success Criteria** (what must be TRUE):
+  1. Running wizard on a project with existing user-written CLAUDE.md does NOT overwrite or delete user content outside the markers.
+  2. Our section is wrapped in `<!-- @claude-dev-stack:start -->` ... `<!-- @claude-dev-stack:end -->` markers (reusing the mechanism already in `lib/project-setup.mjs`).
+  3. `generateClaudeMD()` in `lib/install/claude-md.mjs` delegates to `updateProjectClaudeMd()` (or equivalent) instead of `writeFileSync` overwrite.
+  4. On first install (no CLAUDE.md exists): file created with markers and our instructions between them.
+  5. On re-install where markers exist: only the content between markers is replaced.
+  6. On re-install where CLAUDE.md exists but markers are absent: our section is appended to the end — existing content left untouched.
+  7. User running the wizard sees a status line distinguishing the three paths: `CLAUDE.md: created | updated | appended` (not "overwritten").
+**Plans**: TBD
+
 ---
 
-*Roadmap updated: 2026-04-13 — Phase 24 (Wizard UX Polish) added. v0.12 now 6 phases (19–24), 17 requirements + BUG-07.*
+*Roadmap updated: 2026-04-14 — Phase 29 (Enforcer Hook) + Phase 30 (CLAUDE.md Idempotent Merge) added. v0.12 now 11 phases, 19 requirements.*
