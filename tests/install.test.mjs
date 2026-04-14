@@ -565,3 +565,501 @@ describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06
     );
   });
 });
+
+// ── Phase 23 — Smart Re-install Pre-fill ─────────────────────────
+
+describe('Phase 23 — readInstallProfile (DX-07 / D-01 / D-03)', () => {
+  let tmpVault;
+
+  before(() => {
+    tmpVault = mkdtempSync(join(tmpdir(), 'vault-test-'));
+    mkdirSync(join(tmpVault, 'meta'), { recursive: true });
+  });
+
+  it('returns profile object when profile.json exists with valid content', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const profilePath = join(tmpVault, 'meta', 'profile.json');
+    writeFileSync(profilePath, JSON.stringify({ lang: 'ru', codeLang: 'en', useCase: 'fullstack' }));
+    const result = readInstallProfile(tmpVault);
+    assert.deepStrictEqual(result, { lang: 'ru', codeLang: 'en', useCase: 'fullstack' });
+  });
+
+  it('returns null when profile.json does not exist', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const emptyVault = mkdtempSync(join(tmpdir(), 'vault-empty-'));
+    mkdirSync(join(emptyVault, 'meta'), { recursive: true });
+    const result = readInstallProfile(emptyVault);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when vaultPath is null', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const result = readInstallProfile(null);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when profile.json is corrupt JSON', async () => {
+    const { readInstallProfile } = await import('../lib/install/detect.mjs');
+    const corruptVault = mkdtempSync(join(tmpdir(), 'vault-corrupt-'));
+    mkdirSync(join(corruptVault, 'meta'), { recursive: true });
+    writeFileSync(join(corruptVault, 'meta', 'profile.json'), '{ invalid json !!');
+    const result = readInstallProfile(corruptVault);
+    assert.strictEqual(result, null);
+  });
+});
+
+describe('Phase 23 — saveInstallProfile (DX-07 / D-01)', () => {
+  it('writes profile.json with correct JSON content', async () => {
+    const { saveInstallProfile } = await import('../lib/install/profile.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-save-'));
+    mkdirSync(join(tmpVault, 'meta'), { recursive: true });
+    saveInstallProfile(tmpVault, { lang: 'ru', codeLang: 'en', useCase: 'fullstack' });
+    const written = JSON.parse(readFileSync(join(tmpVault, 'meta', 'profile.json'), 'utf8'));
+    assert.deepStrictEqual(written, { lang: 'ru', codeLang: 'en', useCase: 'fullstack' });
+  });
+
+  it('does nothing (no throw) when vaultPath is null', async () => {
+    const { saveInstallProfile } = await import('../lib/install/profile.mjs');
+    assert.doesNotThrow(() => saveInstallProfile(null, { lang: 'en' }));
+  });
+
+  it('creates meta/ dir if missing', async () => {
+    const { saveInstallProfile } = await import('../lib/install/profile.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-nometa-'));
+    // Do NOT create meta/ dir — saveInstallProfile should create it
+    saveInstallProfile(tmpVault, { lang: 'en', codeLang: 'en', useCase: 'any' });
+    assert.ok(existsSync(join(tmpVault, 'meta', 'profile.json')), 'profile.json must exist after save');
+  });
+});
+
+describe('Phase 23 — detectProjectsDir (DX-08)', () => {
+  it('returns common prefix when project-map.json has paths under same dir', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-pdir-'));
+    mkdirSync(join(tmpVault, 'meta'), { recursive: true });
+    writeFileSync(join(tmpVault, 'project-map.json'), JSON.stringify({
+      projects: {
+        '/Users/x/Projects/alpha': 'alpha',
+        '/Users/x/Projects/beta': 'beta',
+      },
+    }));
+    const result = detectProjectsDir(tmpVault);
+    assert.strictEqual(result, '/Users/x/Projects');
+  });
+
+  it('returns null when no project-map.json', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-nomap-'));
+    const result = detectProjectsDir(tmpVault);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null when vaultPath is null', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const result = detectProjectsDir(null);
+    assert.strictEqual(result, null);
+  });
+
+  it('returns null for empty projects object', async () => {
+    const { detectProjectsDir } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-empty-proj-'));
+    writeFileSync(join(tmpVault, 'project-map.json'), JSON.stringify({ projects: {} }));
+    const result = detectProjectsDir(tmpVault);
+    assert.strictEqual(result, null);
+  });
+});
+
+describe('Phase 23 — detectRegisteredPaths (DX-09)', () => {
+  it('returns object with path→name mapping from project-map.json', async () => {
+    const { detectRegisteredPaths } = await import('../lib/install/detect.mjs');
+    const tmpVault = mkdtempSync(join(tmpdir(), 'vault-regpaths-'));
+    writeFileSync(join(tmpVault, 'project-map.json'), JSON.stringify({
+      projects: {
+        '/path/to/foo': 'foo',
+        '/path/to/bar': 'bar',
+      },
+    }));
+    const result = detectRegisteredPaths(tmpVault);
+    assert.deepStrictEqual(result, { '/path/to/foo': 'foo', '/path/to/bar': 'bar' });
+  });
+
+  it('returns empty object when vaultPath is null', async () => {
+    const { detectRegisteredPaths } = await import('../lib/install/detect.mjs');
+    const result = detectRegisteredPaths(null);
+    assert.deepStrictEqual(result, {});
+  });
+});
+
+describe('Phase 23 — detectInstallState extended fields', () => {
+  it('detectInstallState result includes profile, projectsDir, registeredPaths, notebooklmAuthenticated', async () => {
+    const { detectInstallState } = await import('../lib/install/detect.mjs');
+    const result = detectInstallState();
+    assert.ok('profile' in result, 'result must include profile field');
+    assert.ok('projectsDir' in result, 'result must include projectsDir field');
+    assert.ok('registeredPaths' in result, 'result must include registeredPaths field');
+    assert.ok('notebooklmAuthenticated' in result, 'result must include notebooklmAuthenticated field');
+    assert.strictEqual(typeof result.notebooklmAuthenticated, 'boolean');
+  });
+});
+
+describe('Phase 23 — lib/install/detect.mjs exports (D-08 extended)', () => {
+  it('exports readInstallProfile function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.readInstallProfile, 'function');
+  });
+
+  it('exports detectProjectsDir function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.detectProjectsDir, 'function');
+  });
+
+  it('exports detectRegisteredPaths function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.detectRegisteredPaths, 'function');
+  });
+
+  it('exports detectInstallState function', async () => {
+    const m = await import('../lib/install/detect.mjs');
+    assert.strictEqual(typeof m.detectInstallState, 'function');
+  });
+});
+
+describe('Phase 23 — lib/install/profile.mjs exports saveInstallProfile (D-08 extended)', () => {
+  it('exports saveInstallProfile function', async () => {
+    const m = await import('../lib/install/profile.mjs');
+    assert.strictEqual(typeof m.saveInstallProfile, 'function');
+  });
+});
+
+// ── Phase 23 Task 2 — Pre-fill UX structural tests ────────────────
+
+describe('Phase 23 Task 2 — lib/install/profile.mjs select pre-fill (D-04, D-05)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'profile.mjs'), 'utf8');
+
+  it('uses select prompt type for Keep current / Change (D-04)', () => {
+    assert.ok(
+      src.includes("type: 'select'"),
+      "profile.mjs must use type: 'select' for pre-fill prompt",
+    );
+  });
+
+  it('has Keep current choice (D-04)', () => {
+    assert.ok(
+      src.includes("'Keep current'") || src.includes('"Keep current"'),
+      "profile.mjs must have 'Keep current' choice",
+    );
+  });
+
+  it('has Change choice (D-04)', () => {
+    assert.ok(
+      src.includes("'Change'") || src.includes('"Change"'),
+      "profile.mjs must have 'Change' choice",
+    );
+  });
+
+  it('does NOT use confirm for language change (D-04)', () => {
+    const confirmCount = (src.match(/type:\s*['"]confirm['"]/g) || []).length;
+    assert.strictEqual(confirmCount, 0, "profile.mjs must NOT use confirm type — use select instead");
+  });
+
+  it('returns kept profile when detectedProfile provided and action is keep', () => {
+    // Structural: check that 'keep' action returns early with detectedProfile values
+    assert.ok(
+      src.includes("action === 'keep'"),
+      "profile.mjs must check action === 'keep' to return early",
+    );
+  });
+});
+
+describe('Phase 23 Task 2 — lib/install/projects.mjs Map-based registered paths (DX-09, D-06)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'projects.mjs'), 'utf8');
+
+  it('uses new Map() instead of new Set() for registered paths (DX-09)', () => {
+    assert.ok(
+      src.includes('new Map('),
+      'projects.mjs must use new Map() for registered paths',
+    );
+  });
+
+  it('uses registeredPaths.get() to look up project name (DX-09)', () => {
+    assert.ok(
+      src.includes('registeredPaths.get('),
+      'projects.mjs must use registeredPaths.get() for name lookup',
+    );
+  });
+
+  it('logs (registered) info line for skipped projects (D-06)', () => {
+    assert.ok(
+      src.includes('(registered)'),
+      'projects.mjs must include "(registered)" info line for skipped projects',
+    );
+  });
+
+  it('uses continue to skip name prompt for registered paths', () => {
+    assert.ok(
+      src.includes('continue'),
+      'projects.mjs must use continue to skip name prompt for registered projects',
+    );
+  });
+});
+
+describe('Phase 23 Task 2 — lib/install/plugins.mjs detectedUseCase param (DX-10)', () => {
+  const src = readFileSync(join(projectRoot, 'lib', 'install', 'plugins.mjs'), 'utf8');
+
+  it('accepts detectedUseCase as 3rd parameter', () => {
+    assert.ok(
+      src.includes('selectAndInstallPlugins(stepNum, totalSteps, detectedUseCase)'),
+      'selectAndInstallPlugins must accept detectedUseCase as 3rd parameter',
+    );
+  });
+
+  it('uses detectedUseCase in pre-fill block', () => {
+    const count = (src.match(/detectedUseCase/g) || []).length;
+    assert.ok(count >= 2, `detectedUseCase must appear at least 2 times, got ${count}`);
+  });
+
+  it('returns useCase in all code paths', () => {
+    assert.ok(
+      src.includes('return { installed, failed, useCase }') ||
+      src.includes("return { installed, failed"),
+      'selectAndInstallPlugins must include useCase in return value',
+    );
+    assert.ok(
+      src.includes('useCase'),
+      'useCase must be present in return statement',
+    );
+  });
+});
+
+describe('Phase 23 Task 2 — bin/install.mjs orchestration wiring', () => {
+  const src = readFileSync(join(projectRoot, 'bin', 'install.mjs'), 'utf8');
+
+  it('imports saveInstallProfile from profile.mjs', () => {
+    assert.ok(
+      src.includes('saveInstallProfile'),
+      'bin/install.mjs must import saveInstallProfile',
+    );
+  });
+
+  it('passes installState.projectsDir to collectProjects (DX-08)', () => {
+    assert.ok(
+      src.includes('installState.projectsDir'),
+      'bin/install.mjs must pass installState.projectsDir to collectProjects',
+    );
+  });
+
+  it('passes installState.profile?.useCase to selectAndInstallPlugins (DX-10)', () => {
+    assert.ok(
+      src.includes('installState.profile?.useCase') || src.includes("installState.profile && installState.profile.useCase"),
+      'bin/install.mjs must pass profile useCase to selectAndInstallPlugins',
+    );
+  });
+
+  it('calls saveInstallProfile after vaultPath resolved', () => {
+    const saveCount = (src.match(/saveInstallProfile/g) || []).length;
+    assert.ok(saveCount >= 2, `saveInstallProfile must appear at least 2 times (import + call), got ${saveCount}`);
+  });
+});
+
+// ── Phase 23 Plan 02 Task 1 — GSD version check (DX-11) ──────────
+
+describe('Phase 23 Plan 02 — lib/install/gsd.mjs version check (DX-11)', () => {
+  const gsdSource = readFileSync(join(projectRoot, 'lib', 'install', 'gsd.mjs'), 'utf8');
+
+  it('exports installGSD function', async () => {
+    const m = await import('../lib/install/gsd.mjs');
+    assert.strictEqual(typeof m.installGSD, 'function');
+  });
+
+  it('contains _installedGSDVersion helper (D-07, D-08)', () => {
+    assert.ok(
+      gsdSource.includes('_installedGSDVersion'),
+      'gsd.mjs must define _installedGSDVersion helper',
+    );
+  });
+
+  it('contains _latestGSDVersion helper using npm view (D-07)', () => {
+    assert.ok(
+      gsdSource.includes('_latestGSDVersion'),
+      'gsd.mjs must define _latestGSDVersion helper',
+    );
+    assert.ok(
+      /npm.*view.*get-shit-done-cc.*version/.test(gsdSource),
+      'gsd.mjs must call npm view get-shit-done-cc version',
+    );
+  });
+
+  it('reads package.json for installed version detection (D-07)', () => {
+    assert.ok(
+      gsdSource.includes('package.json'),
+      'gsd.mjs must read package.json for installed version',
+    );
+  });
+
+  it('contains select prompt with Update/Skip choices when outdated (D-09)', () => {
+    assert.ok(
+      gsdSource.includes("type: 'select'"),
+      "gsd.mjs must use type: 'select' for Update/Skip prompt",
+    );
+    assert.ok(
+      gsdSource.includes("'Update'") || gsdSource.includes('"Update"'),
+      "gsd.mjs must have 'Update' choice",
+    );
+    assert.ok(
+      gsdSource.includes("'Skip'") || gsdSource.includes('"Skip"'),
+      "gsd.mjs must have 'Skip' choice in update prompt",
+    );
+  });
+
+  it('auto-skips with "up to date" message when versions match (D-08)', () => {
+    assert.ok(
+      gsdSource.includes('up to date'),
+      'gsd.mjs must print "up to date" message when installed === latest',
+    );
+  });
+
+  it('installGSD is async (needed for prompt)', () => {
+    assert.ok(
+      gsdSource.includes('async function installGSD') || gsdSource.includes('export async function installGSD'),
+      'installGSD must be async',
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 1 — NotebookLM auth detection (DX-12) ───
+
+describe('Phase 23 Plan 02 — lib/install/notebooklm.mjs auth detection (DX-12)', () => {
+  const nblmSource = readFileSync(join(projectRoot, 'lib', 'install', 'notebooklm.mjs'), 'utf8');
+
+  it('installNotebookLM accepts 4th parameter alreadyAuthenticated (DX-12)', () => {
+    assert.ok(
+      nblmSource.includes('alreadyAuthenticated'),
+      'installNotebookLM must accept alreadyAuthenticated as 4th parameter',
+    );
+  });
+
+  it('contains select prompt with Skip/Re-login/Run sync choices when authenticated (D-11)', () => {
+    assert.ok(
+      nblmSource.includes("'Re-login'") || nblmSource.includes('"Re-login"'),
+      "notebooklm.mjs must have 'Re-login' choice",
+    );
+    assert.ok(
+      nblmSource.includes("'Run sync now'") || nblmSource.includes('"Run sync now"'),
+      "notebooklm.mjs must have 'Run sync now' choice",
+    );
+    assert.ok(
+      nblmSource.includes("'Skip'") || nblmSource.includes('"Skip"'),
+      "notebooklm.mjs must have 'Skip' choice in auth select",
+    );
+  });
+
+  it('contains "Run sync now?" text replacing "First sync" (D-12)', () => {
+    assert.ok(
+      nblmSource.includes('Run sync now?'),
+      'notebooklm.mjs must contain "Run sync now?" text (D-12)',
+    );
+  });
+
+  it('does NOT contain "Run first NotebookLM sync now?" text (D-12 replaced)', () => {
+    assert.ok(
+      !nblmSource.includes('Run first NotebookLM sync now?'),
+      '"Run first NotebookLM sync now?" must be replaced with "Run sync now?"',
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 1 — bin/install.mjs wiring (DX-11/DX-12) ──
+
+describe('Phase 23 Plan 02 — bin/install.mjs DX-11/DX-12 wiring', () => {
+  const binSrc = readFileSync(join(projectRoot, 'bin', 'install.mjs'), 'utf8');
+
+  it('passes notebooklmAuthenticated to installNotebookLM (DX-12)', () => {
+    assert.ok(
+      binSrc.includes('notebooklmAuthenticated'),
+      'bin/install.mjs must pass notebooklmAuthenticated to installNotebookLM',
+    );
+  });
+
+  it('awaits installGSD with await keyword (DX-11 async)', () => {
+    assert.ok(
+      binSrc.includes('await installGSD'),
+      'bin/install.mjs must await installGSD (now async)',
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 2 — loop.md bulk prompt (DX-13) ─────────
+
+describe('Phase 23 Plan 02 — lib/install/components.mjs bulk loop.md (DX-13)', () => {
+  const compSrc = readFileSync(join(projectRoot, 'lib', 'install', 'components.mjs'), 'utf8');
+
+  it('installLoopMd contains bulk prompt text for new projects (D-13)', () => {
+    assert.ok(
+      compSrc.includes('Install loop.md for all'),
+      'components.mjs must contain "Install loop.md for all" bulk prompt text',
+    );
+  });
+
+  it('installLoopMd splits into newProjects and installedProjects (DX-13)', () => {
+    assert.ok(
+      compSrc.includes('newProjects'),
+      'components.mjs must define newProjects variable',
+    );
+    assert.ok(
+      compSrc.includes('installedProjects'),
+      'components.mjs must define installedProjects variable',
+    );
+  });
+
+  it('installLoopMd uses only select prompts — no confirm (D-04)', () => {
+    const confirmCount = (compSrc.match(/type:\s*['"]confirm['"]/g) || []).length;
+    assert.strictEqual(
+      confirmCount,
+      0,
+      `installLoopMd must NOT use type: 'confirm' — got ${confirmCount} occurrences (use select per D-04)`,
+    );
+  });
+
+  it('installLoopMd has at least 2 select prompts (bulk + per-project fallback)', () => {
+    const selectCount = (compSrc.match(/type:\s*['"]select['"]/g) || []).length;
+    assert.ok(
+      selectCount >= 2,
+      `installLoopMd must have at least 2 select prompts, got ${selectCount}`,
+    );
+  });
+});
+
+// ── Phase 23 Plan 02 Task 2 — git-conventions bulk prompt (DX-13) ──
+
+describe('Phase 23 Plan 02 — lib/install/git-conventions.mjs bulk prompt (DX-13)', () => {
+  const gcSrc = readFileSync(join(projectRoot, 'lib', 'install', 'git-conventions.mjs'), 'utf8');
+
+  it('contains bulk prompt text for all projects (D-13)', () => {
+    assert.ok(
+      gcSrc.includes('Configure git conventions for all'),
+      'git-conventions.mjs must contain "Configure git conventions for all" bulk prompt text',
+    );
+  });
+
+  it('contains per-project choice value (D-13)', () => {
+    assert.ok(
+      gcSrc.includes("'per-project'") || gcSrc.includes('"per-project"'),
+      "git-conventions.mjs must have 'per-project' choice value",
+    );
+  });
+
+  it('contains skip choice value for bulk skip (D-13)', () => {
+    assert.ok(
+      gcSrc.includes("value: 'skip'") || gcSrc.includes('value: "skip"'),
+      "git-conventions.mjs must have 'skip' choice value for bulk skip",
+    );
+  });
+
+  it('uses configureAll flag for bulk auto-accept (D-13)', () => {
+    const configureAllCount = (gcSrc.match(/configureAll/g) || []).length;
+    assert.ok(
+      configureAllCount >= 3,
+      `git-conventions.mjs must reference configureAll at least 3 times, got ${configureAllCount}`,
+    );
+  });
+});
