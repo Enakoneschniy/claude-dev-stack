@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, chmodSync } from 'fs';
 import { execFileSync, spawnSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
