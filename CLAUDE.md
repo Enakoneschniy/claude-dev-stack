@@ -1,7 +1,7 @@
 # CLAUDE.md — Project Intelligence Layer
 
 ## Language
-Communication in  ru. Code in English.
+Общение на русском. Код и коммиты на английском.
 
 ## Auto-Routing (IMPORTANT)
 Do NOT ask which tool to use. Determine automatically:
@@ -24,18 +24,17 @@ Before starting, ALWAYS read:
 
 ## Code Style
 - Commits: conventional commits (feat:, fix:, chore:)
-- Code and comments in  en
-- Communication in  ru
+- Code and comments in en
+- Communication in ru
 
 ## Rules
 - Do NOT delete code without explicit request
 - On .env change → update .env.example
 - On new dependency → explain in session log
-- **TeamCreate worktrees**: do NOT modify shared `.planning/` root files (STATE.md, ROADMAP.md, REQUIREMENTS.md) from worktrees. Phase dirs OK. Team lead updates shared state after merge.
-- **TeamCreate only for 2+ phases**: single phase = regular Agent, no TeamCreate overhead.
 
 ## References
 - Vault: `/Users/eugenenakoneschniy/vault/`
 - Registry: `/Users/eugenenakoneschniy/vault/meta/project-registry.md`
 - Patterns: `/Users/eugenenakoneschniy/vault/shared/patterns.md`
 - Skills: `/Users/eugenenakoneschniy/.claude/skills/`
+
