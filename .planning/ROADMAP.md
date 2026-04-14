@@ -141,12 +141,13 @@ Plans:
   3. Selecting "Schedule after reset" creates a CronCreate/RemoteTrigger task timed for the 5h reset window, with full GSD context (phase, plan, branch).
   4. Claude Code statusline footer shows real-time plan usage (e.g., `5h:17% 7d:71%`) alongside existing context % display.
   5. Statusline updates from cached API data (60s TTL), no extra API calls beyond what budget-check already makes.
-**Plans**: 3 plans
+**Plans**: 4 plans
 
 Plans:
 - [ ] 25-01-PLAN.md — PreToolUse budget-gate + PostToolUse budget-history hooks + wizard install (LIMIT-05 SC#1, SC#2)
 - [ ] 25-02-PLAN.md — cds-statusline.js full replacement + global statusLine registration (LIMIT-05 SC#4, SC#5)
 - [ ] 25-03-PLAN.md — Backfill LIMIT-05 into REQUIREMENTS.md + Traceability table (D-11)
+- [ ] 25-04-PLAN.md — budget-gate-schedule skill + buildCronArgs helper + wizard registration (LIMIT-05 SC#3)
 
 ---
 
@@ -160,7 +161,13 @@ Plans:
   3. Duplicate detection: if a decision about the same topic already exists, it updates the existing ADR instead of creating a duplicate.
   4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
   5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 26-01-PLAN.md — lib/adr-bridge-session.mjs core (Haiku subprocess + topic match + write/supersede) + tests (D-01..D-03, D-07..D-11)
+- [ ] 26-02-PLAN.md — claude-dev-stack decisions CLI (list/show/search) + bin/cli.mjs wire + tests (D-12, D-13)
+- [ ] 26-03-PLAN.md — session-manager SKILL.md /end integration (bash block + human verification) (D-04, D-05, D-06)
+- [ ] 26-04-PLAN.md — Backfill ADR-02 into REQUIREMENTS.md + Traceability row (D-14)
 
 ---
 
