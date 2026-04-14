@@ -57,7 +57,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
 - [ ] **Phase 27: GSD Workflow Customization via Patches** — Per-project GSD overrides for branching, push/PR behavior, agent prompts; survives /gsd-update (GSD-01)
-- [ ] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01)
+- [x] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01) (completed 2026-04-14)
 - [ ] **Phase 30: CLAUDE.md Idempotent Merge** — Wizard preserves user content in CLAUDE.md; claude-dev-stack section lives between markers, re-install updates only that section (BUG-07)
 
 ---
@@ -363,8 +363,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 29-01-PLAN.md — hooks/gsd-workflow-enforcer.mjs + tests (hook behavior, WF-01 SC#1..SC#5)
-- [ ] 29-02-PLAN.md — lib/install/hooks.mjs extension + wizard wiring + install tests (WF-01 SC#6)
+- [x] 29-01-PLAN.md — hooks/gsd-workflow-enforcer.mjs + tests (hook behavior, WF-01 SC#1..SC#5)
+- [x] 29-02-PLAN.md — lib/install/hooks.mjs extension + wizard wiring + install tests (WF-01 SC#6)
 
 ### Phase 30: CLAUDE.md Idempotent Merge
 **Goal**: User-written CLAUDE.md content is preserved across wizard runs. Claude-dev-stack instructions live in a clearly delimited section between markers; re-install only updates the managed section, never touches user content.
@@ -385,7 +385,7 @@ Plans:
 **Goal:** [To be planned]
 **Requirements**: TBD
 **Depends on:** Phase 30
-**Plans:** 0 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] TBD (run /gsd-plan-phase 31 to break down)
