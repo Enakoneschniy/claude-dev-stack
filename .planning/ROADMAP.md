@@ -141,7 +141,12 @@ Plans:
   3. Selecting "Schedule after reset" creates a CronCreate/RemoteTrigger task timed for the 5h reset window, with full GSD context (phase, plan, branch).
   4. Claude Code statusline footer shows real-time plan usage (e.g., `5h:17% 7d:71%`) alongside existing context % display.
   5. Statusline updates from cached API data (60s TTL), no extra API calls beyond what budget-check already makes.
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 25-01-PLAN.md — PreToolUse budget-gate + PostToolUse budget-history hooks + wizard install (LIMIT-05 SC#1, SC#2)
+- [ ] 25-02-PLAN.md — cds-statusline.js full replacement + global statusLine registration (LIMIT-05 SC#4, SC#5)
+- [ ] 25-03-PLAN.md — Backfill LIMIT-05 into REQUIREMENTS.md + Traceability table (D-11)
 
 ---
 
@@ -345,6 +350,16 @@ Plans:
   6. On re-install where CLAUDE.md exists but markers are absent: our section is appended to the end — existing content left untouched.
   7. User running the wizard sees a status line distinguishing the three paths: `CLAUDE.md: created | updated | appended` (not "overwritten").
 **Plans**: TBD
+
+### Phase 31: Skills to Hooks Migration — replace deterministic skills (dev-router, session-manager start, project-switcher detection, git-conventions) with Claude Code hooks for silent UX and token savings. Scope: (1) dev-router → UserPromptSubmit regex hook with additionalContext; (2) session-manager context loading → fully in SessionStart hook (skill remains only for /end logging); (3) project-switcher detection → UserPromptSubmit regex against vault/meta/project-registry.md; (4) git-conventions → PreToolUse on Bash(git commit*) with conventional commits validation. Out of scope: gsd-* skills (third-party), research-*, notebooklm, obsidian — require LLM. Deliverable: candidate skills deactivated/removed, corresponding hooks added to ~/.claude/settings.json, documented in vault/shared/patterns.md.
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 30
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 31 to break down)
 
 ---
 
