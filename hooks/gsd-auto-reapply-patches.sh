@@ -28,20 +28,21 @@ if [ -z "$PATCHES_DIR" ] && [ -d "$HOME/.claude/gsd-local-patches" ]; then
 fi
 
 # Locate the claude-dev-stack package patches/ directory (only if not already resolved above).
-# 1. Try npm global location (npx installs)
+# 1. Try npm global location and well-known install paths (quoted to handle spaces in HOME)
 if [ -z "$PATCHES_DIR" ]; then
-for candidate in \
-  "$(npm root -g 2>/dev/null)/claude-dev-stack/patches" \
-  "$HOME/.npm/_npx/*/node_modules/claude-dev-stack/patches" \
-  "$HOME/.local/share/npm/lib/node_modules/claude-dev-stack/patches"; do
-  # Expand glob in candidate
-  for expanded in $candidate; do
-    if [ -d "$expanded" ]; then
-      PATCHES_DIR="$expanded"
-      break 2
+  for candidate in \
+    "$(npm root -g 2>/dev/null)/claude-dev-stack/patches" \
+    "$HOME/.local/share/npm/lib/node_modules/claude-dev-stack/patches"; do
+    if [ -d "$candidate" ]; then
+      PATCHES_DIR="$candidate"
+      break
     fi
   done
-done
+fi
+
+# Handle npx cache separately — glob required, use find to avoid word-splitting
+if [ -z "$PATCHES_DIR" ]; then
+  PATCHES_DIR="$(find "$HOME/.npm/_npx" -type d -name 'patches' -path '*/claude-dev-stack/patches' 2>/dev/null | head -1)"
 fi
 
 # 2. Try well-known dev locations (local checkouts)
@@ -64,14 +65,18 @@ fi
 
 APPLIED=0
 
+# Portable SHA-256: prefer sha256sum (Linux), fall back to shasum (macOS)
+_sha256() { sha256sum "$1" 2>/dev/null | awk '{print $1}' || shasum -a 256 "$1" 2>/dev/null | awk '{print $1}'; }
+
 # Apply patch: patches/transition.md → GSD workflows/transition.md
 PATCH_FILE="$PATCHES_DIR/transition.md"
 TARGET_FILE="$GSD_DIR/workflows/transition.md"
 
 if [ -f "$PATCH_FILE" ] && [ -f "$TARGET_FILE" ]; then
-  PATCH_SHA=$(shasum -a 256 "$PATCH_FILE" 2>/dev/null | awk '{print $1}')
-  TARGET_SHA=$(shasum -a 256 "$TARGET_FILE" 2>/dev/null | awk '{print $1}')
-  if [ "$PATCH_SHA" != "$TARGET_SHA" ]; then
+  PATCH_SHA=$(_sha256 "$PATCH_FILE")
+  TARGET_SHA=$(_sha256 "$TARGET_FILE")
+  # Guard: if both SHAs are empty (no sha tool available), force apply to be safe
+  if [ -z "$PATCH_SHA" ] || [ -z "$TARGET_SHA" ] || [ "$PATCH_SHA" != "$TARGET_SHA" ]; then
     cp "$PATCH_FILE" "$TARGET_FILE"
     APPLIED=$((APPLIED + 1))
   fi
