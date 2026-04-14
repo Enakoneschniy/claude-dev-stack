@@ -372,6 +372,24 @@ describe('hooks', () => {
     });
   });
 
+  // WF-01: gsd-workflow-enforcer.mjs file-level assertions (Phase 29 Plan 02)
+  describe('gsd-workflow-enforcer.mjs', () => {
+    const hookPath = join(hooksDir, 'gsd-workflow-enforcer.mjs');
+
+    it('exists in hooks/', () => {
+      assert.ok(existsSync(hookPath), 'hooks/gsd-workflow-enforcer.mjs must exist');
+    });
+
+    it('has node shebang', () => {
+      const firstLine = readFileSync(hookPath, 'utf8').split('\n')[0];
+      assert.match(firstLine, /^#!.*node/, 'must start with #!... node shebang');
+    });
+
+    it('passes node --check', () => {
+      assert.doesNotThrow(() => execFileSync('node', ['--check', hookPath]));
+    });
+  });
+
   // D-07: gsd-auto-reapply-patches.sh must prefer ~/.claude/gsd-local-patches over npm resolution
   describe('gsd-auto-reapply-patches.sh — D-07 precedence', () => {
     const scriptPath = join(hooksDir, 'gsd-auto-reapply-patches.sh');
