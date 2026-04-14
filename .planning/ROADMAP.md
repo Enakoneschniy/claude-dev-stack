@@ -183,7 +183,13 @@ Plans:
   5. `/gsd-update` preserves `.planning/gsd-overrides/` — it only updates `~/.claude/get-shit-done/` (global install), project-level overrides are untouched.
   6. `claude-dev-stack gsd customize` CLI scaffolds `.planning/gsd-overrides/` with commented templates showing what can be overridden.
   7. Patch script supports diff-based patches (not just full file replacement) — user can patch a single section of a workflow without maintaining the entire file.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 27-01-PLAN.md — Extend gsd-auto-reapply-patches.sh into three-tier resolver with diff apply + baseline backup (D-01..D-06, D-09..D-11)
+- [ ] 27-02-PLAN.md — patches/ship.md.patch config-aware gates + wizard writes workflow.auto_push/auto_pr/merge_strategy directly to config.json (D-07/D-08)
+- [ ] 27-03-PLAN.md — lib/gsd-customize-cli.mjs with customize/list-overrides/remove subcommands (D-12..D-14)
+- [ ] 27-04-PLAN.md — GSD-01 backfill into REQUIREMENTS.md + Traceability row (D-15)
 
 ---
 
@@ -218,8 +224,9 @@ All 10 v1 requirements mapped to exactly one owning phase:
 | DX-11 | 23 | Smart Re-install Pre-fill |
 | DX-12 | 23 | Smart Re-install Pre-fill |
 | DX-13 | 23 | Smart Re-install Pre-fill |
+| SSR-01 | 28 | Silent SessionStart + skill activation only on end/resume triggers |
 
-**Coverage check**: 24/24 requirements mapped (100%), 0 orphaned.
+**Coverage check**: 25/25 requirements mapped (100%), 0 orphaned.
 
 - Phase 19: 6 requirements (BUG-01..BUG-06)
 - Phase 20: 1 requirement (LIMIT-01)
@@ -227,9 +234,10 @@ All 10 v1 requirements mapped to exactly one owning phase:
 - Phase 22: 1 requirement (LIMIT-04)
 - Phase 23: 7 requirements (DX-07..DX-13)
 - Phase 24: 7 requirements (UX-01..UX-07)
+- Phase 28: 1 requirement (SSR-01)
 - BUG-07: Phase 19 (added post-UAT)
 
-Total: 6 + 1 + 2 + 1 + 7 + 7 = 24 ✓
+Total: 6 + 1 + 2 + 1 + 7 + 7 + 1 = 25 ✓
 
 ---
 
@@ -284,6 +292,7 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
 | 23. Smart Re-install Pre-fill | v0.12 | 2/2 | Complete   | 2026-04-13 |
 | 24. Wizard UX Polish | v0.12 | 0/? | Not started | - |
+| 28. Silent Session Start | v0.12 | 0/3 | Planned | - |
 
 ### Phase 23: Smart Re-install Pre-fill
 **Goal**: Wizard re-install skips or pre-fills all steps that have existing configuration — no redundant prompts for already-configured values.
@@ -323,13 +332,22 @@ Plans:
 
 ### Phase 28: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
 
-**Goal:** [To be planned]
-**Requirements**: TBD
-**Depends on:** Phase 27
-**Plans:** 1/1 plans complete
+**Goal:** Starting a new Claude Code session on a claude-dev-stack project loads vault context silently via the SessionStart hook. Claude does NOT re-read `context.md` or session logs on the first user message. The `session-manager` skill activates only on explicit end/resume triggers — never on greetings. A marker file (`.claude/.session-loaded`) signals to the skill's `/resume` path whether to skip or perform an explicit load.
+**Requirements**: SSR-01
+**Depends on:** Phase 27 (roadmap-declared ordering; no hard code dependency — Phase 28 only touches CLAUDE.md template, session-manager skill, SessionStart hook, install wizard). Recommended sequencing: ship after Phase 30 (CLAUDE.md idempotent merge) for best user-content preservation, but not blocking — partial-merge fallback in existing `generateClaudeMD()` handles common cases.
+**Success Criteria** (what must be TRUE):
+  1. CLAUDE.md template "Knowledge Base" section instructs Claude NOT to re-read `context.md`/session logs on first message.
+  2. session-manager skill description omits greeting triggers ("привет", "hi", "начинаем") and "first message" auto-activation.
+  3. SessionStart hook writes `.claude/.session-loaded` marker atomically (ISO 8601 UTC timestamp) every successful run.
+  4. Install wizard adds `.claude/.session-loaded` to each configured project's `.gitignore` idempotently.
+  5. session-manager `/resume` path checks marker mtime — if < 60 min, uses pre-loaded context; otherwise falls through to explicit `cat`.
+  6. `.planning/REQUIREMENTS.md` contains new `### Session Start/Resume (SSR)` section + `| SSR-01 | 28 | — | pending |` Traceability row.
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD (run /gsd-plan-phase 28 to break down)
+- [ ] 28-01-PLAN.md — CLAUDE.md template rewrite + session-manager SKILL.md description/body/resume changes (D-01..D-04, D-06)
+- [ ] 28-02-PLAN.md — SessionStart hook marker writer + install wizard .gitignore helper (D-05, D-07)
+- [ ] 28-03-PLAN.md — SSR-01 backfill into REQUIREMENTS.md (D-08)
 
 ### Phase 29: GSD Workflow Enforcer Hook
 **Goal**: After `/gsd-plan-phase` completes, a hook automatically surfaces next-step guidance that prevents Claude from suggesting `/gsd-execute-phase` when more pending phases remain — enforcing the discuss+plan+manager batching design by default.
@@ -342,7 +360,11 @@ Plans:
   4. If 0–1 pending phase: hook stays silent (normal `/gsd-execute-phase` or completion flow unaffected).
   5. Hook fails silently (exit 0, no output) when `.planning/ROADMAP.md` is absent — does not break non-GSD projects.
   6. Wizard installs this hook into project `.claude/settings.json` (PostToolUse) alongside existing session hooks (BUG-01 compliant).
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 29-01-PLAN.md — hooks/gsd-workflow-enforcer.mjs + tests (hook behavior, WF-01 SC#1..SC#5)
+- [ ] 29-02-PLAN.md — lib/install/hooks.mjs extension + wizard wiring + install tests (WF-01 SC#6)
 
 ### Phase 30: CLAUDE.md Idempotent Merge
 **Goal**: User-written CLAUDE.md content is preserved across wizard runs. Claude-dev-stack instructions live in a clearly delimited section between markers; re-install only updates the managed section, never touches user content.
@@ -370,4 +392,4 @@ Plans:
 
 ---
 
-*Roadmap updated: 2026-04-14 — Phase 29 (Enforcer Hook) + Phase 30 (CLAUDE.md Idempotent Merge) added. v0.12 now 11 phases, 19 requirements.*
+*Roadmap updated: 2026-04-14 — Phase 28 (Silent Session Start) planned: 3 plans, requirement SSR-01 added, coverage table updated to 25/25.*
