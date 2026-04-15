@@ -1,7 +1,7 @@
 import { describe, it, before, after, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync, mkdtempSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 
@@ -331,9 +331,18 @@ describe('bridgeSession() — topic path traversal', () => {
       assert.ok(adr.path.startsWith(t.decisionsDir), `ADR escaped decisionsDir: ${adr.path}`);
       assert.doesNotMatch(adr.topic, /[^a-z0-9-]/);
     }
-    // No file written outside decisionsDir
-    const etcPasswd = join(t.vault, '..', '..', '..', 'etc', 'passwd');
-    assert.ok(!existsSync(etcPasswd), 'no file outside vault');
+    // No file written outside decisionsDir or the session log's directory.
+    // Walk t.dir recursively — every file found must live under one of
+    // the two legitimate locations. This catches any traversal escape
+    // without depending on absolute system paths.
+    const allowedPrefixes = [t.decisionsDir, dirname(t.sessionLogPath)];
+    const entries = readdirSync(t.dir, { withFileTypes: true, recursive: true });
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const full = join(entry.parentPath ?? entry.path, entry.name);
+      const ok = allowedPrefixes.some((p) => full === p || full.startsWith(p + '/'));
+      assert.ok(ok, `file written outside allowed dirs: ${full}`);
+    }
   });
 });
 
