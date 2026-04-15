@@ -4,21 +4,21 @@ milestone: v0.12
 milestone_name: Hooks & Limits
 status: executing
 stopped_at: Phase 23 context gathered
-last_updated: "2026-04-13T20:55:13.197Z"
-last_activity: 2026-04-13
+last_updated: "2026-04-14T23:37:11.484Z"
+last_activity: 2026-04-14
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 0
-  percent: 0
+  total_phases: 13
+  completed_phases: 3
+  total_plans: 16
+  completed_plans: 5
+  percent: 31
 ---
 
 # Project State: claude-dev-stack
 
 **Last updated:** 2026-04-13 — Roadmap for v0.12 Hooks & Limits created. 4 phases (19–22), 9 requirements mapped.
 
-**Last activity:** 2026-04-13
+**Last activity:** 2026-04-14
 
 ---
 
@@ -33,8 +33,8 @@ See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 ## Current Position
 
-Phase: Not started (roadmap ready)
-Plan: —
+Phase: 30
+Plan: Not started
 Status: Ready to execute
 Last activity: 2026-04-13 -- Phase 23 planning complete
 
@@ -70,6 +70,10 @@ Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
 - **Test baseline**: 558 (v0.11.0). Every new `lib/*.mjs` needs matching `tests/*.test.mjs`.
 - **SEED-001**: Integrate Claude primitives (Managed Agents, Dispatch, /schedule, CronCreate), don't build custom infra.
 - **Hooks architecture**: Must be project-level `.claude/settings.json`, not global `~/.claude/settings.json`.
+
+### Roadmap Evolution
+
+- Phase 28 added: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
 
 ### Pending Todos
 

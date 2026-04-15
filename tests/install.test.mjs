@@ -404,6 +404,80 @@ describe('lib/install/hooks.mjs — project-level hooks (BUG-01/BUG-02)', () => 
       'gsd-auto-reapply-patches.sh must be copied to hooksDir',
     );
   });
+
+  // BUG-01 (1c): global settings.json must NOT be modified when projects are provided
+  it('installSessionHook does NOT write to ~/.claude/settings.json when projects provided (BUG-01)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-bug01-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-bug01-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-bug01-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+
+      // Pre-create a global settings.json with a known marker
+      const claudeDir = join(tmpHome, '.claude');
+      mkdirSync(claudeDir, { recursive: true });
+      const globalSettingsPath = join(claudeDir, 'settings.json');
+      const markerContent = JSON.stringify({ preserved: true });
+      writeFileSync(globalSettingsPath, markerContent);
+
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      // Global settings.json must be byte-identical to the marker (untouched)
+      const after = readFileSync(globalSettingsPath, 'utf8');
+      assert.equal(
+        after,
+        markerContent,
+        'global ~/.claude/settings.json must be untouched when projects are provided',
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  // BUG-02 (2c): permissions.allow must be idempotent — no duplicates across reruns
+  it('installSessionHook permissions.allow is idempotent across reruns (BUG-02)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-bug02-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-bug02-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-bug02-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      // Call wizard twice with same inputs
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      const settingsPath = join(tmpProjectPath, '.claude', 'settings.json');
+      assert.ok(existsSync(settingsPath), 'project settings.json must exist');
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      const allow = settings?.permissions?.allow || [];
+
+      // 'Bash(git status)' must appear exactly once (no duplicates)
+      const gitStatusCount = allow.filter(p => p === 'Bash(git status)').length;
+      assert.equal(
+        gitStatusCount,
+        1,
+        `'Bash(git status)' must appear exactly once, found ${gitStatusCount}`,
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
 });
 
 // ── Phase 19: BUG-03 — collectProjects pre-select structural ─────
@@ -563,6 +637,162 @@ describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06
       sessionStart.includes('gsd-auto-reapply-patches.sh'),
       'session-start-context.sh must invoke gsd-auto-reapply-patches.sh',
     );
+  });
+
+  // ── WF-01: gsd-workflow-enforcer wizard install (Phase 29 Plan 02) ──
+  it('copies gsd-workflow-enforcer.mjs into hooksDir (WF-01)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-wf01-copy-home-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-wf01-copy-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      // Use repo root as pkgRoot so real hooks/gsd-workflow-enforcer.mjs is the source
+      installSessionHook(1, 1, projectRoot, vaultPath, projectsData);
+
+      const hookDest = join(tmpHome, '.claude', 'hooks', 'gsd-workflow-enforcer.mjs');
+      assert.ok(
+        existsSync(hookDest),
+        'gsd-workflow-enforcer.mjs must be copied to ~/.claude/hooks/ during install',
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  it('registers PostToolUse Skill → gsd-workflow-enforcer in project settings.json (WF-01)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-wf01-reg-home-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-wf01-reg-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      installSessionHook(1, 1, projectRoot, vaultPath, projectsData);
+
+      const settingsPath = join(tmpProjectPath, '.claude', 'settings.json');
+      assert.ok(existsSync(settingsPath), 'project settings.json must exist');
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      const postToolUse = settings?.hooks?.PostToolUse || [];
+      const match = postToolUse.find(e =>
+        e.matcher === 'Skill' &&
+        e.hooks?.some(h => /gsd-workflow-enforcer\.mjs/.test(h.command || '')),
+      );
+      assert.ok(match, 'PostToolUse Skill → gsd-workflow-enforcer entry must exist');
+      assert.equal(match.hooks[0].timeout, 10, 'timeout must be 10 seconds');
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  it('is idempotent — running twice does not duplicate gsd-workflow-enforcer entry (WF-01)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-wf01-idem-home-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-wf01-idem-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      installSessionHook(1, 1, projectRoot, vaultPath, projectsData);
+      installSessionHook(1, 1, projectRoot, vaultPath, projectsData);
+
+      const settingsPath = join(tmpProjectPath, '.claude', 'settings.json');
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      const count = (settings?.hooks?.PostToolUse || []).filter(e =>
+        e.hooks?.some(h => /gsd-workflow-enforcer\.mjs/.test(h.command || '')),
+      ).length;
+      assert.equal(count, 1, `must not duplicate entry on re-run, got ${count}`);
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  it('skips gsd-workflow-enforcer registration when source missing in pkgRoot (WF-01)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-wf01-missing-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-wf01-missing-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-wf01-missing-proj-'));
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+      // pkgRoot is an empty tmp dir — no hooks/gsd-workflow-enforcer.mjs source
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      const settingsPath = join(tmpProjectPath, '.claude', 'settings.json');
+      const settings = existsSync(settingsPath)
+        ? JSON.parse(readFileSync(settingsPath, 'utf8'))
+        : {};
+      const match = (settings?.hooks?.PostToolUse || []).find(e =>
+        e.hooks?.some(h => /gsd-workflow-enforcer\.mjs/.test(h.command || '')),
+      );
+      assert.strictEqual(match, undefined, 'must not register when source missing');
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  // D-07: installSessionHook must copy patches/ to ~/.claude/gsd-local-patches/
+  it('installSessionHook copies patches/ to ~/.claude/gsd-local-patches/ (BUG-06 D-07)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const nonce = `TEST_PATCH_MARKER_${Date.now()}`;
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-d07-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-d07-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-d07-proj-'));
+    const patchesSrcDir = join(tmpPkgRoot, 'patches');
+    mkdirSync(patchesSrcDir, { recursive: true });
+    writeFileSync(join(patchesSrcDir, 'transition.md'), nonce);
+
+    const vaultPath = join(tmpHome, 'vault');
+    const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+
+    const originalHome = process.env.HOME;
+    try {
+      process.env.HOME = tmpHome;
+
+      // First call: wizard copies patches to ~/.claude/gsd-local-patches/
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+
+      const destFile = join(tmpHome, '.claude', 'gsd-local-patches', 'transition.md');
+      assert.ok(existsSync(destFile), `~/.claude/gsd-local-patches/transition.md must exist after wizard run`);
+      assert.equal(
+        readFileSync(destFile, 'utf8'),
+        nonce,
+        'gsd-local-patches/transition.md must match source byte-for-byte',
+      );
+
+      // Second call: idempotent — file still matches source, no throw
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      assert.ok(existsSync(destFile), 'gsd-local-patches/transition.md must still exist after second call');
+      assert.equal(
+        readFileSync(destFile, 'utf8'),
+        nonce,
+        'gsd-local-patches/transition.md must still match source after idempotent run',
+      );
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
   });
 });
 

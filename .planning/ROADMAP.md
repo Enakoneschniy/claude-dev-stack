@@ -48,7 +48,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 ## Phases
 
-- [ ] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06)
+- [x] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06) (completed 2026-04-14)
 - [x] **Phase 20: Budget Detection** — OAuth usage API, SessionStart display, UserPromptSubmit hook (LIMIT-01) (completed 2026-04-14)
 - [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
 - [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
@@ -57,6 +57,8 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
 - [ ] **Phase 27: GSD Workflow Customization via Patches** — Per-project GSD overrides for branching, push/PR behavior, agent prompts; survives /gsd-update (GSD-01)
+- [x] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01) (completed 2026-04-14)
+- [ ] **Phase 30: CLAUDE.md Idempotent Merge** — Wizard preserves user content in CLAUDE.md; claude-dev-stack section lives between markers, re-install updates only that section (BUG-07)
 
 ---
 
@@ -73,7 +75,9 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   4. User re-running the install wizard sees components already detected as installed marked with "(installed)" in `selectComponents` and pre-selected by default.
   5. User running git-conventions setup on a project that already has `git-scopes.json` is offered "(already configured) — reconfigure?" instead of silent re-initialization.
   6. After `/gsd-update`, transition.md TeamCreate patch is auto-reapplied from package-shipped `patches/` via SessionStart hook. User sees "GSD patches auto-reapplied" message if patch was restored.
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [x] 19-01-PLAN.md — BUG-06 D-07 (wizard copy + hook precedence) + BUG-01/02 audit
 
 ---
 
@@ -102,8 +106,12 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   3. Selecting "Auto-continue locally" schedules a Desktop task that runs the GSD resume command when triggered.
   4. Selecting "Auto-continue in cloud" schedules a Cloud task that clones the repo and resumes autonomously.
   5. User running the install wizard can choose to install `loop.md` to their project `.claude/` directory — the template provides a GSD-aware maintenance loop for scheduled/recurring tasks.
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
+
+Plans:
+- [ ] 21-01-PLAN.md — Budget hook hint line + test assertions (LIMIT-02 hook side)
+- [ ] 21-02-PLAN.md — SKILL.md rewrite for direct tool invocation + LIMIT-03 UAT verification
 
 ---
 
@@ -115,7 +123,11 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   1. When a scheduled task fires, it reads `.planning/STATE.md`, extracts `stopped_at` and `resume_file`, and begins execution from that point — no manual step required.
   2. Handoff works after a fresh git clone — all state is committed to git and the scheduled task operates on a clean checkout without needing previous session artifacts.
   3. If `stopped_at` is missing or STATE.md is absent, the task surfaces a clear error instead of silently executing from the wrong position.
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 22-01-PLAN.md — Zero-dep handoff-check.mjs script + wizard copy (D-01/D-02)
+- [ ] 22-02-PLAN.md — loop.md rewrite + patches/gsd-resume-work.md + session-manager /end extension (D-03..D-07)
 
 ---
 
@@ -129,7 +141,13 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   3. Selecting "Schedule after reset" creates a CronCreate/RemoteTrigger task timed for the 5h reset window, with full GSD context (phase, plan, branch).
   4. Claude Code statusline footer shows real-time plan usage (e.g., `5h:17% 7d:71%`) alongside existing context % display.
   5. Statusline updates from cached API data (60s TTL), no extra API calls beyond what budget-check already makes.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 25-01-PLAN.md — PreToolUse budget-gate + PostToolUse budget-history hooks + wizard install (LIMIT-05 SC#1, SC#2)
+- [ ] 25-02-PLAN.md — cds-statusline.js full replacement + global statusLine registration (LIMIT-05 SC#4, SC#5)
+- [ ] 25-03-PLAN.md — Backfill LIMIT-05 into REQUIREMENTS.md + Traceability table (D-11)
+- [ ] 25-04-PLAN.md — budget-gate-schedule skill + buildCronArgs helper + wizard registration (LIMIT-05 SC#3)
 
 ---
 
@@ -143,7 +161,13 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   3. Duplicate detection: if a decision about the same topic already exists, it updates the existing ADR instead of creating a duplicate.
   4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
   5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 26-01-PLAN.md — lib/adr-bridge-session.mjs core (Haiku subprocess + topic match + write/supersede) + tests (D-01..D-03, D-07..D-11)
+- [ ] 26-02-PLAN.md — claude-dev-stack decisions CLI (list/show/search) + bin/cli.mjs wire + tests (D-12, D-13)
+- [ ] 26-03-PLAN.md — session-manager SKILL.md /end integration (bash block + human verification) (D-04, D-05, D-06)
+- [ ] 26-04-PLAN.md — Backfill ADR-02 into REQUIREMENTS.md + Traceability row (D-14)
 
 ---
 
@@ -159,7 +183,13 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
   5. `/gsd-update` preserves `.planning/gsd-overrides/` — it only updates `~/.claude/get-shit-done/` (global install), project-level overrides are untouched.
   6. `claude-dev-stack gsd customize` CLI scaffolds `.planning/gsd-overrides/` with commented templates showing what can be overridden.
   7. Patch script supports diff-based patches (not just full file replacement) — user can patch a single section of a workflow without maintaining the entire file.
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 27-01-PLAN.md — Extend gsd-auto-reapply-patches.sh into three-tier resolver with diff apply + baseline backup (D-01..D-06, D-09..D-11)
+- [ ] 27-02-PLAN.md — patches/ship.md.patch config-aware gates + wizard writes workflow.auto_push/auto_pr/merge_strategy directly to config.json (D-07/D-08)
+- [ ] 27-03-PLAN.md — lib/gsd-customize-cli.mjs with customize/list-overrides/remove subcommands (D-12..D-14)
+- [ ] 27-04-PLAN.md — GSD-01 backfill into REQUIREMENTS.md + Traceability row (D-15)
 
 ---
 
@@ -194,8 +224,9 @@ All 10 v1 requirements mapped to exactly one owning phase:
 | DX-11 | 23 | Smart Re-install Pre-fill |
 | DX-12 | 23 | Smart Re-install Pre-fill |
 | DX-13 | 23 | Smart Re-install Pre-fill |
+| SSR-01 | 28 | Silent SessionStart + skill activation only on end/resume triggers |
 
-**Coverage check**: 24/24 requirements mapped (100%), 0 orphaned.
+**Coverage check**: 25/25 requirements mapped (100%), 0 orphaned.
 
 - Phase 19: 6 requirements (BUG-01..BUG-06)
 - Phase 20: 1 requirement (LIMIT-01)
@@ -203,9 +234,10 @@ All 10 v1 requirements mapped to exactly one owning phase:
 - Phase 22: 1 requirement (LIMIT-04)
 - Phase 23: 7 requirements (DX-07..DX-13)
 - Phase 24: 7 requirements (UX-01..UX-07)
+- Phase 28: 1 requirement (SSR-01)
 - BUG-07: Phase 19 (added post-UAT)
 
-Total: 6 + 1 + 2 + 1 + 7 + 7 = 24 ✓
+Total: 6 + 1 + 2 + 1 + 7 + 7 + 1 = 25 ✓
 
 ---
 
@@ -254,12 +286,13 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 17. NotebookLM Cross-Notebook Search | v0.11 | 2/2 | Complete | 2026-04-13 |
 | 18. Notion Database Import + Analytics Integration | v0.11 | 2/2 | Complete | 2026-04-13 |
 | 18.1. Always-on TeamCreate execution | v0.11 | 1/1 | Complete | 2026-04-13 |
-| 19. Project-Level Hooks & Wizard Bug Fixes | v0.12 | 0/? | Not started | - |
+| 19. Project-Level Hooks & Wizard Bug Fixes | v0.12 | 1/1 | Complete   | 2026-04-14 |
 | 20. Budget Detection | v0.12 | 0/? | Not started | - |
 | 21. Continuation Prompt & loop.md | v0.12 | 0/? | Not started | - |
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
 | 23. Smart Re-install Pre-fill | v0.12 | 2/2 | Complete   | 2026-04-13 |
 | 24. Wizard UX Polish | v0.12 | 0/? | Not started | - |
+| 28. Silent Session Start | v0.12 | 0/3 | Planned | - |
 
 ### Phase 23: Smart Re-install Pre-fill
 **Goal**: Wizard re-install skips or pre-fills all steps that have existing configuration — no redundant prompts for already-configured values.
@@ -291,8 +324,72 @@ Plans:
   4. Step counter shows correct total (no "Step 15 of 14").
   5. Detect banner and vault step show consistent project counts from same data source.
   6. All confirmation prompts use consistent select-style (no mixed y/N and select).
+**Plans**: 2 plans
+
+Plans:
+- [ ] 24-01-PLAN.md — Git sync detection + dynamic step counter + unified project count + confirm-to-select sweep (UX-01, UX-04, UX-05, UX-06, UX-07)
+- [ ] 24-02-PLAN.md — UAT scaffold + full wizard verification for UX-02, UX-03 and regression coverage of UX-01/04/05/06/07
+
+### Phase 28: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
+
+**Goal:** Starting a new Claude Code session on a claude-dev-stack project loads vault context silently via the SessionStart hook. Claude does NOT re-read `context.md` or session logs on the first user message. The `session-manager` skill activates only on explicit end/resume triggers — never on greetings. A marker file (`.claude/.session-loaded`) signals to the skill's `/resume` path whether to skip or perform an explicit load.
+**Requirements**: SSR-01
+**Depends on:** Phase 27 (roadmap-declared ordering; no hard code dependency — Phase 28 only touches CLAUDE.md template, session-manager skill, SessionStart hook, install wizard). Recommended sequencing: ship after Phase 30 (CLAUDE.md idempotent merge) for best user-content preservation, but not blocking — partial-merge fallback in existing `generateClaudeMD()` handles common cases.
+**Success Criteria** (what must be TRUE):
+  1. CLAUDE.md template "Knowledge Base" section instructs Claude NOT to re-read `context.md`/session logs on first message.
+  2. session-manager skill description omits greeting triggers ("привет", "hi", "начинаем") and "first message" auto-activation.
+  3. SessionStart hook writes `.claude/.session-loaded` marker atomically (ISO 8601 UTC timestamp) every successful run.
+  4. Install wizard adds `.claude/.session-loaded` to each configured project's `.gitignore` idempotently.
+  5. session-manager `/resume` path checks marker mtime — if < 60 min, uses pre-loaded context; otherwise falls through to explicit `cat`.
+  6. `.planning/REQUIREMENTS.md` contains new `### Session Start/Resume (SSR)` section + `| SSR-01 | 28 | — | pending |` Traceability row.
+**Plans**: 3 plans
+
+Plans:
+- [ ] 28-01-PLAN.md — CLAUDE.md template rewrite + session-manager SKILL.md description/body/resume changes (D-01..D-04, D-06)
+- [ ] 28-02-PLAN.md — SessionStart hook marker writer + install wizard .gitignore helper (D-05, D-07)
+- [ ] 28-03-PLAN.md — SSR-01 backfill into REQUIREMENTS.md (D-08)
+
+### Phase 29: GSD Workflow Enforcer Hook
+**Goal**: After `/gsd-plan-phase` completes, a hook automatically surfaces next-step guidance that prevents Claude from suggesting `/gsd-execute-phase` when more pending phases remain — enforcing the discuss+plan+manager batching design by default.
+**Depends on**: Nothing (hook can be added anytime)
+**Requirements**: WF-01
+**Success Criteria** (what must be TRUE):
+  1. Hook fires after `/gsd-plan-phase N` completes (PostToolUse on Skill tool).
+  2. Hook reads `.planning/ROADMAP.md` / `.planning/STATE.md` to count remaining pending phases.
+  3. If 2+ pending phases remain: hook outputs `NEXT: /gsd-discuss-phase M — do NOT run /gsd-execute-phase; use /gsd-manager only after all pending phases are planned` to session context.
+  4. If 0–1 pending phase: hook stays silent (normal `/gsd-execute-phase` or completion flow unaffected).
+  5. Hook fails silently (exit 0, no output) when `.planning/ROADMAP.md` is absent — does not break non-GSD projects.
+  6. Wizard installs this hook into project `.claude/settings.json` (PostToolUse) alongside existing session hooks (BUG-01 compliant).
+**Plans**: 2 plans
+
+Plans:
+- [x] 29-01-PLAN.md — hooks/gsd-workflow-enforcer.mjs + tests (hook behavior, WF-01 SC#1..SC#5)
+- [x] 29-02-PLAN.md — lib/install/hooks.mjs extension + wizard wiring + install tests (WF-01 SC#6)
+
+### Phase 30: CLAUDE.md Idempotent Merge
+**Goal**: User-written CLAUDE.md content is preserved across wizard runs. Claude-dev-stack instructions live in a clearly delimited section between markers; re-install only updates the managed section, never touches user content.
+**Depends on**: Nothing (hot-fixable at any time)
+**Requirements**: BUG-07
+**Success Criteria** (what must be TRUE):
+  1. Running wizard on a project with existing user-written CLAUDE.md does NOT overwrite or delete user content outside the markers.
+  2. Our section is wrapped in `<!-- @claude-dev-stack:start -->` ... `<!-- @claude-dev-stack:end -->` markers (reusing the mechanism already in `lib/project-setup.mjs`).
+  3. `generateClaudeMD()` in `lib/install/claude-md.mjs` delegates to `updateProjectClaudeMd()` (or equivalent) instead of `writeFileSync` overwrite.
+  4. On first install (no CLAUDE.md exists): file created with markers and our instructions between them.
+  5. On re-install where markers exist: only the content between markers is replaced.
+  6. On re-install where CLAUDE.md exists but markers are absent: our section is appended to the end — existing content left untouched.
+  7. User running the wizard sees a status line distinguishing the three paths: `CLAUDE.md: created | updated | appended` (not "overwritten").
 **Plans**: TBD
+
+### Phase 31: Skills to Hooks Migration — replace deterministic skills (dev-router, session-manager start, project-switcher detection, git-conventions) with Claude Code hooks for silent UX and token savings. Scope: (1) dev-router → UserPromptSubmit regex hook with additionalContext; (2) session-manager context loading → fully in SessionStart hook (skill remains only for /end logging); (3) project-switcher detection → UserPromptSubmit regex against vault/meta/project-registry.md; (4) git-conventions → PreToolUse on Bash(git commit*) with conventional commits validation. Out of scope: gsd-* skills (third-party), research-*, notebooklm, obsidian — require LLM. Deliverable: candidate skills deactivated/removed, corresponding hooks added to ~/.claude/settings.json, documented in vault/shared/patterns.md.
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 30
+**Plans:** 2/2 plans complete
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 31 to break down)
 
 ---
 
-*Roadmap updated: 2026-04-13 — Phase 24 (Wizard UX Polish) added. v0.12 now 6 phases (19–24), 17 requirements + BUG-07.*
+*Roadmap updated: 2026-04-14 — Phase 28 (Silent Session Start) planned: 3 plans, requirement SSR-01 added, coverage table updated to 25/25.*
