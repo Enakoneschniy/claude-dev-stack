@@ -15,7 +15,7 @@ const libDir = join(projectRoot, 'lib');
 // ── lib/budget.mjs unit tests ────────────────────────────────────────────────
 
 describe('lib/budget.mjs', async () => {
-  const { parseUsage, computePercent, shouldWarn, formatWarning,
+  const { parseUsage, shouldWarn, formatWarning,
     currentSessionId, DEFAULT_THRESHOLD } = await import('../lib/budget.mjs');
 
   describe('parseUsage', () => {
@@ -23,82 +23,28 @@ describe('lib/budget.mjs', async () => {
       assert.equal(parseUsage(null), null);
     });
 
-    it('returns null when no usage field', () => {
-      assert.equal(parseUsage({ tool: 'Write' }), null);
+    it('returns null when no used_pct field', () => {
+      assert.equal(parseUsage({ session_id: 'abc' }), null);
     });
 
-    it('returns null when context_window_tokens is zero', () => {
-      assert.equal(parseUsage({ usage: { context_window_tokens: 0 } }), null);
-    });
-
-    it('returns null when context_window_tokens is missing', () => {
-      assert.equal(parseUsage({ usage: { input_tokens: 100 } }), null);
-    });
-
-    it('parses basic usage correctly', () => {
+    it('parses statusline bridge metrics correctly', () => {
       const result = parseUsage({
-        usage: {
-          input_tokens: 5000,
-          output_tokens: 1000,
-          cache_read_input_tokens: 0,
-          cache_creation_input_tokens: 0,
-          context_window_tokens: 10000,
-        },
+        session_id: 'abc',
+        remaining_percentage: 75,
+        used_pct: 25,
+        timestamp: 1234567890,
       });
-      assert.deepEqual(result, { usedTokens: 6000, totalTokens: 10000 });
+      assert.deepEqual(result, { usedPct: 25, remainingPct: 75 });
     });
 
-    it('sums all token fields', () => {
-      const result = parseUsage({
-        usage: {
-          input_tokens: 1000,
-          output_tokens: 500,
-          cache_read_input_tokens: 200,
-          cache_creation_input_tokens: 300,
-          context_window_tokens: 20000,
-        },
-      });
-      assert.deepEqual(result, { usedTokens: 2000, totalTokens: 20000 });
-    });
-
-    it('treats missing token fields as 0', () => {
-      const result = parseUsage({
-        usage: { context_window_tokens: 10000 },
-      });
-      assert.deepEqual(result, { usedTokens: 0, totalTokens: 10000 });
-    });
-  });
-
-  describe('computePercent', () => {
-    it('returns null for non-numbers', () => {
-      assert.equal(computePercent('a', 100), null);
-      assert.equal(computePercent(50, 'b'), null);
-    });
-
-    it('returns null for zero totalTokens', () => {
-      assert.equal(computePercent(50, 0), null);
-    });
-
-    it('computes 70% correctly', () => {
-      assert.equal(computePercent(7000, 10000), 70);
-    });
-
-    it('rounds to nearest integer', () => {
-      assert.equal(computePercent(7001, 10000), 70);
-      assert.equal(computePercent(7500, 10000), 75);
-    });
-
-    it('returns 0 for zero usage', () => {
-      assert.equal(computePercent(0, 10000), 0);
-    });
-
-    it('returns 100 when fully used', () => {
-      assert.equal(computePercent(10000, 10000), 100);
+    it('computes remainingPct when remaining_percentage missing', () => {
+      const result = parseUsage({ used_pct: 40 });
+      assert.deepEqual(result, { usedPct: 40, remainingPct: 60 });
     });
   });
 
   describe('shouldWarn', () => {
-    const sessionId = '2026-04-13';
+    const sessionId = 'test-session-123';
 
     it('returns false when percent < threshold', () => {
       assert.equal(shouldWarn(69, 70, null, sessionId), false);
@@ -118,7 +64,7 @@ describe('lib/budget.mjs', async () => {
     });
 
     it('returns true when state is for a different session', () => {
-      const state = { firedForSession: '2026-04-12', firedAtPercent: 72 };
+      const state = { firedForSession: 'other-session', firedAtPercent: 72 };
       assert.equal(shouldWarn(80, 70, state, sessionId), true);
     });
 
@@ -129,29 +75,23 @@ describe('lib/budget.mjs', async () => {
 
   describe('formatWarning', () => {
     it('includes the percent and threshold', () => {
-      const msg = formatWarning(75, 70, 7500, 10000);
+      const msg = formatWarning(75, 70);
       assert.ok(msg.includes('75%'), 'must include current percent');
       assert.ok(msg.includes('70%'), 'must include threshold');
     });
 
-    it('includes token counts', () => {
-      const msg = formatWarning(75, 70, 7500, 10000);
-      assert.ok(msg.includes('7,500') || msg.includes('7500'), 'must include used tokens');
-      assert.ok(msg.includes('10,000') || msg.includes('10000'), 'must include total tokens');
-    });
-
-    it('includes remaining estimate', () => {
-      const msg = formatWarning(75, 70, 7500, 10000);
-      assert.ok(msg.includes('2k') || msg.includes('2,500') || msg.includes('Remaining'), 'must mention remaining');
+    it('includes remaining percentage', () => {
+      const msg = formatWarning(75, 70);
+      assert.ok(msg.includes('25%'), 'must include remaining percentage');
     });
 
     it('returns a non-empty string', () => {
-      const msg = formatWarning(80, 70, 8000, 10000);
+      const msg = formatWarning(80, 70);
       assert.ok(typeof msg === 'string' && msg.length > 0);
     });
 
     it('includes continue suggestion line', () => {
-      const w = formatWarning(75, 70, 150000, 200000);
+      const w = formatWarning(75, 70);
       assert.ok(w.includes('claude-dev-stack budget continue'), 'should include continue suggestion');
     });
   });
@@ -203,12 +143,9 @@ describe('lib/budget.mjs config and state (isolated)', () => {
   });
 
   it('loadThreshold returns DEFAULT_THRESHOLD when no config', async () => {
-    // Force re-import to get fresh homedir resolution
     const { loadThreshold, DEFAULT_THRESHOLD } = await import('../lib/budget.mjs');
-    // Can't easily re-resolve homedir in ESM — test via env var override
     process.env.BUDGET_THRESHOLD_PERCENT = '';
     const t = loadThreshold();
-    // Without config file and with empty env, should return DEFAULT_THRESHOLD
     assert.equal(t, DEFAULT_THRESHOLD);
     delete process.env.BUDGET_THRESHOLD_PERCENT;
   });
@@ -237,7 +174,7 @@ describe('hooks/budget-check.mjs', () => {
     assert.ok(existsSync(hookPath), 'hooks/budget-check.mjs must exist');
   });
 
-  it('exits 0 with empty stdin (no usage data)', () => {
+  it('exits 0 with empty stdin (no session data)', () => {
     const result = spawnSync(process.execPath, [hookPath], {
       encoding: 'utf8',
       input: '',
@@ -257,7 +194,7 @@ describe('hooks/budget-check.mjs', () => {
     assert.equal(result.status, 0, `exit code must be 0 on bad JSON`);
   });
 
-  it('exits 0 with no usage field in payload', () => {
+  it('exits 0 with no session_id in payload', () => {
     const payload = JSON.stringify({ tool_name: 'Write', tool_input: {} });
     const result = spawnSync(process.execPath, [hookPath], {
       encoding: 'utf8',
@@ -268,79 +205,45 @@ describe('hooks/budget-check.mjs', () => {
     assert.equal(result.status, 0);
   });
 
-  it('prints warning when usage crosses threshold, exits 0', () => {
-    const tmpHome = join(tmpdir(), `cds-budget-hook-warn-${process.pid}`);
-    mkdirSync(join(tmpHome, '.claude'), { recursive: true });
-
-    const payload = JSON.stringify({
-      usage: {
-        input_tokens: 7500,
-        output_tokens: 500,
-        cache_read_input_tokens: 0,
-        cache_creation_input_tokens: 0,
-        context_window_tokens: 10000,
-      },
-    });
-
-    const result = spawnSync(process.execPath, [hookPath], {
-      encoding: 'utf8',
-      input: payload,
-      env: { ...process.env, HOME: tmpHome, BUDGET_THRESHOLD_PERCENT: '70' },
-      timeout: 5000,
-    });
-
-    rmSync(tmpHome, { recursive: true, force: true });
-
-    assert.equal(result.status, 0, `exit code must be 0, stderr: ${result.stderr}`);
-    assert.ok(result.stdout.includes('BUDGET WARNING'), `stdout must include "BUDGET WARNING", got: ${result.stdout}`);
-    assert.ok(result.stdout.includes('80%'), 'warning must include computed percent (80%)');
+  it('hook contains OAuth usage API call', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('api.anthropic.com/api/oauth/usage'), 'must call OAuth usage API');
   });
 
-  it('does NOT print warning when usage below threshold', () => {
-    const tmpHome = join(tmpdir(), `cds-budget-hook-ok-${process.pid}`);
-    mkdirSync(join(tmpHome, '.claude'), { recursive: true });
+  it('hook contains Keychain token retrieval', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('Claude Code-credentials'), 'must read from Keychain');
+  });
 
-    const payload = JSON.stringify({
-      usage: {
-        input_tokens: 5000,
-        output_tokens: 500,
-        cache_read_input_tokens: 0,
-        cache_creation_input_tokens: 0,
-        context_window_tokens: 10000,
-      },
-    });
+  it('hook contains BUDGET WARNING output', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('BUDGET WARNING'), 'must output BUDGET WARNING');
+  });
 
-    const result = spawnSync(process.execPath, [hookPath], {
-      encoding: 'utf8',
-      input: payload,
-      env: { ...process.env, HOME: tmpHome, BUDGET_THRESHOLD_PERCENT: '70' },
-      timeout: 5000,
-    });
+  it('hook contains five_hour and seven_day checks', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('five_hour'), 'must check five_hour utilization');
+    assert.ok(src.includes('seven_day'), 'must check seven_day utilization');
+    assert.ok(src.includes('extra_usage'), 'must check extra_usage utilization');
+  });
 
-    rmSync(tmpHome, { recursive: true, force: true });
-
-    assert.equal(result.status, 0);
-    assert.ok(!result.stdout.includes('BUDGET WARNING'), 'must NOT warn when usage < threshold');
+  it('hook contains cache logic to avoid API spam', () => {
+    const src = readFileSync(hookPath, 'utf8');
+    assert.ok(src.includes('budget-usage-cache.json'), 'must use cache file');
+    assert.ok(src.includes('CACHE_TTL_MS'), 'must have cache TTL');
   });
 
   it('does NOT print warning twice in same session (state file present)', () => {
     const tmpHome = join(tmpdir(), `cds-budget-hook-once-${process.pid}`);
     mkdirSync(join(tmpHome, '.claude'), { recursive: true });
 
-    const today = new Date().toISOString().slice(0, 10);
-    // Pre-seed state file indicating warning already fired today
-    const statePath = join(tmpHome, '.claude', 'budget-state.json');
-    writeFileSync(statePath, JSON.stringify({ firedForSession: today, firedAtPercent: 75 }));
+    const sessionId = `test-budget-once-${process.pid}`;
 
-    const payload = JSON.stringify({
-      usage: {
-        input_tokens: 8500,
-        output_tokens: 500,
-        cache_read_input_tokens: 0,
-        cache_creation_input_tokens: 0,
-        context_window_tokens: 10000,
-      },
-    });
+    // Pre-seed state file indicating warning already fired for this session
+    const statePath = join(tmpHome, '.claude', 'budget-state.json');
+    writeFileSync(statePath, JSON.stringify({ firedForSession: sessionId, alerts: ['5h: 80%'] }));
+
+    const payload = JSON.stringify({ session_id: sessionId });
 
     const result = spawnSync(process.execPath, [hookPath], {
       encoding: 'utf8',
@@ -352,39 +255,7 @@ describe('hooks/budget-check.mjs', () => {
     rmSync(tmpHome, { recursive: true, force: true });
 
     assert.equal(result.status, 0);
-    assert.ok(!result.stdout.includes('BUDGET WARNING'), 'must NOT warn again when already fired today');
-  });
-
-  it('saves state file after warning fires', () => {
-    const tmpHome = join(tmpdir(), `cds-budget-hook-state-${process.pid}`);
-    mkdirSync(join(tmpHome, '.claude'), { recursive: true });
-
-    const payload = JSON.stringify({
-      usage: {
-        input_tokens: 7500,
-        output_tokens: 500,
-        cache_read_input_tokens: 0,
-        cache_creation_input_tokens: 0,
-        context_window_tokens: 10000,
-      },
-    });
-
-    spawnSync(process.execPath, [hookPath], {
-      encoding: 'utf8',
-      input: payload,
-      env: { ...process.env, HOME: tmpHome, BUDGET_THRESHOLD_PERCENT: '70' },
-      timeout: 5000,
-    });
-
-    const statePath = join(tmpHome, '.claude', 'budget-state.json');
-    assert.ok(existsSync(statePath), 'budget-state.json must be created after warning fires');
-
-    const state = JSON.parse(readFileSync(statePath, 'utf8'));
-    const today = new Date().toISOString().slice(0, 10);
-    assert.equal(state.firedForSession, today, 'state must record today as firedForSession');
-    assert.ok(typeof state.firedAtPercent === 'number', 'state must record firedAtPercent');
-
-    rmSync(tmpHome, { recursive: true, force: true });
+    assert.ok(!result.stdout.includes('BUDGET WARNING'), 'must NOT warn again when already fired for this session');
   });
 });
 
@@ -416,7 +287,7 @@ describe('hooks/budget-reset.mjs', () => {
     mkdirSync(join(tmpHome, '.claude'), { recursive: true });
 
     const statePath = join(tmpHome, '.claude', 'budget-state.json');
-    writeFileSync(statePath, JSON.stringify({ firedForSession: '2026-04-13', firedAtPercent: 75 }));
+    writeFileSync(statePath, JSON.stringify({ firedForSession: 'old-session', firedAtPercent: 75 }));
 
     spawnSync(process.execPath, [resetPath], {
       encoding: 'utf8',

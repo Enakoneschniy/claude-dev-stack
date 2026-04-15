@@ -4,7 +4,7 @@
 
 **Phase numbering**: continues from v0.11 (last phase: 18.1) → starts at Phase 19
 **Test baseline**: 558 (v0.11.0)
-**Total requirements**: 10 v1 requirements.
+**Total requirements**: 12 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill + 1 GSD-01 backfill + 1 SSR-01 backfill).
 
 ---
 
@@ -37,6 +37,65 @@
 - [ ] **DX-11**: GSD install checks installed version against latest — skips `npx get-shit-done-cc@latest` if already up to date. Same for Obsidian Skills.
 - [ ] **DX-12**: NotebookLM login checks `~/.notebooklm/storage_state.json` existence — skips browser OAuth if already authenticated. "First sync" text replaced with "Run sync now?" for re-installs.
 - [ ] **DX-13**: Bulk prompts (loop.md per project, git-conventions per project) use "Install for all N projects? (Y/n)" or multiselect instead of N individual y/N prompts.
+
+### Wizard UX Polish (UX)
+
+- [ ] **UX-01**: Git sync step detects existing configured remote and shows "Git sync: configured (remote: origin → github.com/...)" instead of offering "(recommended)" sync setup.
+- [ ] **UX-02**: loop.md installation uses "Install loop.md for all N projects? (Y/n)" bulk prompt instead of N separate per-project confirms.
+- [ ] **UX-03**: git-conventions installation uses "Install git-conventions for all N projects? (Y/n)" bulk prompt instead of N separate per-project confirms.
+- [ ] **UX-04**: Git sync step checks for existing remote (`git remote -v` in vault) — if remote exists, shows status instead of re-running init/push flow.
+- [ ] **UX-05**: Wizard step counter is accurate — total step count matches actual steps shown (no "Step 15 of 14").
+- [ ] **UX-06**: Detect banner project count matches vault step project count — both use same source (`project-map.json`), no "0 projects" vs "8 project(s)" discrepancy.
+- [ ] **UX-07**: All wizard confirmation prompts use consistent select-style prompts instead of mixed confirm (y/N) and select styles.
+
+### Decisions (ADR)
+
+- [ ] **ADR-02**: Session-end hook scans session transcript (not just GSD discuss-phase) for architectural decisions — new dependencies, API changes, data model changes, significant refactors — and creates ADR files in `vault/projects/{project}/decisions/`. Includes duplicate detection (same topic → update, not duplicate), YAML frontmatter with source (session log path + commit SHA), and `claude-dev-stack decisions` CLI (list/show/search) for browsing.
+
+  Success Criteria:
+  1. Session-end hook scans session transcript for architectural decisions (new dependencies added, API endpoints changed, data model changes, significant refactors) and creates ADR files in `vault/projects/{project}/decisions/`.
+  2. ADR bridge runs on session end in addition to GSD discuss-phase — decisions from any workflow (manual coding, bug fixes, hotfixes) are captured.
+  3. Duplicate detection: if a decision about the same topic already exists, it updates the existing ADR instead of creating a duplicate.
+  4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
+  5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
+
+### GSD Workflow (GSD)
+
+- [ ] **GSD-01**: Projects using claude-dev-stack + GSD can override GSD workflow behavior (e.g., `workflows/manager.md`, `workflows/transition.md`) via package-shipped patches that survive `/gsd-update`. Implementation: shipped `patches/*.md`, install wizard copies to `~/.claude/gsd-local-patches/`, SessionStart hook re-applies any patch whose SHA-256 differs from the upstream workflow file. Formalized scope; extended features (per-project `.planning/gsd-overrides/`, `gsd customize` CLI, diff-based patches, `workflow.auto_push`/`auto_pr`/`merge_strategy` config gates) are deferred to backlog.
+
+  Success Criteria (formalization cut):
+  1. Package-shipped `patches/*.md` files replace same-named files under `~/.claude/get-shit-done/workflows/` whenever SHAs differ.
+  2. Install wizard copies shipped `patches/` to `~/.claude/gsd-local-patches/` (wizard-pinned, authoritative source).
+  3. `gsd-auto-reapply-patches.sh` SessionStart hook resolves patches in order: `$PATCHES_DIR` → `~/.claude/gsd-local-patches/` → npm global → dev checkout.
+  4. Hook exits 0 silently when GSD is not installed or no patches source resolves.
+  5. Hook is idempotent — re-running on already-patched workflows produces no change and no output.
+  6. Regression tests under `tests/` cover hook behavior (`gsd-auto-reapply-patches.test.mjs`) and wizard copy (`install-patches-copy.test.mjs`).
+  7. Pattern documented in `vault/shared/patterns.md` so other GSD-using projects can adopt it.
+
+### Session Start/Resume (SSR)
+
+- [ ] **SSR-01**: SessionStart hook is the single source of vault context
+  loading for configured projects. The `session-manager` skill does not
+  auto-activate on greetings; its `/resume` path checks a
+  `.claude/.session-loaded` marker (atomic, ISO 8601 UTC) and skips the
+  redundant `cat` when the marker is < 60 min old. CLAUDE.md template
+  instructs Claude not to re-read `context.md` on the first message.
+  Install wizard adds the marker path to project `.gitignore` idempotently.
+
+  Success Criteria:
+  1. CLAUDE.md template "Knowledge Base" section instructs Claude NOT to re-read `context.md` / session logs on the first message.
+  2. `session-manager` skill description omits greeting triggers ("привет", "hi", "начинаем") and first-message auto-activation.
+  3. SessionStart hook writes `.claude/.session-loaded` marker atomically (ISO 8601 UTC timestamp) on every successful run.
+  4. Install wizard adds `.claude/.session-loaded` to each configured project's `.gitignore` idempotently.
+  5. `session-manager` `/resume` path checks marker mtime — if < 60 min, uses pre-loaded context; otherwise falls through to explicit `cat`.
+  6. `.planning/REQUIREMENTS.md` contains this section and the `| SSR-01 | 28 | — | pending |` traceability row.
+
+### Skills→Hooks (SKL)
+
+- [x] **SKL-01**: `dev-router` skill replaced by `hooks/dev-router.mjs` UserPromptSubmit hook. Hook reads prompt from stdin JSON, regex-matches dev/research/session/end keywords, emits a routing hint as `additionalContext` (≤200 chars). Fail-silent on empty stdin / malformed JSON. Skill file removed from `skills/` and from `lib/install/skills.mjs` skillNames; deprecated install at `~/.claude/skills/dev-router/` cleaned up by wizard re-run.
+- [x] **SKL-02**: `session-manager` skill start-path (auto-load context.md + last sessions on first message) fully migrated to SessionStart hook (`hooks/session-start-context.sh`, owned by Phase 28). Phase 31 removes the `### /resume or /start` section and `## Automatic Behavior` block from the skill body. Skill retains `/end` (session log + ADR), `/handoff`, `/status`, `## ADR Creation`, `## Best Practices`. New note line at top of skill body directs readers to the hook.
+- [x] **SKL-03**: `project-switcher` skill replaced by `hooks/project-switcher.mjs` UserPromptSubmit hook. Hook parses project names from `vault/project-map.json` (NOT project-registry.md — JSON is reliable), uses word-boundary regex to match prompt against known projects, emits switch hint only when matched project differs from current cwd's project. Fail-silent when registry absent. Skill file removed from `skills/` and skillNames; deprecated install cleaned up by wizard.
+- [x] **SKL-04**: `git-conventions` enforcement migrated to `hooks/git-conventions-check.mjs` PreToolUse hook with `matcher: "Bash"` and per-hook `if: "Bash(git commit*)"` scope-narrowing. Hook validates the `-m "..."` message against conventional commits regex `/^(feat|fix|chore|docs|refactor|test|ci|build|perf|style|revert)(\(.+\))?!?:\s.+/`. Default mode: warn-only (exit 0 with stdout suggestion). Strict mode (exit 2 blocking) opt-in via `.planning/config.json` → `workflow.commit_validation: "strict"`. Coexists with GSD's `gsd-validate-commit.sh` (per research finding #3 — GSD is opt-in via community flag).
 
 ---
 
@@ -77,3 +136,17 @@
 | DX-11 | 23 | — | pending |
 | DX-12 | 23 | — | pending |
 | DX-13 | 23 | — | pending |
+| UX-01 | 24 | — | pending |
+| UX-02 | 24 | — | pending |
+| UX-03 | 24 | — | pending |
+| UX-04 | 24 | — | pending |
+| UX-05 | 24 | — | pending |
+| UX-06 | 24 | — | pending |
+| UX-07 | 24 | — | pending |
+| ADR-02 | 26 | — | pending |
+| GSD-01 | 27 | 27-01..04 | pending |
+| SSR-01 | 28 | 28-01..03 | pending |
+| SKL-01 | 31 | 31-01, 31-02 | complete |
+| SKL-02 | 31 | 31-03 | complete |
+| SKL-03 | 31 | 31-01, 31-02 | complete |
+| SKL-04 | 31 | 31-01, 31-02 | complete |

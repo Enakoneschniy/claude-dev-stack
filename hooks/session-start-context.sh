@@ -60,3 +60,26 @@ if [ -f "$CONTEXT" ]; then
     fi
   fi
 fi
+
+# SSR-01 (Phase 28): write .claude/.session-loaded marker so the
+# session-manager skill's /resume path can detect that context was
+# pre-loaded by this hook and skip a redundant cat.
+# Fail-silent — never break the hook, never pollute stdout.
+MARKER_DIR="$CURRENT_DIR/.claude"
+if [ -d "$MARKER_DIR" ] || mkdir -p "$MARKER_DIR" 2>/dev/null; then
+  TS="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
+  if [ -n "$TS" ]; then
+    TMP="$MARKER_DIR/.session-loaded.tmp"
+    FINAL="$MARKER_DIR/.session-loaded"
+    if printf '%s\n' "$TS" > "$TMP" 2>/dev/null; then
+      mv "$TMP" "$FINAL" 2>/dev/null || rm -f "$TMP" 2>/dev/null
+    fi
+  fi
+fi
+
+# Budget check: show plan usage at session start
+BUDGET_OUT=$(node "$HOOKS_DIR/budget-check-status.mjs" 2>/dev/null)
+if [ -n "$BUDGET_OUT" ]; then
+  echo ""
+  echo "$BUDGET_OUT"
+fi

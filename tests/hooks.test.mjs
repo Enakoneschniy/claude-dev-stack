@@ -1,6 +1,6 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'fs';
+import { existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, chmodSync } from 'fs';
 import { execFileSync, spawnSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -9,6 +9,45 @@ import { tmpdir } from 'os';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const hooksDir = join(__dirname, '..', 'hooks');
 const fixturesDir = join(__dirname, 'fixtures');
+
+describe('node hooks (Phase 31)', () => {
+  const nodeHookFiles = ['dev-router.mjs', 'project-switcher.mjs', 'git-conventions-check.mjs'];
+  for (const file of nodeHookFiles) {
+    describe(file, () => {
+      const hookPath = join(hooksDir, file);
+
+      it('file exists', () => {
+        assert.ok(existsSync(hookPath));
+      });
+
+      it('starts with node shebang', () => {
+        const content = readFileSync(hookPath, 'utf8');
+        assert.ok(
+          content.startsWith('#!/usr/bin/env node'),
+          `expected #!/usr/bin/env node shebang in ${file}`
+        );
+      });
+
+      it('exits 0 on empty stdin', () => {
+        const result = spawnSync('node', [hookPath], {
+          input: '',
+          encoding: 'utf8',
+          timeout: 3000,
+        });
+        assert.equal(result.status, 0);
+      });
+
+      it('exits 0 on malformed JSON', () => {
+        const result = spawnSync('node', [hookPath], {
+          input: 'not-json{{{',
+          encoding: 'utf8',
+          timeout: 3000,
+        });
+        assert.equal(result.status, 0);
+      });
+    });
+  }
+});
 
 describe('hooks', () => {
   const hookFiles = ['session-start-context.sh', 'session-end-check.sh'];
@@ -369,6 +408,81 @@ describe('hooks', () => {
       const src = readFileSync(hookPath, 'utf8');
       const count = (src.match(/notebooklm-sync-trigger\.mjs/g) || []).length;
       assert.equal(count, 1, `expected exactly 1 trigger reference, got ${count}`);
+    });
+  });
+
+  // WF-01: gsd-workflow-enforcer.mjs file-level assertions (Phase 29 Plan 02)
+  describe('gsd-workflow-enforcer.mjs', () => {
+    const hookPath = join(hooksDir, 'gsd-workflow-enforcer.mjs');
+
+    it('exists in hooks/', () => {
+      assert.ok(existsSync(hookPath), 'hooks/gsd-workflow-enforcer.mjs must exist');
+    });
+
+    it('has node shebang', () => {
+      const firstLine = readFileSync(hookPath, 'utf8').split('\n')[0];
+      assert.match(firstLine, /^#!.*node/, 'must start with #!... node shebang');
+    });
+
+    it('passes node --check', () => {
+      assert.doesNotThrow(() => execFileSync('node', ['--check', hookPath]));
+    });
+  });
+
+  // D-07: gsd-auto-reapply-patches.sh must prefer ~/.claude/gsd-local-patches over npm resolution
+  describe('gsd-auto-reapply-patches.sh — D-07 precedence', () => {
+    const scriptPath = join(hooksDir, 'gsd-auto-reapply-patches.sh');
+
+    it('gsd-auto-reapply-patches.sh prefers ~/.claude/gsd-local-patches over npm resolution (BUG-06 D-07)', () => {
+      const nonce = `NEW_WIZARD_PINNED_${Date.now()}`;
+      const tmpHome = mkdtempSync(join(tmpdir(), 'hooks-d07-home-'));
+      const tmpGsdDir = mkdtempSync(join(tmpdir(), 'hooks-d07-gsd-'));
+
+      try {
+        // Set up fake GSD workflows dir with OLD content
+        const workflowsDir = join(tmpGsdDir, 'workflows');
+        mkdirSync(workflowsDir, { recursive: true });
+        writeFileSync(join(workflowsDir, 'transition.md'), 'OLD_UNPATCHED');
+
+        // Set up ~/.claude/gsd-local-patches with NEW (wizard-pinned) content
+        const localPatchesDir = join(tmpHome, '.claude', 'gsd-local-patches');
+        mkdirSync(localPatchesDir, { recursive: true });
+        writeFileSync(join(localPatchesDir, 'transition.md'), nonce);
+
+        // Set up a competing npm-cache-style patches dir with THIRD content to prove precedence
+        const npmFakePatchesDir = join(tmpHome, '.npm', '_npx', 'fake', 'node_modules', 'claude-dev-stack', 'patches');
+        mkdirSync(npmFakePatchesDir, { recursive: true });
+        writeFileSync(join(npmFakePatchesDir, 'transition.md'), 'NPM_CACHE_CONTENT');
+
+        // Run the script with PATCHES_DIR="" to force resolution (not the env-var override)
+        const result = execFileSync('bash', [scriptPath], {
+          encoding: 'utf8',
+          env: {
+            ...process.env,
+            HOME: tmpHome,
+            GSD_DIR: tmpGsdDir,
+            PATCHES_DIR: '',
+          },
+          stdio: ['pipe', 'pipe', 'pipe'],
+        });
+
+        // Must print reapply message (content differed)
+        assert.ok(
+          result.includes('GSD patches auto-reapplied'),
+          `must print reapply message, got: "${result}"`,
+        );
+
+        // Must have used the wizard-pinned content (gsd-local-patches wins over npm cache)
+        const applied = readFileSync(join(workflowsDir, 'transition.md'), 'utf8');
+        assert.equal(
+          applied,
+          nonce,
+          `gsd-local-patches must win: expected "${nonce}", got "${applied}"`,
+        );
+      } finally {
+        rmSync(tmpHome, { recursive: true, force: true });
+        rmSync(tmpGsdDir, { recursive: true, force: true });
+      }
     });
   });
 });

@@ -1,14 +1,18 @@
 ---
 name: session-manager
 description: >
-  Automatically manage development session lifecycle. Load context at start, log sessions at end.
-  ALWAYS trigger on first message in any session (greetings, "привет", "hi", "начинаем").
-  ALWAYS trigger on session end signals: "всё", "хватит", "заканчиваем", "done", "end", "конец", "на сегодня всё", "finish".
-  Also trigger on: "что делали", "где остановились", "last time", "resume", "продолжи", "handoff", "передай контекст", "what did we do", "continue where we left off".
-  Auto-activates silently — reads context and presents status without being asked.
+  Log development sessions at end and generate handoffs. Triggers on end-of-session
+  signals ("всё", "хватит", "заканчиваем", "done", "end", "конец", "на сегодня всё", "finish")
+  and explicit resume/handoff/status requests ("что делали", "resume", "продолжи",
+  "handoff", "передай контекст", "what did we do", "где остановились"). Does NOT
+  auto-activate on greetings or first-message — project context is loaded silently
+  at SessionStart by hooks/session-start-context.sh.
 ---
 
 # Session Manager Skill
+
+> Context is loaded at SessionStart by `hooks/session-start-context.sh`.
+> This skill only handles end-of-session logging (`/end`) and explicit resume requests (`/resume`).
 
 Manage development session lifecycle for multi-project work. Eliminates Claude Code "amnesia" by maintaining session logs and project context in an Obsidian vault.
 
@@ -18,32 +22,39 @@ Override with env var: `VAULT_PATH`
 
 ## Commands
 
-### /resume or /start
-Load project context and recent session history.
+### /resume
+Explicit re-load of project context. The SessionStart hook (`hooks/session-start-context.sh`)
+already loads context at session start — use this command only to force a re-read
+mid-session (e.g., after manually editing `context.md` or after switching projects).
 
 ```bash
-# Detect current project from git or cwd
-PROJECT_NAME=$(basename $(git rev-parse --show-toplevel 2>/dev/null || pwd))
-VAULT=${VAULT_PATH:-~/vault}
+VAULT="${VAULT_PATH:-$HOME/vault}"
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel 2>/dev/null || pwd)")
 PROJECT_DIR="$VAULT/projects/$PROJECT_NAME"
+CURRENT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 
-# Read project context
+# SSR-01: if the SessionStart hook already loaded context <60 min ago,
+# skip redundant cat — context is already in the model's prompt.
+MARKER="$CURRENT_DIR/.claude/.session-loaded"
+if [ -f "$MARKER" ]; then
+  NOW=$(date +%s)
+  MTIME=$(stat -f %m "$MARKER" 2>/dev/null || stat -c %Y "$MARKER" 2>/dev/null || echo 0)
+  AGE=$(( NOW - MTIME ))
+  if [ "$AGE" -lt 3600 ] && [ "$AGE" -ge 0 ]; then
+    echo "📋 Context pre-loaded at $(cat "$MARKER" 2>/dev/null) by SessionStart hook — skipping redundant cat."
+    return 0 2>/dev/null || exit 0
+  fi
+fi
+
 cat "$PROJECT_DIR/context.md" 2>/dev/null || echo "No context.md found for $PROJECT_NAME"
 
-# Read last 3 session logs
+# Last 3 session logs
 for f in $(ls -t "$PROJECT_DIR/sessions/"*.md 2>/dev/null | head -3); do
-  echo "=== $(basename $f) ==="
+  echo "=== $(basename "$f") ==="
   cat "$f"
   echo ""
 done
 ```
-
-After reading context, provide a brief status:
-1. Current project state (from context.md)
-2. Last session summary (what was done, what's TODO)
-3. Suggested next steps
-
-Do NOT ask "what should we work on?" — propose based on TODO from last session.
 
 ### /end or /done
 Create session log and update context.
@@ -86,10 +97,31 @@ if [ -f "$UPDATER" ]; then
   VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
     node "$UPDATER" "$(basename "$SESSION_FILE")" 2>/dev/null || true
 fi
+
+# ── Auto-ADR Capture (Phase 26, ADR-02) ────────────────────────
+# Scans the session transcript and writes architectural decisions to vault.
+# Fail-open: never blocks /end if the bridge errors.
+ADR_BRIDGE="$REPO_ROOT/lib/adr-bridge-session.mjs"
+if [ -f "$ADR_BRIDGE" ]; then
+  # SESSION_ID may be substituted by Claude from its runtime context.
+  # If unset, the bridge falls back to most-recent-mtime JSONL detection.
+  ADR_RESULT=$(VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
+    node "$ADR_BRIDGE" \
+    --session-log "$(basename "$SESSION_FILE")" \
+    --cwd "$REPO_ROOT" \
+    ${SESSION_ID:+--session-id "$SESSION_ID"} \
+    2>/dev/null) || ADR_RESULT='{"newAdrs":[],"superseded":[],"error":"bridge failed"}'
+  # ADR_RESULT is valid JSON: {"newAdrs":[...],"superseded":[...],"error":null|string}
+  # Claude reads this variable and formats a one-line summary for the user.
+  echo "$ADR_RESULT"
+fi
+# ────────────────────────────────────────────────────────────
 ```
 
 Replace SESSION_SLUG with a kebab-case summary (e.g., "fix-auth-flow", "add-telegram-pipeline").
 Replace placeholders with actual session data.
+
+After session log and context.md are updated, auto-ADR capture runs (Phase 26 — D-04).
 
 ### /handoff
 Generate a comprehensive handoff document for continuing work in a new session or by another developer.
@@ -136,15 +168,18 @@ for dir in "$VAULT/projects"/*/; do
 done
 ```
 
-## Automatic Behavior
+## Auto-ADR Capture (Phase 26 — D-04, D-05)
 
-When the skill detects this is the FIRST message in a Claude Code session:
-- Auto-run /resume logic (read context + last sessions)
-- Present brief status without being asked
+After the `/end` bash block runs, `$ADR_RESULT` contains a JSON summary of ADRs created or superseded during the session. Claude reads this and reports a one-line summary to the user:
 
-When user signals end of work ("всё", "хватит", "заканчиваем", "done", "end"):
-- Auto-run /end logic
-- Confirm: "Сессия залогирована. TODO: [list]"
+- If `newAdrs` or `superseded` is non-empty: `Session logged. {N} new ADRs (#NNNN topic, ...). {M} superseded (#NNNN topic, ...).`
+- If both empty: `Session logged.` (stay silent about ADRs)
+- If `error` is non-null: `Session logged. (ADR capture unavailable: {reason})`
+
+Never block /end on ADR capture. If the bridge errors, complete the flow silently.
+
+The bridge is `lib/adr-bridge-session.mjs` in the project repo. It uses Claude Haiku 4.5 via `claude -p` subprocess to extract decisions from the session transcript and writes them to `vault/projects/{project}/decisions/` following the template in D-10.
+
 
 ## ADR Creation
 
@@ -177,7 +212,7 @@ EOF
 ```
 
 ## Best Practices
-1. Always use /resume at session start — never work blind
+1. Context loads automatically at SessionStart — use /resume only to force a re-read mid-session
 2. Always use /end at session end — future you will thank you
 3. ADRs are cheap to write and expensive to not have
 4. Session logs should be specific: file names, function names, not vague descriptions
