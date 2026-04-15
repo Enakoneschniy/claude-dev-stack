@@ -1294,3 +1294,27 @@ describe('Phase 24 Plan 01 — bin/install.mjs UX-05/06 step counter + project c
     }
   });
 });
+
+// ── Phase 24 Plan 01 — UX-07 no type: 'confirm' in wizard scope ──
+
+describe("Phase 24 Plan 01 — UX-07: zero type: 'confirm' in wizard scope", () => {
+  const WIZARD_FILES = [
+    'bin/install.mjs',
+    'lib/install/projects.mjs',
+    'lib/install/git-conventions.mjs',
+    'lib/install/notebooklm.mjs',
+    'lib/install/claude-md.mjs',
+  ];
+
+  for (const f of WIZARD_FILES) {
+    it(`UX-07: ${f} has zero type: 'confirm'`, () => {
+      const content = readFileSync(join(projectRoot, f), 'utf8');
+      const matches = content.match(/type:\s*'confirm'/g) || [];
+      assert.strictEqual(
+        matches.length,
+        0,
+        `${f} must have zero type: 'confirm' — found ${matches.length}`,
+      );
+    });
+  }
+});
