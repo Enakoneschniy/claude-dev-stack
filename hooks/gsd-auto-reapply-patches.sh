@@ -20,20 +20,29 @@ else
   fi
 fi
 
-# Locate the claude-dev-stack package patches/ directory.
+# BUG-06 D-07: Prefer wizard-pinned ~/.claude/gsd-local-patches before any
+# runtime resolution. This is the authoritative copy written by the install
+# wizard and is version-pinned to the installed claude-dev-stack.
+if [ -z "$PATCHES_DIR" ] && [ -d "$HOME/.claude/gsd-local-patches" ]; then
+  PATCHES_DIR="$HOME/.claude/gsd-local-patches"
+fi
+
+# Locate the claude-dev-stack package patches/ directory (only if not already resolved above).
 # 1. Try npm global location (npx installs)
-for candidate in \
-  "$(npm root -g 2>/dev/null)/claude-dev-stack/patches" \
-  "$HOME/.npm/_npx/*/node_modules/claude-dev-stack/patches" \
-  "$HOME/.local/share/npm/lib/node_modules/claude-dev-stack/patches"; do
-  # Expand glob in candidate
-  for expanded in $candidate; do
-    if [ -d "$expanded" ]; then
-      PATCHES_DIR="$expanded"
-      break 2
-    fi
+if [ -z "$PATCHES_DIR" ]; then
+  for candidate in \
+    "$(npm root -g 2>/dev/null)/claude-dev-stack/patches" \
+    "$HOME/.npm/_npx/*/node_modules/claude-dev-stack/patches" \
+    "$HOME/.local/share/npm/lib/node_modules/claude-dev-stack/patches"; do
+    # Expand glob in candidate
+    for expanded in $candidate; do
+      if [ -d "$expanded" ]; then
+        PATCHES_DIR="$expanded"
+        break 2
+      fi
+    done
   done
-done
+fi
 
 # 2. Try well-known dev locations (local checkouts)
 if [ -z "$PATCHES_DIR" ]; then
