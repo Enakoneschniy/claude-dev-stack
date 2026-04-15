@@ -1,4 +1,4 @@
-1	# Roadmap: claude-dev-stack
+# Roadmap: claude-dev-stack
 
 ## Milestones
 
@@ -227,8 +227,12 @@ All 10 v1 requirements mapped to exactly one owning phase:
 | DX-12 | 23 | Smart Re-install Pre-fill |
 | DX-13 | 23 | Smart Re-install Pre-fill |
 | SSR-01 | 28 | Silent SessionStart + skill activation only on end/resume triggers |
+| CAPTURE-01 | 32 | Hook installation wired into wizard at project-level .claude/settings.json |
+| CAPTURE-02 | 32 | Trigger regex matches Russian + English phrases, case-insensitive, word-boundary-aware |
+| CAPTURE-03 | 32 | IDEA-CAPTURE HINT stdout format per Claude Code UserPromptSubmit protocol |
+| CAPTURE-04 | 32 | Telemetry counter idea_capture_hints_fired in ~/.claude/cds-stats.json |
 
-**Coverage check**: 25/25 requirements mapped (100%), 0 orphaned.
+**Coverage check**: 29/29 requirements mapped (100%), 0 orphaned.
 
 - Phase 19: 6 requirements (BUG-01..BUG-06)
 - Phase 20: 1 requirement (LIMIT-01)
@@ -237,9 +241,10 @@ All 10 v1 requirements mapped to exactly one owning phase:
 - Phase 23: 7 requirements (DX-07..DX-13)
 - Phase 24: 7 requirements (UX-01..UX-07)
 - Phase 28: 1 requirement (SSR-01)
+- Phase 32: 4 requirements (CAPTURE-01..04)
 - BUG-07: Phase 19 (added post-UAT)
 
-Total: 6 + 1 + 2 + 1 + 7 + 7 + 1 = 25 ✓
+Total: 6 + 1 + 2 + 1 + 7 + 7 + 1 + 4 = 29 ✓
 
 ---
 
@@ -295,6 +300,7 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 23. Smart Re-install Pre-fill | v0.12 | 2/2 | Complete   | 2026-04-13 |
 | 24. Wizard UX Polish | v0.12 | 2/2 | Complete   | 2026-04-15 |
 | 28. Silent Session Start | v0.12 | 0/3 | Planned | - |
+| 32. Capture-automation hotfix (v0.12.1) | v0.12.1 | 0/2 | Planned | - |
 
 ### Phase 23: Smart Re-install Pre-fill
 **Goal**: Wizard re-install skips or pre-fills all steps that have existing configuration — no redundant prompts for already-configured values.
@@ -395,6 +401,18 @@ Plans:
 - [ ] 31-03-PLAN.md — session-manager SKILL.md trim (D-04/D-05/D-06) + vault/shared/patterns.md Skills-vs-Hooks doc (SKL-02 / D-18)
 - [ ] 31-04-PLAN.md — Backfill SKL-01..04 into REQUIREMENTS.md + Traceability rows (D-20)
 
+### Phase 32: Capture-automation hotfix (v0.12.1) — UserPromptSubmit hook detects idea-trigger phrases (Russian + English) and emits hint nudging /gsd-note invocation (per D-18..D-22)
+
+**Goal:** UserPromptSubmit hook installed at project level detects 9 Russian + 7 English idea-trigger phrases in user prompts, emits `💡 IDEA-CAPTURE HINT: Detected trigger phrase "{phrase}" in user message. Consider invoking /gsd-note to capture the idea to .planning/notes/.` to stdout on first match, bumps `~/.claude/cds-stats.json.idea_capture_hints_fired` counter. Zero false-positive on `идеальный`/`идентификатор`. Zero npm deps, ReDoS-safe. Wizard installs hook idempotently into each configured project's `.claude/settings.json`.
+**Requirements**: CAPTURE-01, CAPTURE-02, CAPTURE-03, CAPTURE-04 (backfilled into REQUIREMENTS.md by Plan 02)
+**Depends on:** Phase 31 (node-hook installation pattern established; wizard wire-up piggy-backs on existing hook list)
+**Target release:** v0.12.1 patch on current v0.12.x base — NOT part of v1.0 Pi SDK rewrite
+**Plans:** 2 plans
+
+Plans:
+- [ ] 32-01-PLAN.md — hooks/idea-capture-trigger.mjs + hooks/idea-capture-triggers.json + tests/idea-capture-trigger.test.mjs (TDD — CAPTURE-02/03/04)
+- [ ] 32-02-PLAN.md — lib/install/hooks.mjs wire-up + tests/hooks.test.mjs file-level coverage + REQUIREMENTS backfill (CAPTURE-01..04)
+
 ---
 
-*Roadmap updated: 2026-04-14 — Phase 28 (Silent Session Start) planned: 3 plans, requirement SSR-01 added, coverage table updated to 25/25.*
+*Roadmap updated: 2026-04-15 — Phase 32 (Capture-automation hotfix v0.12.1) planned: 2 plans, 4 new CAPTURE requirements added, coverage table updated to 29/29.*
