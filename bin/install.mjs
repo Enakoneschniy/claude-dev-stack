@@ -158,35 +158,88 @@ async function main() {
     installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
   }
 
-  // Vault git sync setup (optional)
-  console.log('');
-  const { setupSync } = await prompt({ type: 'confirm', name: 'setupSync', message: 'Set up vault git sync? (backup + team sharing)', initial: false });
-
-  if (setupSync) {
-    if (!existsSync(join(vaultPath, '.git'))) {
-      spawnSync('git', ['init'], { cwd: vaultPath, stdio: 'pipe' });
-      const gitignorePath = join(vaultPath, '.gitignore');
-      if (!existsSync(gitignorePath)) writeFileSync(gitignorePath, `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/cache\n.DS_Store\n*.log\n`);
-      spawnSync('git', ['add', '.'], { cwd: vaultPath, stdio: 'pipe' });
-      spawnSync('git', ['commit', '-m', 'Initial vault commit'], { cwd: vaultPath, stdio: 'pipe' });
-      ok('Git repository initialized');
-    }
-    const { remoteUrl } = await prompt({ type: 'text', name: 'remoteUrl', message: 'Remote URL (e.g. git@github.com:user/vault.git)' });
-    if (remoteUrl) {
-      spawnSync('git', ['remote', 'remove', 'origin'], { cwd: vaultPath, stdio: 'pipe' });
-      spawnSync('git', ['remote', 'add', 'origin', remoteUrl], { cwd: vaultPath, stdio: 'pipe' });
-      ok(`Remote: ${remoteUrl}`);
-      const branch = spawnSync('git', ['branch', '--show-current'], { cwd: vaultPath, stdio: 'pipe' });
-      const branchName = branch.stdout?.toString().trim() || 'main';
-      const pushResult = spawnSync('git', ['push', '-u', 'origin', branchName], { cwd: vaultPath, stdio: 'pipe', timeout: 30000 });
-      if (pushResult.status === 0) { ok('Pushed to remote'); info('Auto-sync enabled: pull on start, push on end'); }
-      else warn('Push failed — configure later: claude-dev-stack sync init');
-    }
-  } else {
-    info('Skip sync. Set up later: claude-dev-stack sync init');
-  }
+  // UX-01 / UX-04: Vault git sync — branch on existing remote
+  await runVaultGitSync(vaultPath, installState);
 
   printSummary(installed, failed, vaultPath, projectsData, components);
+}
+
+// UX-01/UX-04: Vault git sync block with detection + select prompts (no type: 'confirm')
+async function runVaultGitSync(vaultPath, installState) {
+  console.log('');
+
+  if (installState.gitRemote) {
+    // Branch A — remote already configured: offer Skip / Reconfigure / Remove
+    ok(`Git sync: configured (origin → ${installState.gitRemote})`);
+    const { gitSyncAction } = await prompt({
+      type: 'select',
+      name: 'gitSyncAction',
+      message: 'Vault git sync',
+      choices: [
+        { title: 'Skip (keep existing)', value: 'skip' },
+        { title: 'Reconfigure (set new remote URL)', value: 'reconfigure' },
+        { title: 'Remove (unset origin)', value: 'remove' },
+      ],
+      initial: 0,
+    });
+
+    if (gitSyncAction === 'skip') {
+      info('Vault git sync: keeping existing remote');
+      return;
+    }
+
+    if (gitSyncAction === 'remove') {
+      spawnSync('git', ['remote', 'remove', 'origin'], { cwd: vaultPath, stdio: 'pipe' });
+      ok('Remote removed from vault — run claude-dev-stack sync init to reconfigure later');
+      return;
+    }
+
+    // gitSyncAction === 'reconfigure' — fall through to remote-add flow (repo already exists)
+    await configureVaultRemote(vaultPath, { initRepo: false });
+    return;
+  }
+
+  // Branch B — no remote configured: offer Set up / Skip
+  const { gitSyncAction } = await prompt({
+    type: 'select',
+    name: 'gitSyncAction',
+    message: 'Set up vault git sync? (backup + team sharing)',
+    choices: [
+      { title: 'Yes, set up now', value: 'setup' },
+      { title: 'Skip (set up later with: claude-dev-stack sync init)', value: 'skip' },
+    ],
+    initial: 1,
+  });
+
+  if (gitSyncAction === 'skip') {
+    info('Skip sync. Set up later: claude-dev-stack sync init');
+    return;
+  }
+
+  // gitSyncAction === 'setup' — run full init + remote-add + push flow
+  await configureVaultRemote(vaultPath, { initRepo: true });
+}
+
+async function configureVaultRemote(vaultPath, { initRepo }) {
+  if (initRepo && !existsSync(join(vaultPath, '.git'))) {
+    spawnSync('git', ['init'], { cwd: vaultPath, stdio: 'pipe' });
+    const gitignorePath = join(vaultPath, '.gitignore');
+    if (!existsSync(gitignorePath)) writeFileSync(gitignorePath, `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/cache\n.DS_Store\n*.log\n`);
+    spawnSync('git', ['add', '.'], { cwd: vaultPath, stdio: 'pipe' });
+    spawnSync('git', ['commit', '-m', 'Initial vault commit'], { cwd: vaultPath, stdio: 'pipe' });
+    ok('Git repository initialized');
+  }
+  const { remoteUrl } = await prompt({ type: 'text', name: 'remoteUrl', message: 'Remote URL (e.g. git@github.com:user/vault.git)' });
+  if (remoteUrl) {
+    spawnSync('git', ['remote', 'remove', 'origin'], { cwd: vaultPath, stdio: 'pipe' });
+    spawnSync('git', ['remote', 'add', 'origin', remoteUrl], { cwd: vaultPath, stdio: 'pipe' });
+    ok(`Remote: ${remoteUrl}`);
+    const branch = spawnSync('git', ['branch', '--show-current'], { cwd: vaultPath, stdio: 'pipe' });
+    const branchName = branch.stdout?.toString().trim() || 'main';
+    const pushResult = spawnSync('git', ['push', '-u', 'origin', branchName], { cwd: vaultPath, stdio: 'pipe', timeout: 30000 });
+    if (pushResult.status === 0) { ok('Pushed to remote'); info('Auto-sync enabled: pull on start, push on end'); }
+    else warn('Push failed — configure later: claude-dev-stack sync init');
+  }
 }
 
 export { installNotebookLM } from '../lib/install/notebooklm.mjs';
