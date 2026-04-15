@@ -86,10 +86,31 @@ if [ -f "$UPDATER" ]; then
   VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
     node "$UPDATER" "$(basename "$SESSION_FILE")" 2>/dev/null || true
 fi
+
+# ── Auto-ADR Capture (Phase 26, ADR-02) ────────────────────────
+# Scans the session transcript and writes architectural decisions to vault.
+# Fail-open: never blocks /end if the bridge errors.
+ADR_BRIDGE="$REPO_ROOT/lib/adr-bridge-session.mjs"
+if [ -f "$ADR_BRIDGE" ]; then
+  # SESSION_ID may be substituted by Claude from its runtime context.
+  # If unset, the bridge falls back to most-recent-mtime JSONL detection.
+  ADR_RESULT=$(VAULT_PATH="$VAULT" CDS_PROJECT_NAME="$PROJECT_NAME" \
+    node "$ADR_BRIDGE" \
+    --session-log "$(basename "$SESSION_FILE")" \
+    --cwd "$REPO_ROOT" \
+    ${SESSION_ID:+--session-id "$SESSION_ID"} \
+    2>/dev/null) || ADR_RESULT='{"newAdrs":[],"superseded":[],"error":"bridge failed"}'
+  # ADR_RESULT is valid JSON: {"newAdrs":[...],"superseded":[...],"error":null|string}
+  # Claude reads this variable and formats a one-line summary for the user.
+  echo "$ADR_RESULT"
+fi
+# ────────────────────────────────────────────────────────────
 ```
 
 Replace SESSION_SLUG with a kebab-case summary (e.g., "fix-auth-flow", "add-telegram-pipeline").
 Replace placeholders with actual session data.
+
+After session log and context.md are updated, auto-ADR capture runs (Phase 26 — D-04).
 
 ### /handoff
 Generate a comprehensive handoff document for continuing work in a new session or by another developer.
@@ -145,6 +166,18 @@ When the skill detects this is the FIRST message in a Claude Code session:
 When user signals end of work ("всё", "хватит", "заканчиваем", "done", "end"):
 - Auto-run /end logic
 - Confirm: "Сессия залогирована. TODO: [list]"
+
+## Auto-ADR Capture (Phase 26 — D-04, D-05)
+
+After the `/end` bash block runs, `$ADR_RESULT` contains a JSON summary of ADRs created or superseded during the session. Claude reads this and reports a one-line summary to the user:
+
+- If `newAdrs` or `superseded` is non-empty: `Session logged. {N} new ADRs (#NNNN topic, ...). {M} superseded (#NNNN topic, ...).`
+- If both empty: `Session logged.` (stay silent about ADRs)
+- If `error` is non-null: `Session logged. (ADR capture unavailable: {reason})`
+
+Never block /end on ADR capture. If the bridge errors, complete the flow silently.
+
+The bridge is `lib/adr-bridge-session.mjs` in the project repo. It uses Claude Haiku 4.5 via `claude -p` subprocess to extract decisions from the session transcript and writes them to `vault/projects/{project}/decisions/` following the template in D-10.
 
 ## ADR Creation
 
