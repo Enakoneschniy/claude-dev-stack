@@ -18,7 +18,7 @@ progress:
 
 **Last updated:** 2026-04-13 — Roadmap for v0.12 Hooks & Limits created. 4 phases (19–22), 9 requirements mapped.
 
-**Last activity:** 2026-04-14
+**Last activity:** 2026-04-15 - Completed quick task 260415-pga: Fix adr-bridge test traversal assertion for Linux CI
 
 ---
 
@@ -120,6 +120,12 @@ None — roadmap defined, ready to start Phase 19 planning.
 - Hooks currently global — affects all projects including non-claude-dev-stack ones. Priority fix (Phase 19).
 - allowedTools written to global settings but missing — either overwritten or never persisted. Priority fix (Phase 19).
 - 3 wizard UAT bugs from v0.11 (pre-select, components, git-conventions). All addressed in Phase 19.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260415-pga | Fix adr-bridge test traversal assertion for Linux CI | 2026-04-15 | d18fc30 | [260415-pga-fix-adr-bridge-test-traversal-assertion-](./quick/260415-pga-fix-adr-bridge-test-traversal-assertion-/) |
 
 ---
 
