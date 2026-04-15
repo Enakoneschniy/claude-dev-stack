@@ -4,7 +4,7 @@
 
 **Phase numbering**: continues from v0.11 (last phase: 18.1) → starts at Phase 19
 **Test baseline**: 558 (v0.11.0)
-**Total requirements**: 11 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill).
+**Total requirements**: 12 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill + 1 GSD-01 backfill).
 
 ---
 
@@ -59,6 +59,19 @@
   4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
   5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
 
+### GSD Workflow (GSD)
+
+- [ ] **GSD-01**: Projects using claude-dev-stack + GSD can override GSD workflow behavior (e.g., `workflows/manager.md`, `workflows/transition.md`) via package-shipped patches that survive `/gsd-update`. Implementation: shipped `patches/*.md`, install wizard copies to `~/.claude/gsd-local-patches/`, SessionStart hook re-applies any patch whose SHA-256 differs from the upstream workflow file. Formalized scope; extended features (per-project `.planning/gsd-overrides/`, `gsd customize` CLI, diff-based patches, `workflow.auto_push`/`auto_pr`/`merge_strategy` config gates) are deferred to backlog.
+
+  Success Criteria (formalization cut):
+  1. Package-shipped `patches/*.md` files replace same-named files under `~/.claude/get-shit-done/workflows/` whenever SHAs differ.
+  2. Install wizard copies shipped `patches/` to `~/.claude/gsd-local-patches/` (wizard-pinned, authoritative source).
+  3. `gsd-auto-reapply-patches.sh` SessionStart hook resolves patches in order: `$PATCHES_DIR` → `~/.claude/gsd-local-patches/` → npm global → dev checkout.
+  4. Hook exits 0 silently when GSD is not installed or no patches source resolves.
+  5. Hook is idempotent — re-running on already-patched workflows produces no change and no output.
+  6. Regression tests under `tests/` cover hook behavior (`gsd-auto-reapply-patches.test.mjs`) and wizard copy (`install-patches-copy.test.mjs`).
+  7. Pattern documented in `vault/shared/patterns.md` so other GSD-using projects can adopt it.
+
 ---
 
 ## Future Requirements
@@ -106,3 +119,4 @@
 | UX-06 | 24 | — | pending |
 | UX-07 | 24 | — | pending |
 | ADR-02 | 26 | — | pending |
+| GSD-01 | 27 | 27-01..04 | pending |
