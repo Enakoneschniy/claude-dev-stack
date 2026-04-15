@@ -1,11 +1,14 @@
 ---
 name: session-manager
 description: >
-  Automatically manage development session lifecycle. Load context at start, log sessions at end.
-  ALWAYS trigger on first message in any session (greetings, "привет", "hi", "начинаем").
-  ALWAYS trigger on session end signals: "всё", "хватит", "заканчиваем", "done", "end", "конец", "на сегодня всё", "finish".
-  Also trigger on: "что делали", "где остановились", "last time", "resume", "продолжи", "handoff", "передай контекст", "what did we do", "continue where we left off".
-  Auto-activates silently — reads context and presents status without being asked.
+  Manage development session lifecycle for explicit end and resume triggers.
+  Trigger on session end signals: "всё", "хватит", "заканчиваем", "done",
+  "end", "конец", "на сегодня всё", "finish".
+  Trigger on explicit resume-intent: "что делали", "где остановились",
+  "last time", "resume", "продолжи", "handoff", "передай контекст",
+  "what did we do", "continue where we left off".
+  Do NOT auto-activate on greetings or the first message of a session —
+  the SessionStart hook already injected project context.
 ---
 
 # Session Manager Skill
@@ -19,13 +22,28 @@ Override with env var: `VAULT_PATH`
 ## Commands
 
 ### /resume or /start
-Load project context and recent session history.
+Load project context and recent session history (only when the SessionStart
+hook didn't already do it in this session).
 
 ```bash
 # Detect current project from git or cwd
 PROJECT_NAME=$(basename $(git rev-parse --show-toplevel 2>/dev/null || pwd))
 VAULT=${VAULT_PATH:-~/vault}
 PROJECT_DIR="$VAULT/projects/$PROJECT_NAME"
+CURRENT_DIR=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+# SSR-01: if the SessionStart hook already loaded context <60 min ago,
+# skip redundant cat — context is already in the model's prompt.
+MARKER="$CURRENT_DIR/.claude/.session-loaded"
+if [ -f "$MARKER" ]; then
+  NOW=$(date +%s)
+  MTIME=$(stat -f %m "$MARKER" 2>/dev/null || stat -c %Y "$MARKER" 2>/dev/null || echo 0)
+  AGE=$(( NOW - MTIME ))
+  if [ "$AGE" -lt 3600 ] && [ "$AGE" -ge 0 ]; then
+    echo "📋 Context pre-loaded at $(cat "$MARKER" 2>/dev/null) by SessionStart hook — skipping redundant cat."
+    return 0 2>/dev/null || exit 0
+  fi
+fi
 
 # Read project context
 cat "$PROJECT_DIR/context.md" 2>/dev/null || echo "No context.md found for $PROJECT_NAME"
@@ -159,13 +177,15 @@ done
 
 ## Automatic Behavior
 
-When the skill detects this is the FIRST message in a Claude Code session:
-- Auto-run /resume logic (read context + last sessions)
-- Present brief status without being asked
-
 When user signals end of work ("всё", "хватит", "заканчиваем", "done", "end"):
 - Auto-run /end logic
 - Confirm: "Сессия залогирована. TODO: [list]"
+
+Do NOT auto-activate on greetings or the first message. The SessionStart
+hook (`hooks/session-start-context.sh`) already injects project context
+and writes `.claude/.session-loaded`. Only run `/resume` on explicit user
+intent (see description triggers), and even then use the marker check
+above to skip a redundant `cat`.
 
 ## Auto-ADR Capture (Phase 26 — D-04, D-05)
 
