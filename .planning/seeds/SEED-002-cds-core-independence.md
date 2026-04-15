@@ -1,11 +1,17 @@
 ---
 id: SEED-002
-status: dormant
+status: superseded-by-plan
+superseded_on: 2026-04-15
+superseded_by: docs/cds-core-independence-plan.md (D-07)
 planted: 2026-04-14
 planted_during: v0.12 Hooks & Limits (mid-milestone, during Phase 25 planning)
 trigger_when: "After v0.12 release ships (phases 21-31 merged); when planning v0.13+ or starting CDS-Core Independence milestone"
 scope: Large
 ---
+
+> **⚠ PARTIALLY SUPERSEDED 2026-04-15** — Active planning has moved to `vault/projects/claude-dev-stack/docs/cds-core-independence-plan.md` (mirrored to `docs/cds-core-independence-plan.md` in vault-synced form). The "vendored fork of GSD-1" strategy described below was **replaced by full TypeScript rewrite on Pi SDK** (see D-07 in the plan). The `DO NOT TOUCH` list below is retained as historical record but is **no longer binding** — everything gets rewritten on Pi SDK.
+>
+> This seed stays in the repo as audit trail for how the decision evolved. Read the plan doc for current strategy.
 
 # SEED-002: CDS-Core Independence — Vendored Fork of GSD
 
