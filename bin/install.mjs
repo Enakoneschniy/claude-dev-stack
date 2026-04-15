@@ -32,8 +32,17 @@ async function main() {
   });
 
   printHeader();
-  const { ready } = await prompt({ type: 'confirm', name: 'ready', message: 'Ready to start?', initial: true });
-  if (!ready) { console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`); return; }
+  const { ready } = await prompt({
+    type: 'select',
+    name: 'ready',
+    message: 'Ready to start?',
+    choices: [
+      { title: 'Yes, start installation', value: 'start' },
+      { title: 'Cancel', value: 'cancel' },
+    ],
+    initial: 0,
+  });
+  if (ready === 'cancel') { console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`); return; }
 
   // DX-02: Detect existing install state
   const installState = detectInstallState();
@@ -50,12 +59,16 @@ async function main() {
     console.log('');
 
     const result = await prompt({
-      type: 'confirm',
+      type: 'select',
       name: 'reconfigure',
       message: 'Reconfigure everything from scratch?',
-      initial: false,
+      choices: [
+        { title: 'Keep existing + offer per-step skip', value: 'skip-aware' },
+        { title: 'Reconfigure everything', value: 'reconfigure' },
+      ],
+      initial: 0,
     });
-    reconfigure = result.reconfigure;
+    reconfigure = result.reconfigure === 'reconfigure';
 
     if (!reconfigure) {
       console.log(`  ${c.dim}Skip-aware mode: completed sections will offer skip/reconfigure.${c.reset}`);
@@ -75,118 +88,238 @@ async function main() {
   projectsData._profileName = profile.name;
   const components = await selectComponents(earlyTotal, !!pipCmd, installState);
 
-  const setupSteps = 6;
-  const installCount = [
-    components.vault, components.gsd, components.obsidianSkills,
-    components.customSkills, components.deepResearch, components.notebooklm,
-  ].filter(Boolean).length;
-  const totalSteps = setupSteps + installCount + 2;
+  // UX-05: Resolve the hooks action BEFORE building the steps array so a "skip" choice
+  // does not consume a step number.
+  const hookAction = await resolveHookAction(installState, reconfigure);
 
-  const pluginResults = await selectAndInstallPlugins(5, totalSteps, installState.profile?.useCase);
+  const installed = [];
+  const failed = [];
 
-  // DX-02: Skip/reconfigure vault step if already configured
+  // UX-05: Build runtime steps array — only push a step if it will actually run.
+  // Each run() callback receives (stepNum, totalSteps) so helpers keep their signatures.
+  const steps = [];
+
+  // Plugins step (runs first after pre-flight — step 5 in the sequence)
+  let pluginResults = { installed: [], failed: [], useCase: undefined };
+  steps.push({
+    label: 'Plugins',
+    run: async (n, t) => {
+      pluginResults = await selectAndInstallPlugins(n, t, installState.profile?.useCase);
+      if (pluginResults.installed.length > 0) installed.push(`Claude plugins (${pluginResults.installed.length} new)`);
+      if (pluginResults.failed.length > 0) failed.push(`Claude plugins (${pluginResults.failed.length} failed)`);
+    },
+  });
+
+  // Vault path selection (always, but prompt varies based on state)
   let vaultPath;
-  if (installState.vaultExists && !reconfigure) {
-    const { vaultAction } = await prompt({
-      type: 'select',
-      name: 'vaultAction',
-      message: `Vault setup — already at ${installState.vaultPath.replace(homedir(), '~')} (${installState.projects.length} project${installState.projects.length === 1 ? '' : 's'})`,
-      choices: [
-        { title: 'Skip (keep existing)', value: 'skip' },
-        { title: 'Reconfigure', value: 'reconfigure' },
-      ],
-      initial: 0,
-    });
-    if (vaultAction === 'skip') {
-      vaultPath = installState.vaultPath;
-      info(`Vault: ${vaultPath.replace(homedir(), '~')} (skipped)`);
-    } else {
-      vaultPath = await getVaultPath(totalSteps, installState.vaultPath);
-    }
-  } else {
-    vaultPath = await getVaultPath(totalSteps, installState.vaultPath || null);
+  steps.push({
+    label: 'Vault path',
+    run: async (n, t) => {
+      if (installState.vaultExists && !reconfigure) {
+        const { vaultAction } = await prompt({
+          type: 'select',
+          name: 'vaultAction',
+          message: `Vault setup — already at ${installState.vaultPath.replace(homedir(), '~')} (${installState.projects.length} project${installState.projects.length === 1 ? '' : 's'})`,
+          choices: [
+            { title: 'Skip (keep existing)', value: 'skip' },
+            { title: 'Reconfigure', value: 'reconfigure' },
+          ],
+          initial: 0,
+        });
+        if (vaultAction === 'skip') {
+          vaultPath = installState.vaultPath;
+          info(`Vault: ${vaultPath.replace(homedir(), '~')} (skipped)`);
+          return;
+        }
+      }
+      vaultPath = await getVaultPath(t, installState.vaultPath || null);
+    },
+  });
+
+  // Component installs — one step each, only pushed if selected
+  if (components.vault) {
+    steps.push({ label: 'Knowledge Vault', run: async (n, t) => {
+      if (installVault(vaultPath, projectsData, n, t, PKG_ROOT)) installed.push('Knowledge Vault');
+      else failed.push('Vault');
+    }});
+  }
+  if (components.gsd) {
+    steps.push({ label: 'GSD', run: async (n, t) => {
+      if (await installGSD(n, t)) installed.push('GSD (Get Shit Done)');
+      else failed.push('GSD');
+    }});
+  }
+  if (components.obsidianSkills) {
+    steps.push({ label: 'Obsidian Skills', run: async (n, t) => {
+      if (installObsidianSkills(skillsDir, n, t, PKG_ROOT)) installed.push('Obsidian Skills (kepano)');
+      else failed.push('Obsidian Skills');
+    }});
+  }
+  if (components.customSkills) {
+    steps.push({ label: 'Custom skills', run: async (n, t) => {
+      if (installCustomSkills(skillsDir, n, t, PKG_ROOT)) installed.push('Custom skills (sessions, projects, router)');
+      else failed.push('Custom skills');
+    }});
+  }
+  if (components.deepResearch) {
+    steps.push({ label: 'Deep Research', run: async (n, t) => {
+      if (installDeepResearch(skillsDir, agentsDir, n, t)) installed.push('Deep Research');
+      else failed.push('Deep Research');
+    }});
+  }
+  if (components.notebooklm) {
+    steps.push({ label: 'NotebookLM', run: async (n, t) => {
+      if (await installNotebookLM(pipCmd, n, t, installState.notebooklmAuthenticated)) installed.push('NotebookLM');
+      else failed.push('NotebookLM');
+    }});
   }
 
-  // DX-07 / DX-10: Persist profile for next re-install
+  // LIMIT-03: loop.md — only if GSD selected or already installed
+  if (components.gsd || installState.gsdInstalled) {
+    steps.push({ label: 'loop.md', run: async (n, t) => {
+      await installLoopMd(n, t, PKG_ROOT, projectsData?.projects || [], installState.loopMdByProject || {});
+    }});
+  }
+
+  // Git conventions — always
+  steps.push({ label: 'Git conventions', run: async (n, t) => {
+    const gitConvOk = await installGitConventions(projectsData, n, t);
+    if (gitConvOk) installed.push('Git conventions'); else failed.push('Git conventions');
+  }});
+
+  // CLAUDE.md — always
+  steps.push({ label: 'CLAUDE.md', run: async (n, t) => {
+    await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, n, t, PKG_ROOT);
+  }});
+
+  // Session hooks — only push if action !== 'skip'
+  if (hookAction === 'install') {
+    steps.push({ label: 'Session hooks', run: async (n, t) => {
+      installSessionHook(n, t, PKG_ROOT, vaultPath, projectsData);
+    }});
+  }
+
+  // UX-05: totalSteps is derived from runtime array length.
+  // Pre-flight steps (prereqs, profile, projects, components) ran earlier with earlyTotal='...'
+  // placeholders; the dynamic counter begins at step 5 (plugins) and proceeds.
+  const preFlightCount = 4; // prereqs(1) + profile(2) + projects(3) + components(4)
+  const totalSteps = steps.length + preFlightCount;
+
+  for (let i = 0; i < steps.length; i++) {
+    const stepNum = preFlightCount + i + 1;
+    await steps[i].run(stepNum, totalSteps);
+  }
+
+  // DX-07 / DX-10: Persist profile for next re-install (after plugins + vaultPath are known)
   saveInstallProfile(vaultPath, {
     lang: profile.lang,
     codeLang: profile.codeLang,
     useCase: pluginResults.useCase || installState.profile?.useCase || null,
   });
 
-  const installed = [];
-  const failed = [];
-  let stepNum = setupSteps + 1;
-
-  if (pluginResults.installed.length > 0) installed.push(`Claude plugins (${pluginResults.installed.length} new)`);
-  if (pluginResults.failed.length > 0) failed.push(`Claude plugins (${pluginResults.failed.length} failed)`);
-
-  if (components.vault) installVault(vaultPath, projectsData, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Knowledge Vault') : failed.push('Vault');
-  if (components.gsd) (await installGSD(stepNum++, totalSteps)) ? installed.push('GSD (Get Shit Done)') : failed.push('GSD');
-  if (components.obsidianSkills) installObsidianSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Obsidian Skills (kepano)') : failed.push('Obsidian Skills');
-  if (components.customSkills) installCustomSkills(skillsDir, stepNum++, totalSteps, PKG_ROOT) ? installed.push('Custom skills (sessions, projects, router)') : failed.push('Custom skills');
-  if (components.deepResearch) installDeepResearch(skillsDir, agentsDir, stepNum++, totalSteps) ? installed.push('Deep Research') : failed.push('Deep Research');
-  if (components.notebooklm) (await installNotebookLM(pipCmd, stepNum++, totalSteps, installState.notebooklmAuthenticated)) ? installed.push('NotebookLM') : failed.push('NotebookLM');
-
-  // LIMIT-03: Install loop.md for scheduled tasks (only if GSD selected or already installed)
-  if (components.gsd || installState.gsdInstalled) {
-    await installLoopMd(stepNum++, totalSteps, PKG_ROOT, projectsData?.projects || [], installState.loopMdByProject || {});
+  if (hookAction === 'skip') {
+    info('Session hooks already configured (skipped)');
   }
 
-  const gitConvOk = await installGitConventions(projectsData, stepNum++, totalSteps);
-  if (gitConvOk) installed.push('Git conventions'); else failed.push('Git conventions');
-  await generateClaudeMD(vaultPath, profile, projectsData, skillsDir, stepNum++, totalSteps, PKG_ROOT);
-  // DX-02: Skip/reconfigure hooks step if already installed
-  if (installState.hooksInstalled && !reconfigure) {
-    const { hookAction } = await prompt({
+  // UX-01 / UX-04: Vault git sync — branch on existing remote
+  await runVaultGitSync(vaultPath, installState);
+
+  printSummary(installed, failed, vaultPath, projectsData, components);
+}
+
+// UX-05: Resolve hooks action (install vs skip) BEFORE step array is built,
+// so a "skip" choice does not consume a step number.
+async function resolveHookAction(installState, reconfigure) {
+  if (!installState.hooksInstalled || reconfigure) return 'install';
+  const { action } = await prompt({
+    type: 'select',
+    name: 'action',
+    message: 'Session hooks — already installed',
+    choices: [
+      { title: 'Skip (keep existing)', value: 'skip' },
+      { title: 'Reconfigure', value: 'install' },
+    ],
+    initial: 0,
+  });
+  return action;
+}
+
+// UX-01/UX-04: Vault git sync block — detects existing origin and uses select prompts only (never y/N confirm)
+async function runVaultGitSync(vaultPath, installState) {
+  console.log('');
+
+  if (installState.gitRemote) {
+    // Branch A — remote already configured: offer Skip / Reconfigure / Remove
+    ok(`Git sync: configured (origin → ${installState.gitRemote})`);
+    const { gitSyncAction } = await prompt({
       type: 'select',
-      name: 'hookAction',
-      message: 'Session hooks — already installed',
+      name: 'gitSyncAction',
+      message: 'Vault git sync',
       choices: [
         { title: 'Skip (keep existing)', value: 'skip' },
-        { title: 'Reconfigure', value: 'reconfigure' },
+        { title: 'Reconfigure (set new remote URL)', value: 'reconfigure' },
+        { title: 'Remove (unset origin)', value: 'remove' },
       ],
       initial: 0,
     });
-    if (hookAction === 'skip') {
-      info('Session hooks already configured (skipped)');
-      stepNum++;
-    } else {
-      installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
-    }
-  } else {
-    installSessionHook(stepNum++, totalSteps, PKG_ROOT, vaultPath, projectsData);
-  }
 
-  // Vault git sync setup (optional)
-  console.log('');
-  const { setupSync } = await prompt({ type: 'confirm', name: 'setupSync', message: 'Set up vault git sync? (backup + team sharing)', initial: false });
-
-  if (setupSync) {
-    if (!existsSync(join(vaultPath, '.git'))) {
-      spawnSync('git', ['init'], { cwd: vaultPath, stdio: 'pipe' });
-      const gitignorePath = join(vaultPath, '.gitignore');
-      if (!existsSync(gitignorePath)) writeFileSync(gitignorePath, `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/cache\n.DS_Store\n*.log\n`);
-      spawnSync('git', ['add', '.'], { cwd: vaultPath, stdio: 'pipe' });
-      spawnSync('git', ['commit', '-m', 'Initial vault commit'], { cwd: vaultPath, stdio: 'pipe' });
-      ok('Git repository initialized');
+    if (gitSyncAction === 'skip') {
+      info('Vault git sync: keeping existing remote');
+      return;
     }
-    const { remoteUrl } = await prompt({ type: 'text', name: 'remoteUrl', message: 'Remote URL (e.g. git@github.com:user/vault.git)' });
-    if (remoteUrl) {
+
+    if (gitSyncAction === 'remove') {
       spawnSync('git', ['remote', 'remove', 'origin'], { cwd: vaultPath, stdio: 'pipe' });
-      spawnSync('git', ['remote', 'add', 'origin', remoteUrl], { cwd: vaultPath, stdio: 'pipe' });
-      ok(`Remote: ${remoteUrl}`);
-      const branch = spawnSync('git', ['branch', '--show-current'], { cwd: vaultPath, stdio: 'pipe' });
-      const branchName = branch.stdout?.toString().trim() || 'main';
-      const pushResult = spawnSync('git', ['push', '-u', 'origin', branchName], { cwd: vaultPath, stdio: 'pipe', timeout: 30000 });
-      if (pushResult.status === 0) { ok('Pushed to remote'); info('Auto-sync enabled: pull on start, push on end'); }
-      else warn('Push failed — configure later: claude-dev-stack sync init');
+      ok('Remote removed from vault — run claude-dev-stack sync init to reconfigure later');
+      return;
     }
-  } else {
-    info('Skip sync. Set up later: claude-dev-stack sync init');
+
+    // gitSyncAction === 'reconfigure' — fall through to remote-add flow (repo already exists)
+    await configureVaultRemote(vaultPath, { initRepo: false });
+    return;
   }
 
-  printSummary(installed, failed, vaultPath, projectsData, components);
+  // Branch B — no remote configured: offer Set up / Skip
+  const { gitSyncAction } = await prompt({
+    type: 'select',
+    name: 'gitSyncAction',
+    message: 'Set up vault git sync? (backup + team sharing)',
+    choices: [
+      { title: 'Yes, set up now', value: 'setup' },
+      { title: 'Skip (set up later with: claude-dev-stack sync init)', value: 'skip' },
+    ],
+    initial: 1,
+  });
+
+  if (gitSyncAction === 'skip') {
+    info('Skip sync. Set up later: claude-dev-stack sync init');
+    return;
+  }
+
+  // gitSyncAction === 'setup' — run full init + remote-add + push flow
+  await configureVaultRemote(vaultPath, { initRepo: true });
+}
+
+async function configureVaultRemote(vaultPath, { initRepo }) {
+  if (initRepo && !existsSync(join(vaultPath, '.git'))) {
+    spawnSync('git', ['init'], { cwd: vaultPath, stdio: 'pipe' });
+    const gitignorePath = join(vaultPath, '.gitignore');
+    if (!existsSync(gitignorePath)) writeFileSync(gitignorePath, `.obsidian/workspace.json\n.obsidian/workspace-mobile.json\n.obsidian/cache\n.DS_Store\n*.log\n`);
+    spawnSync('git', ['add', '.'], { cwd: vaultPath, stdio: 'pipe' });
+    spawnSync('git', ['commit', '-m', 'Initial vault commit'], { cwd: vaultPath, stdio: 'pipe' });
+    ok('Git repository initialized');
+  }
+  const { remoteUrl } = await prompt({ type: 'text', name: 'remoteUrl', message: 'Remote URL (e.g. git@github.com:user/vault.git)' });
+  if (remoteUrl) {
+    spawnSync('git', ['remote', 'remove', 'origin'], { cwd: vaultPath, stdio: 'pipe' });
+    spawnSync('git', ['remote', 'add', 'origin', remoteUrl], { cwd: vaultPath, stdio: 'pipe' });
+    ok(`Remote: ${remoteUrl}`);
+    const branch = spawnSync('git', ['branch', '--show-current'], { cwd: vaultPath, stdio: 'pipe' });
+    const branchName = branch.stdout?.toString().trim() || 'main';
+    const pushResult = spawnSync('git', ['push', '-u', 'origin', branchName], { cwd: vaultPath, stdio: 'pipe', timeout: 30000 });
+    if (pushResult.status === 0) { ok('Pushed to remote'); info('Auto-sync enabled: pull on start, push on end'); }
+    else warn('Push failed — configure later: claude-dev-stack sync init');
+  }
 }
 
 export { installNotebookLM } from '../lib/install/notebooklm.mjs';

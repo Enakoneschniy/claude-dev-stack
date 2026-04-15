@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
 status: executing
-stopped_at: Phase 23 context gathered
-last_updated: "2026-04-14T23:42:39.247Z"
-last_activity: 2026-04-14
+stopped_at: Phase 24 Plan 01+02 code complete; UAT deferred to user (Phase 24 + Phase 30)
+last_updated: "2026-04-15T11:00:00.000Z"
+last_activity: 2026-04-15
 progress:
   total_phases: 13
-  completed_phases: 3
+  completed_phases: 8
   total_plans: 19
-  completed_plans: 6
-  percent: 32
+  completed_plans: 14
+  percent: 74
 ---
 
 # Project State: claude-dev-stack
@@ -87,6 +87,9 @@ Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
 - **Test baseline**: 558 (v0.11.0). Every new `lib/*.mjs` needs matching `tests/*.test.mjs`.
 - **SEED-001**: Integrate Claude primitives (Managed Agents, Dispatch, /schedule, CronCreate), don't build custom infra.
 - **Hooks architecture**: Must be project-level `.claude/settings.json`, not global `~/.claude/settings.json`.
+- [Phase 24]: D-01/D-02: Git sync detection with 3-option (Skip/Reconfigure/Remove) and 2-option (Set up/Skip) select prompts
+- [Phase 24]: D-03/D-04: totalSteps = preFlightCount + steps.length (runtime array); hookAction resolved before build
+- [Phase 24]: D-06/D-07: 11 wizard-scope type: confirm prompts swapped to type: select (bin/install.mjs + lib/install/*.mjs)
 
 ### Roadmap Evolution
 
@@ -106,6 +109,6 @@ None — roadmap defined, ready to start Phase 19 planning.
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:13:13.354Z
-Stopped at: Phase 23 context gathered
-Resume file: .planning/phases/23-smart-re-install-pre-fill/23-CONTEXT.md
+Last session: 2026-04-15T10:48:19.980Z
+Stopped at: Phase 24 Plan 01 complete; Plan 02 Task 2 (human UAT) deferred to user
+Resume file: None

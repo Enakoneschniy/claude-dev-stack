@@ -53,7 +53,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
 - [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
 - [x] **Phase 23: Smart Re-install Pre-fill** — Wizard re-install pre-fills all steps with existing config (DX-07..DX-13) (completed 2026-04-13)
-- [ ] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07)
+- [x] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07) (completed 2026-04-15)
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
 - [ ] **Phase 27: GSD Workflow Customization via Patches** — Per-project GSD overrides for branching, push/PR behavior, agent prompts; survives /gsd-update (GSD-01)
@@ -291,7 +291,7 @@ Phase 22 — Post-Reset Handoff (LOW risk)
 | 21. Continuation Prompt & loop.md | v0.12 | 0/? | Not started | - |
 | 22. Post-Reset Handoff | v0.12 | 0/? | Not started | - |
 | 23. Smart Re-install Pre-fill | v0.12 | 2/2 | Complete   | 2026-04-13 |
-| 24. Wizard UX Polish | v0.12 | 0/? | Not started | - |
+| 24. Wizard UX Polish | v0.12 | 2/2 | Complete   | 2026-04-15 |
 | 28. Silent Session Start | v0.12 | 0/3 | Planned | - |
 
 ### Phase 23: Smart Re-install Pre-fill
@@ -327,8 +327,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 24-01-PLAN.md — Git sync detection + dynamic step counter + unified project count + confirm-to-select sweep (UX-01, UX-04, UX-05, UX-06, UX-07)
-- [ ] 24-02-PLAN.md — UAT scaffold + full wizard verification for UX-02, UX-03 and regression coverage of UX-01/04/05/06/07
+- [x] 24-01-PLAN.md — Git sync detection + dynamic step counter + unified project count + confirm-to-select sweep (UX-01, UX-04, UX-05, UX-06, UX-07)
+- [x] 24-02-PLAN.md — UAT scaffold + full wizard verification for UX-02, UX-03 and regression coverage of UX-01/04/05/06/07
 
 ### Phase 28: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
 

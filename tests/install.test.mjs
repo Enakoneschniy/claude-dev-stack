@@ -557,10 +557,11 @@ describe('lib/install/git-conventions.mjs — skip existing git-scopes.json (BUG
   });
 
   it('skips project when user declines reconfigure (BUG-05)', () => {
+    // UX-07 (Phase 24): confirm → select, so old `!reconfigure` check is now `reconfigure === 'keep'`.
     assert.ok(
       src.includes('if (!reconfigure)') || src.includes("if (reconfigure === false") ||
-      src.includes('!reconfigure'),
-      'must skip project when reconfigure is false',
+      src.includes('!reconfigure') || src.includes("reconfigure === 'keep'"),
+      'must skip project when reconfigure is declined (either !reconfigure or keep value)',
     );
   });
 });
@@ -1292,4 +1293,140 @@ describe('Phase 23 Plan 02 — lib/install/git-conventions.mjs bulk prompt (DX-1
       `git-conventions.mjs must reference configureAll at least 3 times, got ${configureAllCount}`,
     );
   });
+});
+
+// ── Phase 24 Plan 01 — UX-01/04 git sync detection ──────────────────
+
+describe('Phase 24 Plan 01 — bin/install.mjs UX-01/04 git sync detection', () => {
+  const installSrc = readFileSync(installMjsPath, 'utf8');
+
+  it('emits "Git sync: configured (origin →" status line for UX-01', () => {
+    assert.match(
+      installSrc,
+      /Git sync: configured \(origin →/,
+      'bin/install.mjs must emit "Git sync: configured (origin →" status line when gitRemote is truthy',
+    );
+  });
+
+  it('contains branch A select with Skip / Reconfigure / Remove choices (UX-01)', () => {
+    assert.ok(
+      installSrc.includes("value: 'reconfigure'"),
+      "bin/install.mjs must have 'reconfigure' choice value in git sync block",
+    );
+    assert.ok(
+      installSrc.includes("value: 'remove'"),
+      "bin/install.mjs must have 'remove' choice value in git sync block",
+    );
+  });
+
+  it('contains branch B select with Set up / Skip choices (UX-04)', () => {
+    assert.ok(
+      installSrc.includes("value: 'setup'"),
+      "bin/install.mjs must have 'setup' choice value in git sync block (UX-04)",
+    );
+  });
+
+  it('reads from installState.gitRemote to decide which branch to take (UX-01/04)', () => {
+    assert.match(
+      installSrc,
+      /installState\.gitRemote/,
+      'bin/install.mjs git sync block must branch on installState.gitRemote',
+    );
+  });
+
+  it("does NOT use type: 'confirm' for the vault git sync prompt (UX-07 partial)", () => {
+    // Ensure no type: 'confirm' remains in the file at all — Task 1 removes the last vault-git-sync confirm
+    // (a stricter assertion is in Task 3, but this guards Task 1 specifically)
+    const setupSyncConfirm = installSrc.includes("name: 'setupSync'") &&
+      installSrc.match(/setupSync[\s\S]{0,200}type:\s*'confirm'/);
+    assert.ok(!setupSyncConfirm, 'setupSync prompt must not use type: confirm');
+  });
+
+  it("handles 'remove' action by running git remote remove origin (UX-01)", () => {
+    assert.ok(
+      installSrc.includes("'remote', 'remove', 'origin'"),
+      'bin/install.mjs must call git remote remove origin when user picks remove',
+    );
+  });
+
+  it("emits ok('Remote removed') message after remove action", () => {
+    assert.match(
+      installSrc,
+      /Remote removed/,
+      'bin/install.mjs must emit "Remote removed" ok message',
+    );
+  });
+});
+
+// ── Phase 24 Plan 01 — UX-05/06 dynamic step counter + unified project count ──
+
+describe('Phase 24 Plan 01 — bin/install.mjs UX-05/06 step counter + project count', () => {
+  const installSrc = readFileSync(installMjsPath, 'utf8');
+
+  it('does NOT contain static setupSteps + installCount + 2 arithmetic (UX-05)', () => {
+    assert.ok(
+      !installSrc.includes('setupSteps + installCount + 2'),
+      'bin/install.mjs must not compute totalSteps = setupSteps + installCount + 2',
+    );
+  });
+
+  it('derives totalSteps from steps.length (UX-05)', () => {
+    assert.match(
+      installSrc,
+      /totalSteps\s*=\s*steps\.length/,
+      'bin/install.mjs must derive totalSteps from steps.length (runtime array)',
+    );
+  });
+
+  it('uses steps.push to collect runtime steps (UX-05)', () => {
+    const pushMatches = installSrc.match(/steps\.push\(/g) || [];
+    assert.ok(
+      pushMatches.length >= 5,
+      `bin/install.mjs must collect steps via steps.push (>= 5 calls), got ${pushMatches.length}`,
+    );
+  });
+
+  it('reads project count from installState.projects.length for detect banner AND vault step (UX-06)', () => {
+    const matches = installSrc.match(/installState\.projects\.length/g) || [];
+    assert.ok(
+      matches.length >= 2,
+      `bin/install.mjs must reference installState.projects.length at least twice (detect banner + vault step), got ${matches.length}`,
+    );
+  });
+
+  it('does not use a separate projectCount variable diverging from installState.projects.length (UX-06)', () => {
+    // Either projectCount stays as an alias for installState.projects.length or is removed.
+    // Assertion: every projectCount *assignment* (const/let/var or plain =, excluding == and ===) must read from installState.projects.length.
+    const assignments = installSrc.match(/(?:const|let|var)\s+projectCount\s*=\s*([^;]+);|projectCount\s*=(?!=)\s*([^;]+);/g) || [];
+    for (const a of assignments) {
+      assert.ok(
+        a.includes('installState.projects.length'),
+        `projectCount assignment must read from installState.projects.length, got: ${a}`,
+      );
+    }
+  });
+});
+
+// ── Phase 24 Plan 01 — UX-07 no type: 'confirm' in wizard scope ──
+
+describe("Phase 24 Plan 01 — UX-07: zero type: 'confirm' in wizard scope", () => {
+  const WIZARD_FILES = [
+    'bin/install.mjs',
+    'lib/install/projects.mjs',
+    'lib/install/git-conventions.mjs',
+    'lib/install/notebooklm.mjs',
+    'lib/install/claude-md.mjs',
+  ];
+
+  for (const f of WIZARD_FILES) {
+    it(`UX-07: ${f} has zero type: 'confirm'`, () => {
+      const content = readFileSync(join(projectRoot, f), 'utf8');
+      const matches = content.match(/type:\s*'confirm'/g) || [];
+      assert.strictEqual(
+        matches.length,
+        0,
+        `${f} must have zero type: 'confirm' — found ${matches.length}`,
+      );
+    });
+  }
 });
