@@ -56,7 +56,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 - [x] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07) (completed 2026-04-15)
 - [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
-- [ ] **Phase 27: GSD Workflow Customization via Patches** — Per-project GSD overrides for branching, push/PR behavior, agent prompts; survives /gsd-update (GSD-01)
+- [x] **Phase 27: GSD Workflow Customization via Patches** — Formalized shipped patches mechanism (SHA-diff re-apply via SessionStart hook, wizard-pinned ~/.claude/gsd-local-patches/, BUG-06 D-07 precedence) with regression tests + vault/shared pattern doc + REQUIREMENTS backfill (GSD-01) (completed 2026-04-15; extended criteria deferred to backlog)
 - [ ] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01)
 - [x] **Phase 30: CLAUDE.md Idempotent Merge** — Wizard preserves user content in CLAUDE.md; claude-dev-stack section lives between markers, re-install updates only that section (BUG-07) (completed 2026-04-14)
 
@@ -185,11 +185,13 @@ Plans:
   7. Patch script supports diff-based patches (not just full file replacement) — user can patch a single section of a workflow without maintaining the entire file.
 **Plans**: 4 plans
 
-Plans:
-- [ ] 27-01-PLAN.md — Extend gsd-auto-reapply-patches.sh into three-tier resolver with diff apply + baseline backup (D-01..D-06, D-09..D-11)
-- [ ] 27-02-PLAN.md — patches/ship.md.patch config-aware gates + wizard writes workflow.auto_push/auto_pr/merge_strategy directly to config.json (D-07/D-08)
-- [ ] 27-03-PLAN.md — lib/gsd-customize-cli.mjs with customize/list-overrides/remove subcommands (D-12..D-14)
-- [ ] 27-04-PLAN.md — GSD-01 backfill into REQUIREMENTS.md + Traceability row (D-15)
+Plans (narrowed cut per 27-CONTEXT D-1 — extended criteria deferred to backlog):
+- [x] 27-01-PLAN.md — tests/gsd-auto-reapply-patches.test.mjs (5 cases: SHA-diff, idempotency, BUG-06 D-07 precedence, missing-GSD, missing-source)
+- [x] 27-02-PLAN.md — tests/install-patches-copy.test.mjs (2 cases: patches/ → ~/.claude/gsd-local-patches/ copy, HOME override)
+- [x] 27-03-PLAN.md — vault/shared/patterns.md — "GSD Local Patches (claude-dev-stack)" pattern
+- [x] 27-04-PLAN.md — GSD-01 backfill into REQUIREMENTS.md + Traceability row
+
+Deferred to backlog (999.x): three-tier resolver with .planning/gsd-overrides/, `gsd customize` CLI, diff-based patches, workflow.auto_push/auto_pr/merge_strategy config gates.
 
 ---
 
