@@ -411,6 +411,37 @@ describe('hooks', () => {
     });
   });
 
+  // CAPTURE-01: idea-capture-trigger.mjs file-level assertions (Phase 32 Plan 02)
+  describe('idea-capture-trigger.mjs', () => {
+    const hookPath = join(hooksDir, 'idea-capture-trigger.mjs');
+    const triggersPath = join(hooksDir, 'idea-capture-triggers.json');
+
+    it('file exists', () => {
+      assert.ok(existsSync(hookPath), 'hooks/idea-capture-trigger.mjs must exist');
+    });
+
+    it('has node shebang', () => {
+      const firstLine = readFileSync(hookPath, 'utf8').split('\n')[0];
+      assert.match(firstLine, /^#!.*node/, 'must start with #!... node shebang');
+    });
+
+    it('passes node --check', () => {
+      assert.doesNotThrow(() => execFileSync('node', ['--check', hookPath]));
+    });
+
+    it('triggers JSON is well-formed and has russian + english string arrays', () => {
+      assert.ok(existsSync(triggersPath), 'hooks/idea-capture-triggers.json must exist');
+      const parsed = JSON.parse(readFileSync(triggersPath, 'utf8'));
+      assert.ok(parsed && typeof parsed === 'object' && !Array.isArray(parsed), 'must be an object');
+      assert.ok(Array.isArray(parsed.russian), 'russian must be an array');
+      assert.ok(Array.isArray(parsed.english), 'english must be an array');
+      assert.ok(parsed.russian.length >= 1, 'russian must have ≥1 entry');
+      assert.ok(parsed.english.length >= 1, 'english must have ≥1 entry');
+      assert.ok(parsed.russian.every(s => typeof s === 'string'), 'russian entries must be strings');
+      assert.ok(parsed.english.every(s => typeof s === 'string'), 'english entries must be strings');
+    });
+  });
+
   // WF-01: gsd-workflow-enforcer.mjs file-level assertions (Phase 29 Plan 02)
   describe('gsd-workflow-enforcer.mjs', () => {
     const hookPath = join(hooksDir, 'gsd-workflow-enforcer.mjs');

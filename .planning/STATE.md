@@ -110,6 +110,7 @@ Progress bar: `[X] [X] [X] [X]` (4/4 plans code complete, 3.x/4 awaiting Plan 03
 ### Roadmap Evolution
 
 - Phase 28 added: Silent Session Start — move vault context loading to SessionStart hook, eliminate permission prompts and skill invocation
+- Phase 32 added + shipped: Capture-automation hook (UserPromptSubmit, Russian+English trigger regex) — ships as v0.12.1 patch release. Per D-18..D-22 in vault docs/cds-core-independence-plan.md.
 
 ### Pending Todos
 
