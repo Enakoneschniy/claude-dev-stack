@@ -1182,3 +1182,66 @@ describe('Phase 23 Plan 02 — lib/install/git-conventions.mjs bulk prompt (DX-1
     );
   });
 });
+
+// ── Phase 24 Plan 01 — UX-01/04 git sync detection ──────────────────
+
+describe('Phase 24 Plan 01 — bin/install.mjs UX-01/04 git sync detection', () => {
+  const installSrc = readFileSync(installMjsPath, 'utf8');
+
+  it('emits "Git sync: configured (origin →" status line for UX-01', () => {
+    assert.match(
+      installSrc,
+      /Git sync: configured \(origin →/,
+      'bin/install.mjs must emit "Git sync: configured (origin →" status line when gitRemote is truthy',
+    );
+  });
+
+  it('contains branch A select with Skip / Reconfigure / Remove choices (UX-01)', () => {
+    assert.ok(
+      installSrc.includes("value: 'reconfigure'"),
+      "bin/install.mjs must have 'reconfigure' choice value in git sync block",
+    );
+    assert.ok(
+      installSrc.includes("value: 'remove'"),
+      "bin/install.mjs must have 'remove' choice value in git sync block",
+    );
+  });
+
+  it('contains branch B select with Set up / Skip choices (UX-04)', () => {
+    assert.ok(
+      installSrc.includes("value: 'setup'"),
+      "bin/install.mjs must have 'setup' choice value in git sync block (UX-04)",
+    );
+  });
+
+  it('reads from installState.gitRemote to decide which branch to take (UX-01/04)', () => {
+    assert.match(
+      installSrc,
+      /installState\.gitRemote/,
+      'bin/install.mjs git sync block must branch on installState.gitRemote',
+    );
+  });
+
+  it("does NOT use type: 'confirm' for the vault git sync prompt (UX-07 partial)", () => {
+    // Ensure no type: 'confirm' remains in the file at all — Task 1 removes the last vault-git-sync confirm
+    // (a stricter assertion is in Task 3, but this guards Task 1 specifically)
+    const setupSyncConfirm = installSrc.includes("name: 'setupSync'") &&
+      installSrc.match(/setupSync[\s\S]{0,200}type:\s*'confirm'/);
+    assert.ok(!setupSyncConfirm, 'setupSync prompt must not use type: confirm');
+  });
+
+  it("handles 'remove' action by running git remote remove origin (UX-01)", () => {
+    assert.ok(
+      installSrc.includes("'remote', 'remove', 'origin'"),
+      'bin/install.mjs must call git remote remove origin when user picks remove',
+    );
+  });
+
+  it("emits ok('Remote removed') message after remove action", () => {
+    assert.match(
+      installSrc,
+      /Remote removed/,
+      'bin/install.mjs must emit "Remote removed" ok message',
+    );
+  });
+});
