@@ -55,18 +55,25 @@ fi
 
 APPLIED=0
 
-# Apply patch: patches/transition.md → GSD workflows/transition.md
-PATCH_FILE="$PATCHES_DIR/transition.md"
-TARGET_FILE="$GSD_DIR/workflows/transition.md"
+# Portable SHA-256: prefer sha256sum (Linux), fall back to shasum (macOS)
+_sha256() { sha256sum "$1" 2>/dev/null | awk '{print $1}' || shasum -a 256 "$1" 2>/dev/null | awk '{print $1}'; }
 
-if [ -f "$PATCH_FILE" ] && [ -f "$TARGET_FILE" ]; then
-  PATCH_SHA=$(shasum -a 256 "$PATCH_FILE" 2>/dev/null | awk '{print $1}')
-  TARGET_SHA=$(shasum -a 256 "$TARGET_FILE" 2>/dev/null | awk '{print $1}')
-  if [ "$PATCH_SHA" != "$TARGET_SHA" ]; then
+# Apply patches — iterate over all .md files in patches dir, map to GSD workflows/
+for PATCH_FILE in "$PATCHES_DIR"/*.md; do
+  [ -f "$PATCH_FILE" ] || continue
+  PATCH_NAME="$(basename "$PATCH_FILE")"
+  TARGET_FILE="$GSD_DIR/workflows/$PATCH_NAME"
+
+  [ -f "$TARGET_FILE" ] || continue
+
+  PATCH_SHA=$(_sha256 "$PATCH_FILE")
+  TARGET_SHA=$(_sha256 "$TARGET_FILE")
+  # Guard: if both SHAs are empty (no sha tool available), force apply to be safe
+  if [ -z "$PATCH_SHA" ] || [ -z "$TARGET_SHA" ] || [ "$PATCH_SHA" != "$TARGET_SHA" ]; then
     cp "$PATCH_FILE" "$TARGET_FILE"
     APPLIED=$((APPLIED + 1))
   fi
-fi
+done
 
 if [ "$APPLIED" -gt 0 ]; then
   echo "GSD patches auto-reapplied ($APPLIED file(s) updated)"
