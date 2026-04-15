@@ -90,6 +90,13 @@
   5. `session-manager` `/resume` path checks marker mtime — if < 60 min, uses pre-loaded context; otherwise falls through to explicit `cat`.
   6. `.planning/REQUIREMENTS.md` contains this section and the `| SSR-01 | 28 | — | pending |` traceability row.
 
+### Skills→Hooks (SKL)
+
+- [x] **SKL-01**: `dev-router` skill replaced by `hooks/dev-router.mjs` UserPromptSubmit hook. Hook reads prompt from stdin JSON, regex-matches dev/research/session/end keywords, emits a routing hint as `additionalContext` (≤200 chars). Fail-silent on empty stdin / malformed JSON. Skill file removed from `skills/` and from `lib/install/skills.mjs` skillNames; deprecated install at `~/.claude/skills/dev-router/` cleaned up by wizard re-run.
+- [x] **SKL-02**: `session-manager` skill start-path (auto-load context.md + last sessions on first message) fully migrated to SessionStart hook (`hooks/session-start-context.sh`, owned by Phase 28). Phase 31 removes the `### /resume or /start` section and `## Automatic Behavior` block from the skill body. Skill retains `/end` (session log + ADR), `/handoff`, `/status`, `## ADR Creation`, `## Best Practices`. New note line at top of skill body directs readers to the hook.
+- [x] **SKL-03**: `project-switcher` skill replaced by `hooks/project-switcher.mjs` UserPromptSubmit hook. Hook parses project names from `vault/project-map.json` (NOT project-registry.md — JSON is reliable), uses word-boundary regex to match prompt against known projects, emits switch hint only when matched project differs from current cwd's project. Fail-silent when registry absent. Skill file removed from `skills/` and skillNames; deprecated install cleaned up by wizard.
+- [x] **SKL-04**: `git-conventions` enforcement migrated to `hooks/git-conventions-check.mjs` PreToolUse hook with `matcher: "Bash"` and per-hook `if: "Bash(git commit*)"` scope-narrowing. Hook validates the `-m "..."` message against conventional commits regex `/^(feat|fix|chore|docs|refactor|test|ci|build|perf|style|revert)(\(.+\))?!?:\s.+/`. Default mode: warn-only (exit 0 with stdout suggestion). Strict mode (exit 2 blocking) opt-in via `.planning/config.json` → `workflow.commit_validation: "strict"`. Coexists with GSD's `gsd-validate-commit.sh` (per research finding #3 — GSD is opt-in via community flag).
+
 ---
 
 ## Future Requirements
@@ -139,3 +146,7 @@
 | ADR-02 | 26 | — | pending |
 | GSD-01 | 27 | 27-01..04 | pending |
 | SSR-01 | 28 | 28-01..03 | pending |
+| SKL-01 | 31 | 31-01, 31-02 | complete |
+| SKL-02 | 31 | 31-03 | complete |
+| SKL-03 | 31 | 31-01, 31-02 | complete |
+| SKL-04 | 31 | 31-01, 31-02 | complete |

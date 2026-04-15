@@ -1430,3 +1430,245 @@ describe("Phase 24 Plan 01 — UX-07: zero type: 'confirm' in wizard scope", () 
     });
   }
 });
+
+
+// ── Phase 31: installSessionHook — new hooks (SKL-01/03/04) ──────
+
+describe('installSessionHook — Phase 31 hooks (SKL-01/03/04)', () => {
+  async function setupAndRun({ preExistingSettings = null } = {}) {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-phase31-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-phase31-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-phase31-proj-'));
+
+    // Copy real shipped hooks/ to tmpPkgRoot so the copy loop finds them
+    const realHooks = join(projectRoot, 'hooks');
+    const pkgHooks = join(tmpPkgRoot, 'hooks');
+    mkdirSync(pkgHooks, { recursive: true });
+    for (const f of [
+      'session-start-context.sh', 'session-end-check.sh', 'vault-auto-push.sh',
+      'gsd-auto-reapply-patches.sh', 'budget-check.mjs', 'budget-reset.mjs',
+      'budget-check-status.mjs', 'gsd-workflow-enforcer.mjs',
+      'dev-router.mjs', 'project-switcher.mjs', 'git-conventions-check.mjs',
+      'notebooklm-sync-trigger.mjs', 'notebooklm-sync-runner.mjs', 'update-context.mjs',
+    ]) {
+      const src = join(realHooks, f);
+      if (existsSync(src)) {
+        const dest = join(pkgHooks, f);
+        writeFileSync(dest, readFileSync(src));
+      }
+    }
+    // Copy lib/budget.mjs too (hooks installer needs it)
+    const pkgLib = join(tmpPkgRoot, 'lib');
+    mkdirSync(pkgLib, { recursive: true });
+    const budgetLib = join(projectRoot, 'lib', 'budget.mjs');
+    if (existsSync(budgetLib)) {
+      writeFileSync(join(pkgLib, 'budget.mjs'), readFileSync(budgetLib));
+    }
+
+    // Optionally seed pre-existing settings.json with a foreign hook
+    const projectSettingsDir = join(tmpProjectPath, '.claude');
+    if (preExistingSettings) {
+      mkdirSync(projectSettingsDir, { recursive: true });
+      writeFileSync(join(projectSettingsDir, 'settings.json'), JSON.stringify(preExistingSettings, null, 2));
+    }
+
+    const originalHome = process.env.HOME;
+    process.env.HOME = tmpHome;
+    try {
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      const settingsPath = join(tmpProjectPath, '.claude', 'settings.json');
+      const settings = existsSync(settingsPath)
+        ? JSON.parse(readFileSync(settingsPath, 'utf8'))
+        : null;
+      return { settings, tmpHome, tmpPkgRoot, tmpProjectPath };
+    } finally {
+      process.env.HOME = originalHome;
+    }
+  }
+
+  function cleanup({ tmpHome, tmpPkgRoot, tmpProjectPath }) {
+    rmSync(tmpHome, { recursive: true, force: true });
+    rmSync(tmpPkgRoot, { recursive: true, force: true });
+    rmSync(tmpProjectPath, { recursive: true, force: true });
+  }
+
+  it('registers dev-router in UserPromptSubmit (SKL-01)', async () => {
+    const ctx = await setupAndRun();
+    try {
+      const entries = ctx.settings?.hooks?.UserPromptSubmit || [];
+      const has = entries.some(e => e.hooks?.some(h => h.command?.includes('dev-router')));
+      assert.ok(has, 'UserPromptSubmit must include a dev-router command');
+    } finally {
+      cleanup(ctx);
+    }
+  });
+
+  it('registers project-switcher in UserPromptSubmit (SKL-03)', async () => {
+    const ctx = await setupAndRun();
+    try {
+      const entries = ctx.settings?.hooks?.UserPromptSubmit || [];
+      const has = entries.some(e => e.hooks?.some(h => h.command?.includes('project-switcher')));
+      assert.ok(has, 'UserPromptSubmit must include a project-switcher command');
+    } finally {
+      cleanup(ctx);
+    }
+  });
+
+  it('registers git-conventions-check in PreToolUse with Bash matcher + if field (SKL-04)', async () => {
+    const ctx = await setupAndRun();
+    try {
+      const entries = ctx.settings?.hooks?.PreToolUse || [];
+      const match = entries.find(e => e.matcher === 'Bash' && e.hooks?.some(h => h.command?.includes('git-conventions-check')));
+      assert.ok(match, 'PreToolUse must have Bash matcher entry for git-conventions-check');
+      const gcHook = match.hooks.find(h => h.command?.includes('git-conventions-check'));
+      assert.equal(gcHook.if, 'Bash(git commit*)', 'hook.if must be "Bash(git commit*)"');
+    } finally {
+      cleanup(ctx);
+    }
+  });
+
+  it('re-running installSessionHook is idempotent (no duplicate entries)', async () => {
+    const { installSessionHook } = await import('../lib/install/hooks.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-phase31-idem-home-'));
+    const tmpPkgRoot = mkdtempSync(join(tmpdir(), 'install-phase31-idem-pkg-'));
+    const tmpProjectPath = mkdtempSync(join(tmpdir(), 'install-phase31-idem-proj-'));
+    const realHooks = join(projectRoot, 'hooks');
+    const pkgHooks = join(tmpPkgRoot, 'hooks');
+    mkdirSync(pkgHooks, { recursive: true });
+    for (const f of [
+      'session-start-context.sh', 'session-end-check.sh', 'vault-auto-push.sh',
+      'gsd-auto-reapply-patches.sh', 'budget-check.mjs', 'budget-reset.mjs',
+      'budget-check-status.mjs', 'gsd-workflow-enforcer.mjs',
+      'dev-router.mjs', 'project-switcher.mjs', 'git-conventions-check.mjs',
+      'notebooklm-sync-trigger.mjs', 'notebooklm-sync-runner.mjs', 'update-context.mjs',
+    ]) {
+      const src = join(realHooks, f);
+      if (existsSync(src)) writeFileSync(join(pkgHooks, f), readFileSync(src));
+    }
+    const originalHome = process.env.HOME;
+    process.env.HOME = tmpHome;
+    try {
+      const vaultPath = join(tmpHome, 'vault');
+      const projectsData = { projects: [{ name: 'test-project', path: tmpProjectPath }] };
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      installSessionHook(1, 1, tmpPkgRoot, vaultPath, projectsData);
+      const settings = JSON.parse(readFileSync(join(tmpProjectPath, '.claude', 'settings.json'), 'utf8'));
+      const upsEntries = settings?.hooks?.UserPromptSubmit || [];
+      const devRouterCount = upsEntries.filter(e => e.hooks?.some(h => h.command?.includes('dev-router'))).length;
+      const projSwitchCount = upsEntries.filter(e => e.hooks?.some(h => h.command?.includes('project-switcher'))).length;
+      const preToolUse = settings?.hooks?.PreToolUse || [];
+      const gitConvCount = preToolUse.filter(e => e.hooks?.some(h => h.command?.includes('git-conventions-check'))).length;
+      assert.equal(devRouterCount, 1, 'dev-router should appear exactly once');
+      assert.equal(projSwitchCount, 1, 'project-switcher should appear exactly once');
+      assert.equal(gitConvCount, 1, 'git-conventions-check should appear exactly once');
+    } finally {
+      process.env.HOME = originalHome;
+      rmSync(tmpHome, { recursive: true, force: true });
+      rmSync(tmpPkgRoot, { recursive: true, force: true });
+      rmSync(tmpProjectPath, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves foreign UserPromptSubmit/PreToolUse entries from other plugins', async () => {
+    const pre = {
+      hooks: {
+        UserPromptSubmit: [
+          { hooks: [{ type: 'command', command: '/path/to/foreign-plugin --some-arg' }] },
+        ],
+        PreToolUse: [
+          { matcher: 'Bash', hooks: [{ type: 'command', command: '/path/to/foreign-bash-check' }] },
+        ],
+      },
+    };
+    const ctx = await setupAndRun({ preExistingSettings: pre });
+    try {
+      const ups = ctx.settings?.hooks?.UserPromptSubmit || [];
+      const ptu = ctx.settings?.hooks?.PreToolUse || [];
+      const foreignUps = ups.some(e => e.hooks?.some(h => h.command?.includes('foreign-plugin')));
+      const foreignPtu = ptu.some(e => e.hooks?.some(h => h.command?.includes('foreign-bash-check')));
+      assert.ok(foreignUps, 'foreign UserPromptSubmit hook must remain');
+      assert.ok(foreignPtu, 'foreign PreToolUse hook must remain');
+    } finally {
+      cleanup(ctx);
+    }
+  });
+
+  it('copies 3 new node hook scripts from pkgRoot/hooks to ~/.claude/hooks', async () => {
+    const ctx = await setupAndRun();
+    try {
+      const hooksDir = join(ctx.tmpHome, '.claude', 'hooks');
+      assert.ok(existsSync(join(hooksDir, 'dev-router.mjs')), 'dev-router.mjs copied');
+      assert.ok(existsSync(join(hooksDir, 'project-switcher.mjs')), 'project-switcher.mjs copied');
+      assert.ok(existsSync(join(hooksDir, 'git-conventions-check.mjs')), 'git-conventions-check.mjs copied');
+    } finally {
+      cleanup(ctx);
+    }
+  });
+});
+
+// ── Phase 31: installCustomSkills — cleanup (D-15/D-17) ──────────
+
+describe('installCustomSkills — Phase 31 cleanup (D-15/D-17)', () => {
+  it('removes ~/.claude/skills/dev-router/ on re-run when present', async () => {
+    const { installCustomSkills } = await import('../lib/install/skills.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-phase31-cleanup-'));
+    const skillsDir = join(tmpHome, '.claude', 'skills');
+    mkdirSync(join(skillsDir, 'dev-router'), { recursive: true });
+    writeFileSync(join(skillsDir, 'dev-router', 'SKILL.md'), 'stale');
+    try {
+      installCustomSkills(skillsDir, 1, 1, projectRoot);
+      assert.ok(!existsSync(join(skillsDir, 'dev-router')), 'dev-router dir must be removed');
+    } finally {
+      rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+
+  it('removes ~/.claude/skills/project-switcher/ on re-run when present', async () => {
+    const { installCustomSkills } = await import('../lib/install/skills.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-phase31-cleanup-ps-'));
+    const skillsDir = join(tmpHome, '.claude', 'skills');
+    mkdirSync(join(skillsDir, 'project-switcher'), { recursive: true });
+    writeFileSync(join(skillsDir, 'project-switcher', 'SKILL.md'), 'stale');
+    try {
+      installCustomSkills(skillsDir, 1, 1, projectRoot);
+      assert.ok(!existsSync(join(skillsDir, 'project-switcher')), 'project-switcher dir must be removed');
+    } finally {
+      rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+
+  it('session-manager and dev-research SKILL.md are still copied (regression guard)', async () => {
+    const { installCustomSkills } = await import('../lib/install/skills.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-phase31-preserve-'));
+    const skillsDir = join(tmpHome, '.claude', 'skills');
+    try {
+      installCustomSkills(skillsDir, 1, 1, projectRoot);
+      assert.ok(existsSync(join(skillsDir, 'session-manager', 'SKILL.md')), 'session-manager copied');
+      assert.ok(existsSync(join(skillsDir, 'dev-research', 'SKILL.md')), 'dev-research copied');
+    } finally {
+      rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+
+  it('does NOT create dev-router or project-switcher dirs after install (D-15)', async () => {
+    const { installCustomSkills } = await import('../lib/install/skills.mjs');
+    const tmpHome = mkdtempSync(join(tmpdir(), 'install-phase31-no-create-'));
+    const skillsDir = join(tmpHome, '.claude', 'skills');
+    try {
+      installCustomSkills(skillsDir, 1, 1, projectRoot);
+      assert.ok(
+        !existsSync(join(skillsDir, 'dev-router')),
+        'dev-router must not be created'
+      );
+      assert.ok(
+        !existsSync(join(skillsDir, 'project-switcher')),
+        'project-switcher must not be created'
+      );
+    } finally {
+      rmSync(tmpHome, { recursive: true, force: true });
+    }
+  });
+});

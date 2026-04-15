@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
-status: planning
-stopped_at: Phase 27 Plans 01/02/03/04 code complete (GSD-01 formalization); Phase 26 Plan 03 Task 3 human-verify UAT still deferred
-last_updated: "2026-04-15T14:40:00.000Z"
+status: executing
+stopped_at: Phase 31 merged into umbrella — Skills→Hooks migration (SKL-01..04) complete; UAT deferred for Phase 24/26/30/31
+last_updated: "2026-04-15T14:00:00.000Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 13
-  completed_phases: 8
-  total_plans: 27
-  completed_plans: 18
-  percent: 67
+  completed_phases: 11
+  total_plans: 31
+  completed_plans: 22
+  percent: 85
 ---
 
 # Project State: claude-dev-stack
