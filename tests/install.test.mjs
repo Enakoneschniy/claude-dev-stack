@@ -1284,8 +1284,8 @@ describe('Phase 24 Plan 01 — bin/install.mjs UX-05/06 step counter + project c
 
   it('does not use a separate projectCount variable diverging from installState.projects.length (UX-06)', () => {
     // Either projectCount stays as an alias for installState.projects.length or is removed.
-    // Assertion: every projectCount assignment (if any) must be on installState.projects.length.
-    const assignments = installSrc.match(/projectCount\s*=\s*([^;]+);/g) || [];
+    // Assertion: every projectCount *assignment* (const/let/var or plain =, excluding == and ===) must read from installState.projects.length.
+    const assignments = installSrc.match(/(?:const|let|var)\s+projectCount\s*=\s*([^;]+);|projectCount\s*=(?!=)\s*([^;]+);/g) || [];
     for (const a of assignments) {
       assert.ok(
         a.includes('installState.projects.length'),
