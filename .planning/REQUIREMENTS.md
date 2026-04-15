@@ -4,7 +4,7 @@
 
 **Phase numbering**: continues from v0.11 (last phase: 18.1) → starts at Phase 19
 **Test baseline**: 558 (v0.11.0)
-**Total requirements**: 12 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill + 1 GSD-01 backfill + 1 SSR-01 backfill).
+**Total requirements**: 12 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill + 1 GSD-01 backfill + 1 SSR-01 backfill + 4 CAPTURE backfills).
 
 ---
 
@@ -97,6 +97,21 @@
 - [x] **SKL-03**: `project-switcher` skill replaced by `hooks/project-switcher.mjs` UserPromptSubmit hook. Hook parses project names from `vault/project-map.json` (NOT project-registry.md — JSON is reliable), uses word-boundary regex to match prompt against known projects, emits switch hint only when matched project differs from current cwd's project. Fail-silent when registry absent. Skill file removed from `skills/` and skillNames; deprecated install cleaned up by wizard.
 - [x] **SKL-04**: `git-conventions` enforcement migrated to `hooks/git-conventions-check.mjs` PreToolUse hook with `matcher: "Bash"` and per-hook `if: "Bash(git commit*)"` scope-narrowing. Hook validates the `-m "..."` message against conventional commits regex `/^(feat|fix|chore|docs|refactor|test|ci|build|perf|style|revert)(\(.+\))?!?:\s.+/`. Default mode: warn-only (exit 0 with stdout suggestion). Strict mode (exit 2 blocking) opt-in via `.planning/config.json` → `workflow.commit_validation: "strict"`. Coexists with GSD's `gsd-validate-commit.sh` (per research finding #3 — GSD is opt-in via community flag).
 
+### Capture Automation (CAPTURE)
+
+- [x] **CAPTURE-01**: Hook installation wired into install wizard at project-level `.claude/settings.json` (NOT global `~/.claude/settings.json`). Wizard copies `hooks/idea-capture-trigger.mjs` + `hooks/idea-capture-triggers.json` into `~/.claude/hooks/` and registers the hook as a UserPromptSubmit entry in each configured project's `.claude/settings.json`. Idempotent — re-running the wizard on an already-configured project does NOT duplicate the entry. Per D-18 in vault cds-core-independence-plan.md.
+- [x] **CAPTURE-02**: Trigger regex matches Russian + English phrases from `hooks/idea-capture-triggers.json`, case-insensitive, word-boundary-aware. Russian uses explicit boundary class `(?:^|[\s.,!?;:()"'«»—-])` (JS `\b` is ASCII-only). English uses standard `\b`. False-positive guard: "идеальный" does NOT match trigger "идея"; "идентификатор" does NOT match any trigger. Hook truncates prompts to 4096 chars before regex testing (ReDoS guard). Per D-19.
+- [x] **CAPTURE-03**: On match, hook emits exactly this hint to stdout: `💡 IDEA-CAPTURE HINT: Detected trigger phrase "{phrase}" in user message. Consider invoking /gsd-note to capture the idea to .planning/notes/.` — where `{phrase}` is the literal trigger string from the JSON config (not the user's possibly-capitalized match). Output goes to stdout per Claude Code UserPromptSubmit hook protocol (plain-stdout form, matching dev-router.mjs / project-switcher.mjs pattern). Per D-20 / D-21.
+- [x] **CAPTURE-04** (OPTIONAL): Telemetry counter `idea_capture_hints_fired` in `~/.claude/cds-stats.json` increments each time the hook fires. Counter initialized if file absent; fail-silent on any filesystem error (EPERM, ENOSPC, corrupt JSON). User opt-out = delete the stats file. Informs v1.0 escalation decision per D-19/D-20.
+
+  Success Criteria (for all four):
+  1. `hooks/idea-capture-trigger.mjs` exists, passes `node --check`, has `#!/usr/bin/env node` shebang, exits 0 on empty/malformed stdin, emits no output when no trigger matches.
+  2. `hooks/idea-capture-triggers.json` exists, parses as `{ russian: string[], english: string[] }` with the full 9 Russian + 7 English phrase list per D-19.
+  3. Matching user prompt produces exactly one line of stdout matching the CAPTURE-03 format; first-match-wins when multiple triggers present.
+  4. Telemetry counter increments on match, is unchanged on no-match, never crashes the hook on filesystem errors.
+  5. `lib/install/hooks.mjs` copies the .mjs and .json into `~/.claude/hooks/` and registers the hook in each project's `.claude/settings.json` UserPromptSubmit list idempotently.
+  6. Full `npm test` suite passes with 0 regressions.
+
 ---
 
 ## Future Requirements
@@ -153,3 +168,7 @@
 | SKL-02 | 31 | 31-03 | complete |
 | SKL-03 | 31 | 31-01, 31-02 | complete |
 | SKL-04 | 31 | 31-01, 31-02 | complete |
+| CAPTURE-01 | 32 | 32-02 | complete |
+| CAPTURE-02 | 32 | 32-01 | complete |
+| CAPTURE-03 | 32 | 32-01 | complete |
+| CAPTURE-04 | 32 | 32-01 | complete |
