@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
-status: executing
-stopped_at: Phase 24 Plan 01+02 code complete; UAT deferred to user (Phase 24 + Phase 30)
-last_updated: "2026-04-15T11:00:00.000Z"
-last_activity: 2026-04-15
+status: planning
+stopped_at: Phase 26 Plans 01/02/03/04 code complete; Plan 03 Task 3 human-verify UAT deferred
+last_updated: "2026-04-15T12:18:12.925Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 13
-  completed_phases: 8
-  total_plans: 19
+  completed_phases: 7
+  total_plans: 23
   completed_plans: 14
-  percent: 74
+  percent: 61
 ---
 
 # Project State: claude-dev-stack
@@ -27,18 +27,27 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Phase 30 — claude-md-idempotent-merge
+**Current focus:** Phase 26 — Auto-ADR Capture (code complete, UAT pending)
 
 ---
 
 ## Current Position
 
-Phase: 30 (claude-md-idempotent-merge) — CODE COMPLETE, HUMAN UAT DEFERRED
-Plan: 2 of 2 (both code paths shipped)
-Status: Awaiting human UAT sign-off in `.planning/phases/30-claude-md-idempotent-merge/30-VALIDATION.md` (Plan 02 Task 3 `checkpoint:human-verify`)
-Last activity: 2026-04-14 -- Phase 30 execution complete pending UAT
+Phase: 26 (auto-adr-capture) — CODE COMPLETE, HUMAN UAT DEFERRED (Plan 03 Task 3)
+Plan: 4 of 4 (01 engine, 02 CLI, 03 SKILL.md wiring code+tests, 04 REQUIREMENTS backfill)
+Status: All code shipped on `gsd/phase-26-auto-adr-capture`. Plan 03 Task 3 is a
+  `checkpoint:human-verify` — requires a real Claude Code session to exercise the
+  full /end -> Haiku -> ADR write chain and confirm the user-facing one-line summary.
+  Parent agent to surface this to the user for UAT before final phase close-out.
+Last activity: 2026-04-15 -- Phase 26 execution complete pending UAT
 
-Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
+Progress bar: `[X] [X] [X] [X]` (4/4 plans code complete, 3.x/4 awaiting Plan 03 UAT)
+
+### Phase 26 Blockers
+
+- **Human UAT checkpoint deferred (Plan 03 Task 3)** — requires a real Claude Code
+  session to exercise the full /end -> Haiku -> ADR write chain. Cannot be run
+  in background/parallel execution. Parent agent to surface to the user.
 
 ### Phase 30 Blockers
 
@@ -47,6 +56,7 @@ Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
   signing off in `30-VALIDATION.md`. Per background-run instructions the agent
   cannot use `AskUserQuestion`; this step is handed back to the manager to
   surface to the user.
+
 - **Operational concurrency issue** — during execution a concurrent
   `gsd-execute-phase` run on `gsd/phase-29-gsd-workflow-enforcer-hook` force-switched
   the shared working tree five separate times. All phase-30 work was rescued by
@@ -90,6 +100,12 @@ Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
 - [Phase 24]: D-01/D-02: Git sync detection with 3-option (Skip/Reconfigure/Remove) and 2-option (Set up/Skip) select prompts
 - [Phase 24]: D-03/D-04: totalSteps = preFlightCount + steps.length (runtime array); hookAction resolved before build
 - [Phase 24]: D-06/D-07: 11 wizard-scope type: confirm prompts swapped to type: select (bin/install.mjs + lib/install/*.mjs)
+- [Phase 26]: D-01 Haiku via `claude -p --model haiku --bare` (text mode, <decisions> XML tag)
+- [Phase 26]: D-03 confidence=low discarded, medium->proposed, high->accepted
+- [Phase 26]: D-06 fail-open: any bridge error becomes {error} JSON, CLI exit 0 always, /end never blocks
+- [Phase 26]: D-07 dual-format topic match (YAML frontmatter + old-format filename; min-4-char substring guard)
+- [Phase 26]: D-10 YAML frontmatter template with nested source:{session_log, commit}
+- [Phase 26]: D-13 decisions CLI is pure filesystem; zero new npm deps; handles both Russian+English old-format labels
 
 ### Roadmap Evolution
 
@@ -109,6 +125,6 @@ None — roadmap defined, ready to start Phase 19 planning.
 
 ## Session Continuity
 
-Last session: 2026-04-15T10:48:19.980Z
-Stopped at: Phase 24 Plan 01 complete; Plan 02 Task 2 (human UAT) deferred to user
+Last session: 2026-04-15T12:18:12.920Z
+Stopped at: Phase 26 Plans 01/02/03/04 code complete; Plan 03 Task 3 human-verify UAT deferred
 Resume file: None
