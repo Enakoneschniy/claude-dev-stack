@@ -1245,3 +1245,52 @@ describe('Phase 24 Plan 01 — bin/install.mjs UX-01/04 git sync detection', () 
     );
   });
 });
+
+// ── Phase 24 Plan 01 — UX-05/06 dynamic step counter + unified project count ──
+
+describe('Phase 24 Plan 01 — bin/install.mjs UX-05/06 step counter + project count', () => {
+  const installSrc = readFileSync(installMjsPath, 'utf8');
+
+  it('does NOT contain static setupSteps + installCount + 2 arithmetic (UX-05)', () => {
+    assert.ok(
+      !installSrc.includes('setupSteps + installCount + 2'),
+      'bin/install.mjs must not compute totalSteps = setupSteps + installCount + 2',
+    );
+  });
+
+  it('derives totalSteps from steps.length (UX-05)', () => {
+    assert.match(
+      installSrc,
+      /totalSteps\s*=\s*steps\.length/,
+      'bin/install.mjs must derive totalSteps from steps.length (runtime array)',
+    );
+  });
+
+  it('uses steps.push to collect runtime steps (UX-05)', () => {
+    const pushMatches = installSrc.match(/steps\.push\(/g) || [];
+    assert.ok(
+      pushMatches.length >= 5,
+      `bin/install.mjs must collect steps via steps.push (>= 5 calls), got ${pushMatches.length}`,
+    );
+  });
+
+  it('reads project count from installState.projects.length for detect banner AND vault step (UX-06)', () => {
+    const matches = installSrc.match(/installState\.projects\.length/g) || [];
+    assert.ok(
+      matches.length >= 2,
+      `bin/install.mjs must reference installState.projects.length at least twice (detect banner + vault step), got ${matches.length}`,
+    );
+  });
+
+  it('does not use a separate projectCount variable diverging from installState.projects.length (UX-06)', () => {
+    // Either projectCount stays as an alias for installState.projects.length or is removed.
+    // Assertion: every projectCount assignment (if any) must be on installState.projects.length.
+    const assignments = installSrc.match(/projectCount\s*=\s*([^;]+);/g) || [];
+    for (const a of assignments) {
+      assert.ok(
+        a.includes('installState.projects.length'),
+        `projectCount assignment must read from installState.projects.length, got: ${a}`,
+      );
+    }
+  });
+});
