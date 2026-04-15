@@ -4,14 +4,14 @@ milestone: v0.12
 milestone_name: Hooks & Limits
 status: executing
 stopped_at: Phase 23 context gathered
-last_updated: "2026-04-14T23:37:11.484Z"
+last_updated: "2026-04-14T23:42:39.247Z"
 last_activity: 2026-04-14
 progress:
   total_phases: 13
   completed_phases: 3
-  total_plans: 16
-  completed_plans: 5
-  percent: 31
+  total_plans: 19
+  completed_plans: 6
+  percent: 32
 ---
 
 # Project State: claude-dev-stack
@@ -27,18 +27,35 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-13)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Milestone v0.12 — Hooks & Limits
+**Current focus:** Phase 30 — claude-md-idempotent-merge
 
 ---
 
 ## Current Position
 
-Phase: 30
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-13 -- Phase 23 planning complete
+Phase: 30 (claude-md-idempotent-merge) — CODE COMPLETE, HUMAN UAT DEFERRED
+Plan: 2 of 2 (both code paths shipped)
+Status: Awaiting human UAT sign-off in `.planning/phases/30-claude-md-idempotent-merge/30-VALIDATION.md` (Plan 02 Task 3 `checkpoint:human-verify`)
+Last activity: 2026-04-14 -- Phase 30 execution complete pending UAT
 
 Progress bar: `[ ] [ ] [ ] [ ]` (0/4 phases)
+
+### Phase 30 Blockers
+
+- **Human UAT checkpoint deferred** — Plan 02 Task 3 is a `checkpoint:human-verify`
+  gate that requires running the 5 UAT scenarios through the actual wizard and
+  signing off in `30-VALIDATION.md`. Per background-run instructions the agent
+  cannot use `AskUserQuestion`; this step is handed back to the manager to
+  surface to the user.
+- **Operational concurrency issue** — during execution a concurrent
+  `gsd-execute-phase` run on `gsd/phase-29-gsd-workflow-enforcer-hook` force-switched
+  the shared working tree five separate times. All phase-30 work was rescued by
+  committing each change immediately to the feature branch, but the race caused
+  one merge conflict on `lib/install/claude-md.mjs` + `lib/project-setup.mjs`
+  that had to be resolved by switching back. Recommended follow-up: either
+  block parallel `gsd-execute-phase` runs on a single repo, or default them
+  to worktrees (`workflow.use_worktrees: true`) rather than assuming the main
+  checkout is free.
 
 ---
 
