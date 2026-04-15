@@ -4,7 +4,7 @@
 
 **Phase numbering**: continues from v0.11 (last phase: 18.1) → starts at Phase 19
 **Test baseline**: 558 (v0.11.0)
-**Total requirements**: 12 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill + 1 GSD-01 backfill).
+**Total requirements**: 12 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill + 1 GSD-01 backfill + 1 SSR-01 backfill).
 
 ---
 
@@ -72,6 +72,24 @@
   6. Regression tests under `tests/` cover hook behavior (`gsd-auto-reapply-patches.test.mjs`) and wizard copy (`install-patches-copy.test.mjs`).
   7. Pattern documented in `vault/shared/patterns.md` so other GSD-using projects can adopt it.
 
+### Session Start/Resume (SSR)
+
+- [ ] **SSR-01**: SessionStart hook is the single source of vault context
+  loading for configured projects. The `session-manager` skill does not
+  auto-activate on greetings; its `/resume` path checks a
+  `.claude/.session-loaded` marker (atomic, ISO 8601 UTC) and skips the
+  redundant `cat` when the marker is < 60 min old. CLAUDE.md template
+  instructs Claude not to re-read `context.md` on the first message.
+  Install wizard adds the marker path to project `.gitignore` idempotently.
+
+  Success Criteria:
+  1. CLAUDE.md template "Knowledge Base" section instructs Claude NOT to re-read `context.md` / session logs on the first message.
+  2. `session-manager` skill description omits greeting triggers ("привет", "hi", "начинаем") and first-message auto-activation.
+  3. SessionStart hook writes `.claude/.session-loaded` marker atomically (ISO 8601 UTC timestamp) on every successful run.
+  4. Install wizard adds `.claude/.session-loaded` to each configured project's `.gitignore` idempotently.
+  5. `session-manager` `/resume` path checks marker mtime — if < 60 min, uses pre-loaded context; otherwise falls through to explicit `cat`.
+  6. `.planning/REQUIREMENTS.md` contains this section and the `| SSR-01 | 28 | — | pending |` traceability row.
+
 ---
 
 ## Future Requirements
@@ -120,3 +138,4 @@
 | UX-07 | 24 | — | pending |
 | ADR-02 | 26 | — | pending |
 | GSD-01 | 27 | 27-01..04 | pending |
+| SSR-01 | 28 | 28-01..03 | pending |
