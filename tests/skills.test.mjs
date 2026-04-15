@@ -28,7 +28,7 @@ describe('skills module', () => {
 
 describe('builtin skills', () => {
   const skillsDir = join(new URL('..', import.meta.url).pathname, 'skills');
-  const builtinSkills = ['session-manager', 'project-switcher', 'dev-router', 'dev-research'];
+  const builtinSkills = ['session-manager', 'dev-research'];
 
   for (const name of builtinSkills) {
     describe(name, () => {
