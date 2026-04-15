@@ -10,6 +10,45 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const hooksDir = join(__dirname, '..', 'hooks');
 const fixturesDir = join(__dirname, 'fixtures');
 
+describe('node hooks (Phase 31)', () => {
+  const nodeHookFiles = ['dev-router.mjs', 'project-switcher.mjs', 'git-conventions-check.mjs'];
+  for (const file of nodeHookFiles) {
+    describe(file, () => {
+      const hookPath = join(hooksDir, file);
+
+      it('file exists', () => {
+        assert.ok(existsSync(hookPath));
+      });
+
+      it('starts with node shebang', () => {
+        const content = readFileSync(hookPath, 'utf8');
+        assert.ok(
+          content.startsWith('#!/usr/bin/env node'),
+          `expected #!/usr/bin/env node shebang in ${file}`
+        );
+      });
+
+      it('exits 0 on empty stdin', () => {
+        const result = spawnSync('node', [hookPath], {
+          input: '',
+          encoding: 'utf8',
+          timeout: 3000,
+        });
+        assert.equal(result.status, 0);
+      });
+
+      it('exits 0 on malformed JSON', () => {
+        const result = spawnSync('node', [hookPath], {
+          input: 'not-json{{{',
+          encoding: 'utf8',
+          timeout: 3000,
+        });
+        assert.equal(result.status, 0);
+      });
+    });
+  }
+});
+
 describe('hooks', () => {
   const hookFiles = ['session-start-context.sh', 'session-end-check.sh'];
 
