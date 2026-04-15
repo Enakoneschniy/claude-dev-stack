@@ -90,6 +90,11 @@ function printHelp() {
   console.log(`  ${c.cyan}${c.bold}Handoff${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack handoff status${c.reset}         ${c.dim}Check if there is stopped work to resume (exit 0/1)${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Decisions${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack decisions list${c.reset}         ${c.dim}List ADRs for current project${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack decisions show <id|slug>${c.reset} ${c.dim}Show full ADR content${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack decisions search <term>${c.reset} ${c.dim}Search across all ADRs${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Maintenance${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack doctor${c.reset}                 ${c.dim}Health check for all components${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack update${c.reset}                 ${c.dim}Update skills, GSD, Claude CLI${c.reset}`);
@@ -229,6 +234,13 @@ async function run() {
     // ── Handoff ──
     case 'handoff': {
       const { main } = await import('../lib/handoff-cli.mjs');
+      await main(args.slice(1));
+      break;
+    }
+
+    // ── Decisions (ADR-02) ──
+    case 'decisions': {
+      const { main } = await import('../lib/decisions-cli.mjs');
       await main(args.slice(1));
       break;
     }

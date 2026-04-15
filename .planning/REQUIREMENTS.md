@@ -4,7 +4,7 @@
 
 **Phase numbering**: continues from v0.11 (last phase: 18.1) → starts at Phase 19
 **Test baseline**: 558 (v0.11.0)
-**Total requirements**: 10 v1 requirements.
+**Total requirements**: 11 v1 requirements (+ 15 DX/UX/WF/BUG-07 backfills + 1 ADR-02 backfill).
 
 ---
 
@@ -47,6 +47,17 @@
 - [ ] **UX-05**: Wizard step counter is accurate — total step count matches actual steps shown (no "Step 15 of 14").
 - [ ] **UX-06**: Detect banner project count matches vault step project count — both use same source (`project-map.json`), no "0 projects" vs "8 project(s)" discrepancy.
 - [ ] **UX-07**: All wizard confirmation prompts use consistent select-style prompts instead of mixed confirm (y/N) and select styles.
+
+### Decisions (ADR)
+
+- [ ] **ADR-02**: Session-end hook scans session transcript (not just GSD discuss-phase) for architectural decisions — new dependencies, API changes, data model changes, significant refactors — and creates ADR files in `vault/projects/{project}/decisions/`. Includes duplicate detection (same topic → update, not duplicate), YAML frontmatter with source (session log path + commit SHA), and `claude-dev-stack decisions` CLI (list/show/search) for browsing.
+
+  Success Criteria:
+  1. Session-end hook scans session transcript for architectural decisions (new dependencies added, API endpoints changed, data model changes, significant refactors) and creates ADR files in `vault/projects/{project}/decisions/`.
+  2. ADR bridge runs on session end in addition to GSD discuss-phase — decisions from any workflow (manual coding, bug fixes, hotfixes) are captured.
+  3. Duplicate detection: if a decision about the same topic already exists, it updates the existing ADR instead of creating a duplicate.
+  4. Each ADR includes: context (why), decision (what), consequences (tradeoffs), and source (session log link or commit hash).
+  5. `claude-dev-stack decisions` CLI lists all decisions for current project with dates and status.
 
 ---
 
@@ -94,3 +105,4 @@
 | UX-05 | 24 | — | pending |
 | UX-06 | 24 | — | pending |
 | UX-07 | 24 | — | pending |
+| ADR-02 | 26 | — | pending |

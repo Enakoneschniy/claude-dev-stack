@@ -164,10 +164,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 26-01-PLAN.md — lib/adr-bridge-session.mjs core (Haiku subprocess + topic match + write/supersede) + tests (D-01..D-03, D-07..D-11)
-- [ ] 26-02-PLAN.md — claude-dev-stack decisions CLI (list/show/search) + bin/cli.mjs wire + tests (D-12, D-13)
-- [ ] 26-03-PLAN.md — session-manager SKILL.md /end integration (bash block + human verification) (D-04, D-05, D-06)
-- [ ] 26-04-PLAN.md — Backfill ADR-02 into REQUIREMENTS.md + Traceability row (D-14)
+- [x] 26-01-PLAN.md — lib/adr-bridge-session.mjs core (Haiku subprocess + topic match + write/supersede) + tests (D-01..D-03, D-07..D-11) — SHIPPED 2026-04-15
+- [x] 26-02-PLAN.md — claude-dev-stack decisions CLI (list/show/search) + bin/cli.mjs wire + tests (D-12, D-13) — SHIPPED 2026-04-15
+- [x] 26-03-PLAN.md — session-manager SKILL.md /end integration (bash block + human verification) (D-04, D-05, D-06) — CODE COMPLETE 2026-04-15; human-verify deferred
+- [x] 26-04-PLAN.md — Backfill ADR-02 into REQUIREMENTS.md + Traceability row (D-14) — SHIPPED 2026-04-15
 
 ---
 
