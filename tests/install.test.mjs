@@ -557,10 +557,11 @@ describe('lib/install/git-conventions.mjs — skip existing git-scopes.json (BUG
   });
 
   it('skips project when user declines reconfigure (BUG-05)', () => {
+    // UX-07 (Phase 24): confirm → select, so old `!reconfigure` check is now `reconfigure === 'keep'`.
     assert.ok(
       src.includes('if (!reconfigure)') || src.includes("if (reconfigure === false") ||
-      src.includes('!reconfigure'),
-      'must skip project when reconfigure is false',
+      src.includes('!reconfigure') || src.includes("reconfigure === 'keep'"),
+      'must skip project when reconfigure is declined (either !reconfigure or keep value)',
     );
   });
 });

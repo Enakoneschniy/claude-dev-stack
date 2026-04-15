@@ -32,8 +32,17 @@ async function main() {
   });
 
   printHeader();
-  const { ready } = await prompt({ type: 'confirm', name: 'ready', message: 'Ready to start?', initial: true });
-  if (!ready) { console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`); return; }
+  const { ready } = await prompt({
+    type: 'select',
+    name: 'ready',
+    message: 'Ready to start?',
+    choices: [
+      { title: 'Yes, start installation', value: 'start' },
+      { title: 'Cancel', value: 'cancel' },
+    ],
+    initial: 0,
+  });
+  if (ready === 'cancel') { console.log(`\n  ${c.dim}No changes made. Run again when ready.${c.reset}\n`); return; }
 
   // DX-02: Detect existing install state
   const installState = detectInstallState();
@@ -50,12 +59,16 @@ async function main() {
     console.log('');
 
     const result = await prompt({
-      type: 'confirm',
+      type: 'select',
       name: 'reconfigure',
       message: 'Reconfigure everything from scratch?',
-      initial: false,
+      choices: [
+        { title: 'Keep existing + offer per-step skip', value: 'skip-aware' },
+        { title: 'Reconfigure everything', value: 'reconfigure' },
+      ],
+      initial: 0,
     });
-    reconfigure = result.reconfigure;
+    reconfigure = result.reconfigure === 'reconfigure';
 
     if (!reconfigure) {
       console.log(`  ${c.dim}Skip-aware mode: completed sections will offer skip/reconfigure.${c.reset}`);
@@ -231,7 +244,7 @@ async function resolveHookAction(installState, reconfigure) {
   return action;
 }
 
-// UX-01/UX-04: Vault git sync block with detection + select prompts (no type: 'confirm')
+// UX-01/UX-04: Vault git sync block — detects existing origin and uses select prompts only (never y/N confirm)
 async function runVaultGitSync(vaultPath, installState) {
   console.log('');
 
