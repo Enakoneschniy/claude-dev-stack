@@ -56,3 +56,41 @@ describe('builtin skills', () => {
     });
   }
 });
+
+describe('session-manager — SKL-02 migration (Phase 31)', () => {
+  const skillsDir = join(new URL('..', import.meta.url).pathname, 'skills');
+  const skillPath = join(skillsDir, 'session-manager', 'SKILL.md');
+  const content = readFileSync(skillPath, 'utf8');
+
+  it('start-path body is removed (D-04)', () => {
+    assert.ok(
+      !content.includes('### /resume or /start'),
+      'should not contain combined /resume+/start auto-loader heading'
+    );
+    assert.ok(
+      !content.includes('## Automatic Behavior'),
+      'should not contain Automatic Behavior section'
+    );
+    assert.ok(
+      !content.includes('Auto-run /resume logic'),
+      'should not describe auto-running resume on first message'
+    );
+  });
+
+  it('contains D-06 note pointing to SessionStart hook', () => {
+    assert.ok(
+      content.includes('Context is loaded at SessionStart'),
+      'should contain D-06 note line'
+    );
+    assert.ok(
+      content.includes('session-start-context.sh'),
+      'should reference the hook by filename'
+    );
+  });
+
+  it('retains /end + /handoff + ADR sections (D-05)', () => {
+    assert.ok(content.includes('### /end'), '/end command retained');
+    assert.ok(content.includes('### /handoff'), '/handoff command retained');
+    assert.ok(content.includes('## ADR Creation'), 'ADR section retained');
+  });
+});
