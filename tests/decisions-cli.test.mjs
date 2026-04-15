@@ -255,10 +255,12 @@ describe('main — CLI', () => {
 
   it('list prints a table with header + rows', async () => {
     const { out } = await captureStdout(() => main(['list', '--project', 'test-project']));
-    assert.ok(/\bid\b/i.test(out));
-    assert.ok(/\bdate\b/i.test(out));
-    assert.ok(/\bstatus\b/i.test(out));
-    assert.ok(/logging-strategy|cache-layer/.test(out));
+    // Strip ANSI escapes before matching header keywords
+    const plain = out.replace(/\x1b\[[0-9;]*m/g, '');
+    assert.ok(/id/i.test(plain));
+    assert.ok(/date/i.test(plain));
+    assert.ok(/status/i.test(plain));
+    assert.ok(/logging-strategy|cache-layer/.test(plain));
   });
 
   it('show prints full content', async () => {
