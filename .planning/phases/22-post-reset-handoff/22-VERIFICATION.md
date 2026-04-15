@@ -1,0 +1,35 @@
+---
+status: passed
+phase: 22-post-reset-handoff
+verified: 2026-04-15
+verification_type: shipped-release-backfill
+evidence: "PR #37 merged (b12d89e), v0.12.0 on npm, 912 tests green on Node 18/20/22"
+requirements_verified:
+  - LIMIT-04
+---
+
+# Phase 22 — Verification Report (Backfill)
+
+## Status: PASSED
+
+Phase shipped in v0.12.0 release. Code complete and merged via PR #37 (commit `b12d89e`).
+Full test suite green (912 tests on Node 18/20/22). Full UAT evidence in PR #37 body
+(see GitHub). Phase SUMMARY.md has implementation details.
+
+This VERIFICATION.md is a **release-backfill stub** created 2026-04-15 to close the GSD
+bookkeeping gap identified during v0.12 milestone audit. It is NOT a full inline
+verification report — see `22-*-SUMMARY.md` for per-plan completion evidence and the
+PR #37 description for end-to-end UAT evidence.
+
+## Requirements Covered
+
+- **LIMIT-04**: Post-reset handoff reads STATE.md `stopped_at` and resumes execution from last position; works with fresh git clone.
+
+All listed requirements are marked `complete` in `.planning/REQUIREMENTS.md` Traceability
+table as of 2026-04-15.
+
+## Out of Scope for This Stub
+
+- Full per-SC evidence rows — see phase SUMMARY.md files and PR #37 description.
+- Manual smoke test transcripts — captured inline in the PR review.
+- Test delta audit — consolidated at the milestone level (558 → 912).

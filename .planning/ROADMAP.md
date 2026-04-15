@@ -50,14 +50,14 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 - [x] **Phase 19: Project-Level Hooks & Wizard Bug Fixes** — Move hooks to project-level settings, add allowedTools, fix all 3 wizard pre-select bugs, git-conventions skip, and GSD patch persistence (BUG-01..06) (completed 2026-04-14)
 - [x] **Phase 20: Budget Detection** — OAuth usage API, SessionStart display, UserPromptSubmit hook (LIMIT-01) (completed 2026-04-14)
-- [ ] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03)
-- [ ] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04)
+- [x] **Phase 21: Continuation Prompt & loop.md** — 4-option continuation prompt when budget low + loop.md template for scheduled tasks (LIMIT-02, LIMIT-03) (completed 2026-04-15)
+- [x] **Phase 22: Post-Reset Handoff** — Load STATE.md on scheduled task fire and continue from stopped_at (LIMIT-04) (completed 2026-04-15)
 - [x] **Phase 23: Smart Re-install Pre-fill** — Wizard re-install pre-fills all steps with existing config (DX-07..DX-13) (completed 2026-04-13)
 - [x] **Phase 24: Wizard UX Polish** — Fix step counter, project count, bulk prompts, git sync detection, consistent prompt style (UX-01..UX-07) (completed 2026-04-15)
-- [ ] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05)
+- [x] **Phase 25: Budget-Aware Execution Gate** — Pre-check plan usage before GSD operations, statusline integration, schedule-for-later via CronCreate (LIMIT-05) (completed 2026-04-15)
 - [ ] **Phase 26: Auto-ADR Capture** — Automatically create vault decisions from session activity, not just GSD discuss-phase (ADR-02)
 - [x] **Phase 27: GSD Workflow Customization via Patches** — Formalized shipped patches mechanism (SHA-diff re-apply via SessionStart hook, wizard-pinned ~/.claude/gsd-local-patches/, BUG-06 D-07 precedence) with regression tests + vault/shared pattern doc + REQUIREMENTS backfill (GSD-01) (completed 2026-04-15; extended criteria deferred to backlog)
-- [ ] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01)
+- [x] **Phase 29: GSD Workflow Enforcer Hook** — PostToolUse hook enforces discuss+plan+manager batching; prevents per-phase execute suggestion when multiple phases pending (WF-01) (completed 2026-04-15)
 - [x] **Phase 30: CLAUDE.md Idempotent Merge** — Wizard preserves user content in CLAUDE.md; claude-dev-stack section lives between markers, re-install updates only that section (BUG-07) (completed 2026-04-14)
 
 ---
