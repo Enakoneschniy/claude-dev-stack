@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v0.12
 milestone_name: Hooks & Limits
 status: executing
-stopped_at: Phase 23 context gathered
-last_updated: "2026-04-13T20:55:13.197Z"
-last_activity: 2026-04-13
+stopped_at: Phase 31 Plans 01/02/03/04 code complete — Skills→Hooks migration (SKL-01..04); 785/785 tests green; ready for merge via PR
+last_updated: "2026-04-15T18:00:00.000Z"
+last_activity: 2026-04-15
 progress:
-  total_phases: 6
-  completed_phases: 0
-  total_plans: 2
-  completed_plans: 0
-  percent: 0
+  total_phases: 14
+  completed_phases: 9
+  total_plans: 31
+  completed_plans: 22
+  percent: 71
 ---
 
 # Project State: claude-dev-stack
