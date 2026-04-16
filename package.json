@@ -42,6 +42,12 @@
     "provenance": true,
     "access": "public"
   },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  },
   "files": [
     "bin/",
     "lib/",
