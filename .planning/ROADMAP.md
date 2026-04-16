@@ -151,7 +151,7 @@
 |-------|----------------|--------|-----------|
 | 33. Monorepo Foundation | 0/? | Not started | — |
 | 34. SDK Integration & Core Primitives | 0/? | Not started | — |
-| 35. Tiered Vault — Tier 2 SQLite | 0/? | Not started | — |
+| 35. Tiered Vault — Tier 2 SQLite | 4/4 | Complete   | 2026-04-16 |
 | 36. Auto Session Capture | 0/? | Not started | — |
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
