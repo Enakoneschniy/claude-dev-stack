@@ -49,23 +49,26 @@ function makeTmpDir(label) {
 
 describe('detectInstallState() — no vault', () => {
   it('returns vaultExists: false when no candidate paths exist', () => {
-    // detectInstallState searches known candidates; in a test env those likely exist
-    // so we cannot control VAULT_CANDIDATES. Instead verify the return shape is correct.
-    const state = detectInstallState();
+    // Use subprocess helper with fake HOME so VAULT_CANDIDATES (module-level,
+    // computed from homedir() at import time) resolves under a dir with no vault.
+    const fakeHome = makeTmpDir('no-vault');
+    const state = runDetect(fakeHome);
     assert.ok(typeof state === 'object', 'must return an object');
-    assert.ok('vaultExists' in state, 'must have vaultExists');
-    assert.ok('vaultPath' in state, 'must have vaultPath');
-    assert.ok('hooksInstalled' in state, 'must have hooksInstalled');
+    assert.strictEqual(state.vaultExists, false, 'vaultExists must be false in empty HOME');
+    assert.strictEqual(state.vaultPath, null, 'vaultPath must be null when no vault');
+    assert.strictEqual(state.hooksInstalled, false, 'hooksInstalled must be false in empty HOME');
     assert.ok('gitRemote' in state, 'must have gitRemote (null or string)');
     assert.ok(Array.isArray(state.projects), 'projects must be an array');
-    assert.strictEqual(state.profile, null, 'profile must always be null (v1 deferred)');
+    assert.strictEqual(state.profile, null, 'profile must be null when no vault');
+    rmSync(fakeHome, { recursive: true, force: true });
   });
 
   it('vaultPath is null when vaultExists is false', () => {
-    const state = detectInstallState();
-    if (!state.vaultExists) {
-      assert.strictEqual(state.vaultPath, null, 'vaultPath must be null when vaultExists is false');
-    }
+    const fakeHome = makeTmpDir('no-vault-path');
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.vaultExists, false);
+    assert.strictEqual(state.vaultPath, null, 'vaultPath must be null when vaultExists is false');
+    rmSync(fakeHome, { recursive: true, force: true });
   });
 });
 
@@ -109,8 +112,14 @@ describe('detectInstallState() — vault present (temp dir simulation)', () => {
   });
 
   it('profile is always null (v1 — CONTEXT.md deferred)', () => {
-    const state = detectInstallState();
-    assert.strictEqual(state.profile, null, 'profile must be null in v1');
+    // Use subprocess with fake HOME — VAULT_CANDIDATES is module-level,
+    // so in-process detectInstallState() inherits the real vault's profile.json.
+    const fakeHome = makeTmpDir('profile-null');
+    mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
+    mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
+    const state = runDetect(fakeHome);
+    assert.strictEqual(state.profile, null, 'profile must be null in v1 (no profile.json)');
+    rmSync(fakeHome, { recursive: true, force: true });
   });
 });
 
@@ -120,13 +129,16 @@ describe('detectInstallState() — does not throw on missing resources', () => {
   });
 
   it('returns consistent shape on repeated calls', () => {
-    const a = detectInstallState();
-    const b = detectInstallState();
+    // Use subprocess with fake HOME for deterministic profile=null assertion.
+    const fakeHome = makeTmpDir('consistent-shape');
+    const a = runDetect(fakeHome);
+    const b = runDetect(fakeHome);
     assert.strictEqual(typeof a.vaultExists, typeof b.vaultExists);
     assert.strictEqual(a.vaultPath, b.vaultPath);
     assert.strictEqual(a.hooksInstalled, b.hooksInstalled);
     assert.strictEqual(a.profile, null);
     assert.strictEqual(b.profile, null);
+    rmSync(fakeHome, { recursive: true, force: true });
   });
 });
 
