@@ -1,10 +1,12 @@
 ---
 name: session-manager
 description: >
-  Fallback for manual session logging when auto-capture is disabled or fails. Also
-  handles explicit handoff requests ("resume", "handoff", "what did we do",
-  "передай контекст"). Auto-capture via hooks/session-end-capture.mjs is the
-  primary Stop-time path — this skill is a safety net for opt-outs and failures.
+  Fallback for manual session logging when auto-capture is disabled or fails, plus
+  explicit resume/handoff/status requests. Auto-capture via
+  hooks/session-end-capture.mjs is the primary Stop-time path — this skill is a
+  safety net. Triggers on end-of-session signals ("done", "end", "всё", "хватит",
+  "finish", "конец") and resume-intent requests ("resume", "продолжи",
+  "что делали", "handoff", "what did we do").
 ---
 
 # Session Manager Skill

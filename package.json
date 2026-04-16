@@ -23,6 +23,7 @@
     "pretest": "node scripts/check-no-shell-interpolation.mjs hooks/session-end-capture.mjs",
     "test": "vitest run",
     "test:structural": "node scripts/check-no-shell-interpolation.mjs hooks/session-end-capture.mjs",
+    "test:live": "INTEGRATION=1 vitest run tests/hooks/session-end-capture.live.test.mjs",
     "build": "tsc --build"
   },
   "bin": {
