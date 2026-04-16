@@ -78,4 +78,5 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
+      - run: pnpm tsc --build  # Phase 36+: root tests import @cds/core, need dist built
       - run: pnpm -w vitest run --project root

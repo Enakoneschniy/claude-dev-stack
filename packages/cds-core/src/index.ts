@@ -25,7 +25,7 @@
 
 // Primitive: dispatchAgent
 export { dispatchAgent } from './agent-dispatcher.js';
-export type { DispatchOptions, DispatchResult } from './agent-dispatcher.js';
+export type { DispatchOptions, DispatchResult, ToolUseBlock } from './agent-dispatcher.js';
 
 // Primitive: Context
 export { Context, contextFilePath } from './context.js';
@@ -53,3 +53,9 @@ export type { SdkMcpToolDefinition as Tool } from '@anthropic-ai/claude-agent-sd
 // Version constant — useful for diagnostic output (replaces Phase 33 stub).
 export const CDS_CORE_VERSION = '0.1.0-phase34';
 export * from "./vault/index.js";
+
+// Phase 36: auto session capture primitives. Namespace re-export lets callers
+// import either via `import { capture } from '@cds/core'` or directly via
+// `import { loadTranscript } from '@cds/core/capture'` (the latter backed by
+// the `./capture` subpath in package.json `exports`).
+export * as capture from './capture/index.js';

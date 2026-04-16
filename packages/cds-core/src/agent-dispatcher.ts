@@ -40,6 +40,20 @@ export interface DispatchOptions {
   session_id?: string;
 }
 
+/**
+ * A tool_use block extracted from an assistant message. Populated when the
+ * caller passes `tools` and the model chooses to invoke one of them.
+ *
+ * Phase 36 depends on this for structured observation extraction — the Stop
+ * hook reads `result.toolUses[0].input` after calling `dispatchAgent` with
+ * `tools: [emitObservationsTool]`.
+ */
+export interface ToolUseBlock {
+  id: string;
+  name: string;
+  input: unknown;
+}
+
 export interface DispatchResult {
   /** Concatenated assistant text output across all assistant messages. */
   output: string;
@@ -47,6 +61,11 @@ export interface DispatchResult {
   tokens: { input: number; output: number };
   /** Cost in USD from SDK's total_cost_usd field. */
   cost_usd: number;
+  /**
+   * Tool-use blocks emitted by the assistant (in emit order). Empty array
+   * when the caller passed no tools or the model emitted no tool calls.
+   */
+  toolUses: ToolUseBlock[];
 }
 
 /**
@@ -103,6 +122,7 @@ export async function dispatchAgent(opts: DispatchOptions): Promise<DispatchResu
   });
 
   const textParts: string[] = [];
+  const toolUses: ToolUseBlock[] = [];
   let tokens = { input: 0, output: 0 };
   let cost_usd = 0;
 
@@ -112,9 +132,21 @@ export async function dispatchAgent(opts: DispatchOptions): Promise<DispatchResu
       const content = (msg as { message?: { content?: unknown[] } }).message?.content;
       if (Array.isArray(content)) {
         for (const block of content) {
-          const b = block as { type?: string; text?: string };
+          const b = block as {
+            type?: string;
+            text?: string;
+            id?: string;
+            name?: string;
+            input?: unknown;
+          };
           if (b.type === 'text' && typeof b.text === 'string') {
             textParts.push(b.text);
+          } else if (
+            b.type === 'tool_use' &&
+            typeof b.id === 'string' &&
+            typeof b.name === 'string'
+          ) {
+            toolUses.push({ id: b.id, name: b.name, input: b.input });
           }
         }
       }
@@ -143,5 +175,5 @@ export async function dispatchAgent(opts: DispatchOptions): Promise<DispatchResu
     // terminal result event.
   }
 
-  return { output: textParts.join(''), tokens, cost_usd };
+  return { output: textParts.join(''), tokens, cost_usd, toolUses };
 }

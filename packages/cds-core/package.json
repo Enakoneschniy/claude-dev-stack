@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./capture": {
+      "import": "./dist/capture/index.js",
+      "types": "./dist/capture/index.d.ts"
     }
   },
   "files": [
@@ -23,6 +27,7 @@
     "better-sqlite3": "^12.9.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13"
+    "@types/better-sqlite3": "^7.6.13",
+    "ajv": "^8.18.0"
   }
 }

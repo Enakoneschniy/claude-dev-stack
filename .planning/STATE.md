@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: CDS-Core Independence (Phase A)
-status: executing
-stopped_at: Phase 35 context gathered (Phase 33 executing, Phase 34 planning)
-last_updated: "2026-04-16T17:02:39.029Z"
-last_activity: 2026-04-16
+status: Phase 36 planned — 4 plans ready to execute (awaits Phase 34 + 35 execution).
+stopped_at: Phase 36 planning complete (Phase 33 done, Phase 34 planned, Phase 35 planned)
+last_updated: "2026-04-16T14:10:00.000Z"
+last_activity: 2026-04-16 — Phase 36 planning complete: 4 PLAN.md files covering CAPTURE-05 + CAPTURE-06, plus RESEARCH.md + VALIDATION.md. Closes v0.12 ADR-02 Known Gap retroactively (auto-capture replaces `claude -p --bare`).
 progress:
   total_phases: 7
-  completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  completed_phases: 1
+  total_plans: 9
+  completed_plans: 4
+  percent: 44
 ---
 
 # Project State: claude-dev-stack
@@ -33,10 +33,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16 after v0.12)
 
 ## Current Position
 
-Phase: 36
-Plan: Not started
-Status: Executing Phase 35
-Last activity: 2026-04-16 -- Phase 35 execution started
+Phase: **33 — Monorepo Foundation** (Not started)
+Plan: —
+Status: Ready to execute
+Last activity: 2026-04-16 -- Phase 36 planning complete
 
 ### Active Milestone Phases (v1.0 Phase A)
 
@@ -91,6 +91,6 @@ Last activity: 2026-04-16 -- Phase 35 execution started
 
 ## Session Continuity
 
-Last session: 2026-04-16T13:12:02.491Z
-Stopped at: Phase 35 context gathered (Phase 33 executing, Phase 34 planning)
-Resume file: .planning/phases/35-tiered-vault-tier-2-sqlite/35-CONTEXT.md
+Last session: 2026-04-16T13:37:27.825Z
+Stopped at: Phase 36 context gathered (Phase 33 done, Phase 34 planned, Phase 35 planning)
+Resume file: .planning/phases/36-auto-session-capture/36-CONTEXT.md

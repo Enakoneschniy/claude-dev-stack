@@ -1,12 +1,12 @@
 ---
 name: session-manager
 description: >
-  Log development sessions at end and generate handoffs. Triggers on end-of-session
-  signals ("всё", "хватит", "заканчиваем", "done", "end", "конец", "на сегодня всё", "finish")
-  and explicit resume/handoff/status requests ("что делали", "resume", "продолжи",
-  "handoff", "передай контекст", "what did we do", "где остановились"). Does NOT
-  auto-activate on greetings or first-message — project context is loaded silently
-  at SessionStart by hooks/session-start-context.sh.
+  Fallback for manual session logging when auto-capture is disabled or fails, plus
+  explicit resume/handoff/status requests. Auto-capture via
+  hooks/session-end-capture.mjs is the primary Stop-time path — this skill is a
+  safety net. Triggers on end-of-session signals ("done", "end", "всё", "хватит",
+  "finish", "конец") and resume-intent requests ("resume", "продолжи",
+  "что делали", "handoff", "what did we do").
 ---
 
 # Session Manager Skill
