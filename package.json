@@ -18,8 +18,10 @@
     "type": "git",
     "url": "https://github.com/Enakoneschniy/claude-dev-stack"
   },
+  "packageManager": "pnpm@10.6.3",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "vitest run",
+    "build": "tsc --build"
   },
   "bin": {
     "claude-dev-stack": "./bin/cli.mjs"
@@ -30,6 +32,11 @@
   },
   "dependencies": {
     "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "vitest": "4.1.4",
+    "typescript": "6.0.2",
+    "@types/node": "25.6.0"
   },
   "publishConfig": {
     "provenance": true,
