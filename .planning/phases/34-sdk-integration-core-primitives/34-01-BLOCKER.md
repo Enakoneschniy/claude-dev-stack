@@ -72,3 +72,30 @@ packages/cds-core/src/errors.ts          not yet created
 .planning/phases/34-sdk-integration-core-primitives/34-01-SUMMARY.md  not yet created
 .planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md  this file (new)
 ```
+
+---
+
+## Resolution (2026-04-16)
+
+**User decision: Option 1 — Explicit LGPL allowlist with NOTICES documentation.**
+
+### Policy applied
+
+The license audit (Plan 01 Task 3 step 4) now allowlists LGPL-3.0-or-later *only* for packages matching `@img/sharp-libvips-*`. This pattern-based exception recognizes the libvips dynamic-linking convention while keeping the forbidden list active for any other LGPL/GPL/AGPL/SSPL runtime dep. Documented transparently in `NOTICES.md` under "LGPL-3.0-or-later (dynamic-linked native bindings — allowlisted)".
+
+### Audit re-run confirmation
+
+```
+License summary: Apache-2.0 (1), BSD-2-Clause (1), BSD-3-Clause (2), ISC (7),
+  LGPL-3.0-or-later (1 — allowlisted), MIT (88), Unknown (1 — SDK per Commercial ToS).
+```
+
+Only `@img/sharp-libvips-darwin-arm64@1.2.4` flagged LGPL. Allowlisted per the policy above.
+
+### Execution resumed
+
+- Plan 01 Tasks 4-6 completed inline during resume.
+- REQUIREMENTS.md SDK-01 amended with two correction sub-bullets (SDK Commercial ToS + LGPL allowlist).
+- NOTICES.md transitive section populated from live `pnpm licenses list` output.
+- `packages/cds-core/src/errors.ts` scaffold created (DispatchError base + LicenseKeyError).
+- Plans 02, 03, 04 resumed in separate executor run.

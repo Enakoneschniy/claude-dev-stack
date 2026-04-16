@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: CDS-Core Independence (Phase A)
-status: blocked
-stopped_at: Phase 34 Plan 01 Task 3 — LGPL transitive via sharp platform binding
-last_updated: "2026-04-16T17:00:00.000Z"
+status: in-progress
+stopped_at: Phase 34 Plan 01 resumed after LGPL allowlist decision (option 1)
+last_updated: "2026-04-16T17:30:00.000Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 7
@@ -12,12 +12,6 @@ progress:
   total_plans: 8
   completed_plans: 4
   percent: 50
-blockers:
-  - id: 34-01-lgpl-sharp
-    phase: 34
-    plan: 34-01
-    file: .planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md
-    summary: "@img/sharp-libvips-darwin-arm64 (LGPL-3.0-or-later) pulled via SDK optionalDependencies; plan audit hard-blocks LGPL but Pitfall 6 only names GPL/AGPL/SSPL. Needs user decision on allowlist vs replan."
 ---
 
 # Project State: claude-dev-stack
