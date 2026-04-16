@@ -212,6 +212,32 @@ Archive: `.planning/milestones/v0.12-ROADMAP.md`
 
 ---
 
+## Backlog
+
+Unsequenced items captured from session work — promote to active milestone via `/gsd-review-backlog`.
+
+### Phase 999.2: CC 2.1.x Subagent Permission Hardening (BACKLOG)
+
+**Goal:** Eliminate the silent Bash-permission failure that breaks `gsd-executor` spawns under Claude Code 2.1.x.
+
+**Source:** 2026-04-16 Phase 39 Wave 2 — both Plan 02 + Plan 03 executors blocked despite using dedicated `gsd-executor` subagent_type. Confirmed `mode=bypassPermissions` on `Task()` does NOT escalate above parent's permission mode (security model).
+
+**Symptoms:**
+- Subagent spawned in worktree returns within seconds with "Bash denied" message
+- Worktree branch_check block requires Bash, so even base verification fails silently
+- After worktree merge, deps installed inside the worktree's `node_modules` are gone — root must `pnpm install` again
+
+**Sub-items (5):**
+1. **GSD workflow auto-pass `mode=bypassPermissions`** to all `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md` (necessary even if not sufficient — sets the right intent).
+2. **Auto-populate `.claude/settings.local.json` allowlist** for executor operations: `Bash(pnpm:*)`, `Bash(npx:*)`, `Bash(node:*)`, `Bash(git merge-base:*)`, `Bash(git reset:*)`, `Bash(git status:*)`, `Bash(tsc:*)`, `Bash(vitest:*)`. Could be a `claude-dev-stack doctor --gsd-permissions` command.
+3. **Worktree base check Read-fallback**: if Bash denied, executor reads `.git/HEAD` + `.git/refs/heads/<branch>` directly to verify base — no shell required.
+4. **Post-worktree-merge `pnpm install` step** in `execute-phase.md` (after `git worktree remove`) to recover deps installed inside the worktree's isolated `node_modules`.
+5. **Wizard / setup detection**: detect CC 2.x at install time, configure GSD-required permission allowlist, document the model change in `docs/migration-v0-to-v1-alpha.md`.
+
+**Plans:** 0 plans (TBD — promote with `/gsd-review-backlog` when ready)
+
+---
+
 ## Cumulative Progress
 
 | Phases | Milestone | Status | Completed |
