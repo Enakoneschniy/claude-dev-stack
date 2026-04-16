@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: CDS-Core Independence (Phase A)
-status: in-progress
-stopped_at: Phase 34 Plan 01 resumed after LGPL allowlist decision (option 1)
-last_updated: "2026-04-16T17:30:00.000Z"
-last_activity: 2026-04-16
+status: Roadmap approved. Awaiting `/gsd-plan-phase 33` to decompose MONO-01..04 into executable plans.
+stopped_at: Phase 35 context gathered (Phase 33 executing, Phase 34 planning)
+last_updated: "2026-04-16T13:12:02.496Z"
+last_activity: 2026-04-16 — Roadmap derived from REQUIREMENTS.md + SEED-004 + cds-core-independence-plan.md (D-28 Phase A scope). Ready for `/gsd-plan-phase 33`.
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 8
-  completed_plans: 4
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 2
   percent: 50
 ---
 
@@ -95,6 +95,6 @@ See `.planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md` for f
 
 ## Session Continuity
 
-Last session: 2026-04-16T13:01:32.627Z
-Stopped at: Phase 34 context gathered (Phase 33 executing in background)
-Resume file: .planning/phases/34-sdk-integration-core-primitives/34-CONTEXT.md
+Last session: 2026-04-16T13:12:02.491Z
+Stopped at: Phase 35 context gathered (Phase 33 executing, Phase 34 planning)
+Resume file: .planning/phases/35-tiered-vault-tier-2-sqlite/35-CONTEXT.md
