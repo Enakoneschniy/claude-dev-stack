@@ -137,31 +137,51 @@
   4. The GitHub release for `v1.0.0-alpha.1` links the migration guide and calls out alpha-status caveats (auto-capture is the only canonical session writer; manual `/end` is fallback only).
 **Plans**: 5 (complete 2026-04-16)
 
-### Phase 40: v1.0 Alpha Polish & Blockers
-**Goal**: Bring v1.0.0-alpha.1 release-ready by closing CI blockers, hardening the subagent permission model that broke during Phase 39 execution, and gating the release behind formal verification + code review. After this phase, alpha is one PR + one GitHub release away from `@alpha` on npm.
+### Phase 40: v1.0 Alpha Implementation Polish
+**Goal**: Close all implementation blockers for v1.0.0-alpha.1 release. After this phase, the codebase is ready for the formal UAT cycle in Phase 41.
 **Depends on**: Phase 39 (demo + release plumbing)
 **Requirements**: derived from Phase 39 follow-ups + 999.2 promotion + carried v0.12 known gap
-**Scope**:
+**Scope** (implementation only; testing/UAT lives in Phase 41):
   1. **CI blocker** — fix 3 pre-existing `tests/detect.test.mjs` failures (carried since v0.12; new `publish.yml` runs `pnpm test` and they now block release).
   2. **CC 2.1.x subagent permission hardening** (promoted from backlog 999.2):
-     - Auto-pass `mode=bypassPermissions` to `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md`
+     - Auto-pass `mode=bypassPermissions` to `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md` (ships as a GSD workflow patch under `patches/` per Phase 27 patch infrastructure)
      - `claude-dev-stack doctor --gsd-permissions` populates `.claude/settings.local.json` allowlist (pnpm:*, npx:*, node:*, git merge-base:*, git reset:*, git status:*, tsc:*, vitest:*)
      - Worktree base check Read-fallback (read `.git/HEAD` directly when Bash denied)
      - Post-worktree-merge `pnpm install` step in `execute-phase.md`
-     - Wizard CC 2.x detection + automatic permission allowlist setup
-  3. **Verification gates** for Phase 39:
-     - `/gsd-verify-work` UAT pass for Phase 39
+     - Wizard CC 2.x detection + automatic permission allowlist setup at install time
+  3. **Code review gate** for Phase 39:
      - `/gsd-code-review` for Phase 39 new code (`packages/cds-cli/src/quick.ts`, `packages/cds-cli/src/capture-standalone.ts`, `lib/install/hooks.mjs::registerCaptureHook`, `bin/install.mjs` Node check wiring)
+     - Apply remediation for any high-severity findings via `/gsd-code-review-fix`
   4. **Documentation polish**:
-     - README update: v1.0 install instructions + cross-link to `docs/migration-v0-to-v1-alpha.md`
-     - Manual end-to-end smoke wizard on a clean test project (install + project setup + Stop hook installed + migrate sessions dry-run)
+     - README update: v1.0 install instructions + cross-link to `docs/migration-v0-to-v1-alpha.md` + CHANGELOG link
   5. **Phase 35 follow-up**: `db.pragma('busy_timeout = 5000')` in `openRawDb` (helps avoid SQLITE_BUSY under concurrent CLAUDE_SESSION_ID writes; non-blocking but ships before alpha for sturdiness).
 **Success Criteria** (what must be TRUE):
   1. `pnpm test` is fully green at HEAD — no failing tests on macOS/Linux Node 20+.
-  2. A fresh `claude-dev-stack` install on a clean macOS or Linux machine completes the wizard end-to-end without any silent permission failures (executors run, hooks register, MCP server appears in `mcp.servers.cds`).
-  3. `/gsd-verify-work` for Phase 39 returns PASS; `/gsd-code-review` produces a clean REVIEW.md (no severity-blocking findings).
-  4. README front-matter mentions v1.0.0-alpha.1 install instructions and links the migration guide.
+  2. `~/.claude/get-shit-done/workflows/execute-phase.md` (post-patch) and `claude-dev-stack doctor --gsd-permissions` together let a fresh user run `/gsd-execute-phase` without any silent Bash denial.
+  3. `/gsd-code-review` produces a clean REVIEW.md (no severity-blocking findings) for Phase 39 code.
+  4. README front-matter mentions v1.0.0-alpha.1 install instructions and links the migration guide + CHANGELOG.
   5. `openRawDb` sets `busy_timeout = 5000` and a regression test confirms the pragma persists across reopens.
+**Plans**: TBD
+
+### Phase 41: v1.0 Alpha UAT & Sandbox
+**Goal**: Validate the v1.0.0-alpha.1 build end-to-end in a sandboxed environment so the release does NOT touch the maintainer's working Claude Code setup. This phase produces the Docker-based UAT harness, runs `/gsd-verify-work` for Phase 39 + Phase 40, and gates the release behind a green sandbox smoke.
+**Depends on**: Phase 40 (implementation polish complete)
+**Requirements**: RELEASE-01 testing tail
+**Scope**:
+  1. **Sandbox design** — Docker UAT harness:
+     - `docker/uat/Dockerfile` — Node 20 + git + minimal toolchain
+     - `docker/uat/run-smoke.sh` — installs `claude-dev-stack-1.0.0-alpha.1.tgz` inside container, runs wizard, asserts `.claude/settings.json` shape, runs every `bin/cli.mjs` subcommand, runs `migrate sessions --dry-run` against a synthetic vault, asserts MCP server entries
+     - `pnpm uat` script wired to invoke the Docker harness
+  2. **CLAUDE_CONFIG_DIR override** — verify whether Claude Code respects an env override for global config dir; if not, document workaround for safe smoke on host machine
+  3. **Verification gates**:
+     - `/gsd-verify-work` for Phase 39 (UAT)
+     - `/gsd-verify-work` for Phase 40 (UAT)
+  4. **Manual smoke procedure** — `docs/uat.md`: run Docker UAT first; only after green, optional manual smoke on host in `/tmp/cds-test-project-{uuid}/` with `CLAUDE_CONFIG_DIR=/tmp/cds-test-claude` to keep blast radius zero
+**Success Criteria**:
+  1. `pnpm uat` exits 0 on a clean machine — wizard completes, hooks registered, MCP server present, all CLI subcommands invokable, no warnings in container logs.
+  2. `/gsd-verify-work` returns PASS for both Phase 39 and Phase 40.
+  3. `docs/uat.md` documents the procedure such that a maintainer can repeat the UAT without referring to source.
+  4. Maintainer's own `~/.claude/` and `~/vault/` are provably untouched by the UAT (audit via shasum diff before/after).
 **Plans**: TBD
 
 ### Risks & Critical Flags
@@ -183,7 +203,8 @@
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
 | 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
-| 40. v1.0 Alpha Polish & Blockers | 0/? | Not started | — |
+| 40. v1.0 Alpha Implementation Polish | 0/? | Not started | — |
+| 41. v1.0 Alpha UAT & Sandbox | 0/? | Not started | — |
 
 ---
 
