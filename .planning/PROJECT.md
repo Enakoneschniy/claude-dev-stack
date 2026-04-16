@@ -12,19 +12,32 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v0.12 — Hooks & Limits
+## Current Milestone: v1.0 — CDS-Core Independence (Planning)
 
-**Goal:** Fix global hooks architecture (move to project-level), fix wizard UAT bugs, and integrate Claude Code's scheduling primitives for limit-aware execution.
+**Goal:** Carve `@cds/core`, `@cds/cli`, `@cds/migrate`, `@cds/s3-backend` into a pnpm monorepo; port memory primitives to Claude Agent SDK; ship `claude-dev-stack@1.0.0-alpha.1` via `--tag alpha`.
 
-**Target features:**
-- **Project-level hooks** — move session hooks from global `~/.claude/settings.json` to project `.claude/settings.json`
-- **Project-level allowedTools** — auto-approve vault reads/writes + safe bash commands per project
-- **Wizard pre-select bugs** — collectProjects and selectComponents should pre-select existing state
-- **git-conventions skip existing** — don't re-init projects with existing `git-scopes.json`
-- **Budget detection hook** — monitor session limits, warn at configurable threshold
-- **4-option continuation prompt** — remind/local-schedule/cloud-schedule/continue-now when budget low
-- **`loop.md` template** — GSD-aware maintenance loop for scheduled tasks
-- **Post-reset handoff** — load STATE.md and continue from `stopped_at` after scheduled resume
+**Phase A scope (from `docs/cds-core-independence-plan.md` + SEED-004):**
+- pnpm workspaces monorepo scaffolding with TS project references + vitest + CI
+- Pi SDK hello-world — first Claude Agent SDK dispatch
+- Core primitives: agent-dispatcher, context, cost-tracker
+- Tiered vault (hot/warm/cold) + auto session capture with Haiku entity extraction
+- `/cds-quick` end-to-end demo
+- Docs + alpha release via `npm publish --tag alpha`
+
+**Open questions for Phase A kickoff:**
+- `@anthropic-ai/claude-agent-sdk` license verification (Apache-2.0 / MIT — confirm)
+- SQLite driver choice: `better-sqlite3` vs `bun:sqlite`
+- Backfill strategy: migrate existing 30+ markdown sessions into SQLite via Haiku entity extraction
+
+<details>
+<summary>v0.12 — Hooks & Limits — SHIPPED ✅ (2026-04-16)</summary>
+
+13 phases (19–32), 32 plans, 912 tests (+354 from v0.11 baseline 558). Published as `claude-dev-stack@0.12.0` (PR #37) + hotfix `@0.12.1` (PR #41). Archive: [`.planning/milestones/v0.12-ROADMAP.md`](milestones/v0.12-ROADMAP.md).
+
+What shipped: project-level hooks + allowedTools (Phase 19), OAuth budget detection + statusline (Phases 20+25), 4-option continuation prompt + `loop.md` + post-reset handoff (Phases 21+22), smart re-install wizard with pre-fill + bulk prompts (Phases 23+24), auto-ADR capture code (Phase 26, UAT deferred), GSD workflow patches + enforcer hook (Phases 27+29), CLAUDE.md idempotent merge (Phase 30), Skills→Hooks migration (Phase 31), idea-capture UserPromptSubmit hook v0.12.1 (Phase 32).
+
+Known Gaps carried to v0.13: ADR-02 + SSR-01 live UAT, Phase 21/25 SUMMARY.md backfill, pre-existing `detect.test.mjs` failures.
+</details>
 
 <details>
 <summary>v0.11 — DX Polish & Ecosystem — SHIPPED ✅ (2026-04-13)</summary>
@@ -75,38 +88,40 @@ What shipped: NotebookLM Query API (ask + generate), session-end sync automation
 - ✓ Bugfixes: ADR path resolution, sync stats undefined, 5 Phase 6 code review warnings — v0.10
 - ✓ ADR bridge — auto-populate vault/decisions from CONTEXT.md decisions during GSD transitions — v0.10
 - ✓ Parallel phase execution via TeamCreate with cost estimate + consent — v0.10
+- ✓ Project-level hooks architecture — session hooks + `allowedTools` in `.claude/settings.json` — v0.12 (BUG-01..06)
+- ✓ OAuth budget detection — `api.anthropic.com/api/oauth/usage` + SessionStart display + statusline footer — v0.12 (LIMIT-01, LIMIT-05)
+- ✓ 4-option continuation prompt + `loop.md` + post-reset handoff — v0.12 (LIMIT-02..04)
+- ✓ Smart re-install wizard pre-fill + bulk prompts — v0.12 (DX-07..13, UX-01..07)
+- ✓ GSD workflow patches (SHA-diff re-apply) + enforcer hook — v0.12 (GSD-01, WF-01)
+- ✓ CLAUDE.md idempotent merge via markers — v0.12 (BUG-07)
+- ✓ Skills→Hooks migration (dev-router, project-switcher, session-manager start, git-conventions) — v0.12 (SKL-01..04)
+- ✓ Idea-capture UserPromptSubmit hook (RU + EN triggers) — v0.12.1 (CAPTURE-01..04)
 
 ### Current State
 
-**Last shipped:** v0.10 Query, Sync Automation & Quality (2026-04-13) — SHIPPED ✅
+**Last shipped:** v0.12 Hooks & Limits (2026-04-16) — SHIPPED ✅
 
-v0.10: 4 phases (10–13), 9 plans, 10/10 requirements, 483 tests (+77 from v0.9 baseline 406). Code review fixes applied for both Phase 12 and 13. Milestone archive: [`.planning/milestones/v0.10-ROADMAP.md`](milestones/v0.10-ROADMAP.md).
+v0.12: 13 phases (19–32), 32 plans, 912 tests (+354 from v0.11 baseline 558). Published as `claude-dev-stack@0.12.0` (PR #37, commit `b12d89e`) + hotfix `@0.12.1` (PR #41, commit `9d34682`). Milestone archive: [`.planning/milestones/v0.12-ROADMAP.md`](milestones/v0.12-ROADMAP.md).
 
-Previous: v0.8.1 NotebookLM Auto-Sync hotfix (2026-04-11). Archive: [`.planning/milestones/v0.8-ROADMAP.md`](milestones/v0.8-ROADMAP.md).
-
-**What shipped in v0.8 / v0.8.1:**
-- `lib/notebooklm.mjs` — 7-function CLI wrapper over `notebooklm-py` (ADR-0001 pivot), with cp-to-tmp `uploadSource` title workaround (v0.8.1)
-- `lib/notebooklm-sync.mjs` — `syncVault(opts)` walks vault → uploads с `{project}__` naming
-- `lib/notebooklm-manifest.mjs` — SHA-256 change detection с atomic writes + corrupt recovery
-- `lib/notebooklm-cli.mjs` — `notebooklm sync`/`status` CLI commands
-- `lib/session-context.mjs` — real fix for context.md auto-update bug
-- `hooks/notebooklm-sync-trigger.mjs` + runner — detached background sync после session end
-- `bin/install.mjs` — full NotebookLM wizard (pipx → login stdio inherit → first sync)
-- `lib/doctor.mjs` — 3-line NotebookLM health section с ADR-0012 severity discipline
-
-**Post-v0.8 tech-debt cleanup (2026-04-11, between v0.8.1 and v0.9 init):**
-- ✅ GitHub Actions v4→v5 migration (PR #17, `becd975`) — fixes Node 20 deprecation warning
-- ✅ Sync log rotation in `notebooklm-sync-runner.mjs` (PR #18, `fd7fdba`) — `_rotateLogIfNeeded` keeps last 100 lines
-- ✅ Output-style hijack defense (PR #19, `288ec69`) — doctor warning + CLAUDE.md template override against `learning-output-style`/`explanatory-output-style` plugin SessionStart hooks that hijack agent behavior
-- ✅ GSD `branching_strategy` → `none` + `quick_branch_template` → `chore/{slug}` (PR #20, `3725def`) — workaround for upstream `cmdCommit` branch hijack bug, enables clean per-quick-task branches
-
-Test count after cleanup: **264** (247 + 17 from cleanup PRs).
+Known Gaps carried to v0.13 / v1.0 planning:
+- ADR-02 UAT deferred — code shipped on `gsd/phase-26-auto-adr-capture`, but `/end → Haiku → ADR write` round-trip failed with `claude -p --model haiku --bare --output-format text` subprocess error; needs debugging.
+- SSR-01 UAT deferred — SessionStart marker mtime + 60-min skip-reload logic shipped, real-session verification pending.
+- Phase 21 / Phase 25 SUMMARY.md — shipped inline, no retrospective written; accepted as tech debt.
+- `detect.test.mjs` 3 pre-existing subtest failures (`profile must be null in v1`) — route to bugfix quick task.
 
 ### Active
 
-<!-- v0.12 milestone active — see Current Milestone section above for goal and target features. -->
+**Milestone v1.0 in planning.** Next step: `/gsd-new-milestone v1.0 "CDS-Core Independence"` to generate roadmap from `docs/cds-core-independence-plan.md` + SEED-004 (tiered vault + auto session capture). Phase numbering will continue from Phase 33+. Branching strategy remains `phase` — `gsd/phase-{N}-{slug}` branches.
 
-**Milestone v0.12 in progress.** See "Current Milestone: v0.12" section above for goal and target features. Phase numbering continues from v0.11 (ended at Phase 18.1). Branching strategy is `phase` — `gsd/phase-{N}-{slug}` branches.
+**Target capabilities for v1.0:**
+- pnpm workspaces monorepo (`@cds/core`, `@cds/cli`, `@cds/migrate`, `@cds/s3-backend`)
+- TypeScript project references + vitest + CI
+- Claude Agent SDK (Pi SDK) port — first agent dispatch
+- Core primitives: agent-dispatcher, context, cost-tracker
+- Tiered vault (hot/warm/cold) with SQLite session capture
+- Haiku entity extraction for backfill of existing markdown sessions
+- `/cds-quick` end-to-end demo
+- Alpha release via `npm publish --tag alpha`
 
 ### Out of Scope
 
@@ -176,6 +191,12 @@ Test count after cleanup: **264** (247 + 17 from cleanup PRs).
 | Fix context.md auto-update inside NotebookLM milestone (not as separate fix) | Sync of stale context.md is worse than not syncing — the fix is a hard prerequisite for the sync feature. Bundling keeps the feedback loop closed. | — Pending |
 | Manual Notion export step kept for now | Already works via `docs add`; automating via Notion MCP is a future phase once pilot validates the pipeline | — Deferred |
 | NotebookLM integration via `notebooklm-py` CLI wrapper, not a custom HTTP client (ADR-0001) | Google NotebookLM has no public REST API. `notebooklm-py` already implements the reverse-engineered RPC + browser OAuth layer. Writing our own would break single-dep (needs playwright) and duplicate work. | ✓ Good — accepted during Phase 2 discuss-phase 2026-04-10; full rationale in `vault/projects/claude-dev-stack/decisions/0001-notebooklm-integration-via-cli-wrapper.md` |
+| Project-level hooks over global hooks (v0.12 Phase 19) | Global `~/.claude/settings.json` affected all projects including non-claude-dev-stack ones. Moving to per-project `.claude/settings.json` scopes hooks to configured projects only. | ✓ Good — shipped in v0.12, verified in live wizard |
+| OAuth usage API for budget detection (v0.12 Phase 20) | No public rate-limit headers on subscription plans. `api.anthropic.com/api/oauth/usage` with Keychain-stored token is the only reliable source. | ✓ Good — shipped with 60s cache + SessionStart display + statusline |
+| Haiku subprocess for auto-ADR capture (v0.12 Phase 26 D-01) | Session transcript is too long for in-context decision extraction. `claude -p --model haiku --bare` gives structured XML output cheaply. | ⚠️ Revisit — UAT failed with subprocess command error; needs debug before v1.0 |
+| Skills→Hooks migration for deterministic routers (v0.12 Phase 31) | Deterministic keyword matching doesn't need LLM activation. Hooks save tokens and fire silently (no skill-activation UI noise). | ✓ Good — 4 skills migrated, token cost ~zero |
+| Drop GSD branching_strategy "none", keep "phase" (v0.12 Phase 19 + memory feedback) | "none" caused commits on main instead of feat branches. `phase` + PR-only merge is the right default. | ✓ Good — enforced via user feedback memory |
+| v1.0 pivot to pnpm monorepo + Claude Agent SDK (SEED-004) | Current single-package CLI has outgrown `bin/install.mjs` (1287 lines god-file). Carving into `@cds/core` primitives unblocks SDK port + alpha release path. | — Pending v1.0 kickoff |
 
 ## Evolution
 
@@ -195,4 +216,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-13 — milestone v0.12 (Hooks & Limits) initiated via `/gsd-new-milestone`. Updated Current Milestone, collapsed v0.11 to details. SEED-001 delegated execution integrated into scope. Phase numbering continues from Phase 19.*
+*Last updated: 2026-04-16 after v0.12 milestone — full evolution review. v0.12 collapsed to `<details>`, v1.0 CDS-Core Independence added as current planning milestone. 9 v0.12 capabilities moved to Validated. 6 new decisions logged. Known Gaps (ADR-02 UAT, SSR-01 UAT, Phase 21/25 SUMMARY gaps, `detect.test.mjs` failures) carried to v0.13 planning.*
