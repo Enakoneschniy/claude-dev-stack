@@ -21,12 +21,18 @@ import { installSessionHook } from '../lib/install/hooks.mjs';
 import { installCdsMcpServer } from '../lib/install/mcp.mjs';
 import { printSummary } from '../lib/install/summary.mjs';
 import { detectInstallState } from '../lib/install/detect.mjs';
+import { assertNodeVersion } from '../lib/install/node-check.mjs';
 
 const PKG_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const skillsDir = join(homedir(), '.claude', 'skills');
 const agentsDir = join(homedir(), '.claude', 'agents');
 
 async function main() {
+  // Node 20+ required for claude-dev-stack@1.0.0-alpha.1 (better-sqlite3 12.x N-API 9 + EOL).
+  // Throws with actionable error + rollback path if too old. MUST be first — before any
+  // file I/O, prompts, or imports that load native bindings.
+  assertNodeVersion(20);
+
   process.on('SIGINT', () => {
     console.log(`\n  ${c.dim}Cancelled. No changes made.${c.reset}\n`);
     process.exit(0);
