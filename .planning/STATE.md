@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: CDS-Core Independence (Phase A)
 status: executing
-stopped_at: Phase 37 context gathered
-last_updated: "2026-04-16T14:17:45.818Z"
+stopped_at: Phase 37 executed (Plans 01–04 landed on gsd/phase-37-mcp-adapter)
+last_updated: "2026-04-16T21:15:00.000Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 7
   completed_phases: 1
-  total_plans: 8
-  completed_plans: 4
-  percent: 50
+  total_plans: 12
+  completed_plans: 8
+  percent: 67
 ---
 
 # Project State: claude-dev-stack
@@ -33,10 +33,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16 after v0.12)
 
 ## Current Position
 
-Phase: **33 — Monorepo Foundation** (Not started)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-04-16 -- Phase 37 planning complete
+Phase: **37 — MCP Adapter** (Executed on branch gsd/phase-37-mcp-adapter; pending PR to main)
+Plan: 04 (Wave 3 wiring + wizard step + CLI dispatch)
+Status: 4/4 plans committed (4c76925, 36df2da, e20c4f6, d762bd2); 80 cds-cli tests pass, root suite 1170/1173 pass with only 3 pre-existing detect.test.mjs failures preserved per phase brief.
+Last activity: 2026-04-16 -- Phase 37 execution complete
 
 ### Active Milestone Phases (v1.0 Phase A)
 
@@ -46,7 +46,7 @@ Last activity: 2026-04-16 -- Phase 37 planning complete
 | 34 | SDK Integration & Core Primitives | SDK-01, SDK-02, CORE-01, CORE-02 | Not started |
 | 35 | Tiered Vault — Tier 2 SQLite | VAULT-01..03 | Not started |
 | 36 | Auto Session Capture | CAPTURE-05, CAPTURE-06 | Not started |
-| 37 | MCP Adapter | MCP-01, MCP-02 | Not started |
+| 37 | MCP Adapter | MCP-01, MCP-02 | Executed (pending PR) |
 | 38 | Backfill Migration | MIGRATE-01, MIGRATE-02 | Not started |
 | 39 | `/cds-quick` Demo & Alpha Release | DEMO-01, RELEASE-01 | Not started |
 
