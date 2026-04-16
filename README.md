@@ -15,6 +15,19 @@ Claude Code is powerful — but it forgets everything between sessions. Claude D
 
 ---
 
+## v1.0.0-alpha.1 (Pre-release)
+
+> **Alpha channel** — install via `npm install -g claude-dev-stack@alpha`.
+> The stable `@latest` tag still points to v0.12.x.
+
+v1.0 adds a pnpm monorepo on Claude Agent SDK, SQLite-backed session memory with FTS5 search, auto session capture (no more `/end`), MCP tools for querying sessions/docs/planning from inside Claude Code, and a one-shot `/cds-quick` agent dispatch skill with cost reporting.
+
+- [Migration guide (v0.12 → v1.0-alpha)](./docs/migration-v0-to-v1-alpha.md) — breaking changes + rollback instructions
+- [CHANGELOG](./CHANGELOG.md) — full list of Added / Changed / Security changes
+- **Requirements:** Node 20+ (Node 18 no longer supported)
+
+---
+
 ## The Problem
 
 If you use Claude Code seriously, you've hit these walls:
