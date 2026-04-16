@@ -18,6 +18,7 @@ import { installNotebookLM } from '../lib/install/notebooklm.mjs';
 import { installGitConventions } from '../lib/install/git-conventions.mjs';
 import { generateClaudeMD } from '../lib/install/claude-md.mjs';
 import { installSessionHook } from '../lib/install/hooks.mjs';
+import { installCdsMcpServer } from '../lib/install/mcp.mjs';
 import { printSummary } from '../lib/install/summary.mjs';
 import { detectInstallState } from '../lib/install/detect.mjs';
 
@@ -198,6 +199,13 @@ async function main() {
       installSessionHook(n, t, PKG_ROOT, vaultPath, projectsData);
     }});
   }
+
+  // Phase 37 MCP-02: register CDS MCP server in each project's .claude/settings.json.
+  // Always runs (independent of hooks choice) — users without hooks still benefit
+  // from Claude Code seeing the MCP tools.
+  steps.push({ label: 'CDS MCP server', run: async (n, t) => {
+    installCdsMcpServer(n, t, projectsData);
+  }});
 
   // UX-05: totalSteps is derived from runtime array length.
   // Pre-flight steps (prereqs, profile, projects, components) ran earlier with earlyTotal='...'

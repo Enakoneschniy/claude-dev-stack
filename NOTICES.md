@@ -139,8 +139,15 @@ LGPL-3.0-or-later permits linking from permissively-licensed software when the l
 - **Version constraint:** `^12.9.0`
 - **License:** MIT
 - **License URL:** https://github.com/WiseLibs/better-sqlite3/blob/master/LICENSE
-- **Used by:** `@cds/core` — Tier 2 SQLite session memory (per Phase 35 VAULT-01).
+- **Used by:** `@cds/core` — Tier 2 SQLite session memory (per Phase 35 VAULT-01); `@cds/cli` — MCP session tools (Phase 37 MCP-01).
 - **Native bindings note:** better-sqlite3 ships platform-specific prebuilds via `prebuild-install`. The pulled `@img/sharp-libvips-*` LGPL binding (see below) is a separate concern from better-sqlite3 itself (MIT native C++ bindings for SQLite, no LGPL linkage).
+
+### @modelcontextprotocol/sdk
+- **Version constraint:** `^1.29.0`
+- **License:** MIT
+- **License URL:** https://github.com/modelcontextprotocol/typescript-sdk/blob/main/LICENSE
+- **Used by:** `@cds/cli` — MCP server hosting the 5 CDS tools (sessions.search, sessions.timeline, sessions.get_observations, docs.search, planning.status) over stdio for Claude Code integration (Phase 37 MCP-01/MCP-02).
+- **Redistribution basis:** MIT is permissive — embedding the SDK inside the `@cds/cli` workspace package is permitted. The SDK is already present transitively through `@anthropic-ai/claude-agent-sdk` (see Transitive Runtime Dependencies below); Phase 37 elevates it to a direct dependency of `@cds/cli`.
 
 ## Development Dependencies
 

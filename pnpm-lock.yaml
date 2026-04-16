@@ -30,6 +30,16 @@ importers:
       '@cds/core':
         specifier: workspace:*
         version: link:../cds-core
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@4.3.6)
+      better-sqlite3:
+        specifier: ^12.9.0
+        version: 12.9.0
+    devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
 
   packages/cds-core:
     dependencies:
