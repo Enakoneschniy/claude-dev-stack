@@ -51,7 +51,7 @@ export async function main(args: string[]): Promise<void> {
   const sessionId = process.env.CLAUDE_SESSION_ID ?? crypto.randomUUID();
   const tracker = new CostTracker(sessionId);
 
-  let result: { output: string; tokens: { input: number; output: number }; stop_reason: string };
+  let result: { output: string; tokens: { input: number; output: number } };
   try {
     result = await dispatchAgent({
       model: opts.model,
