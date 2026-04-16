@@ -32,7 +32,8 @@ describe('tsup.config.ts structure', () => {
   });
 
   it('emits dts + sourcemap, no minify, no splitting', () => {
-    expect(configText).toContain('dts: true');
+    // dts can be true or an object (e.g. with compilerOptions for TS6 compat workaround)
+    expect(configText).toMatch(/dts:\s*(?:true|\{)/);
     expect(configText).toContain('sourcemap: true');
     expect(configText).toContain('minify: false');
     expect(configText).toContain('splitting: false');
