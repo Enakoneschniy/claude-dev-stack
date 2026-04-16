@@ -25,3 +25,6 @@ export {
   formatCost,
   formatSize,
 } from './token-estimate.js';
+
+// Plan 03 addition — CLI entry for programmatic use:
+export { main as cliMain } from './cli.js';

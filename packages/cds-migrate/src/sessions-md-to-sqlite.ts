@@ -13,10 +13,13 @@
 // transaction per D-97).
 
 import Database from 'better-sqlite3';
-import { readdirSync, readFileSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { mkdirSync, readdirSync, readFileSync } from 'node:fs';
+import { basename, dirname, join } from 'node:path';
 
-import { dispatchAgent as productionDispatchAgent } from '@cds/core';
+import {
+  dispatchAgent as productionDispatchAgent,
+  runPendingMigrations,
+} from '@cds/core';
 import { buildExtractionPrompt } from '@cds/core/capture';
 
 import { hashFile } from './file-hash.js';
@@ -261,10 +264,11 @@ function emptyReport(
 
 /**
  * Open the default raw better-sqlite3 handle at
- * `{vaultPath}/projects/{projectName}/sessions.db`, assuming migrations have
- * already been applied (the caller is expected to invoke `openSessionsDB`
- * which runs them). In CLI usage Plan 03 calls `openSessionsDB` once at the
- * top of `main()` so migrations land before the raw handle is opened.
+ * `{vaultPath}/projects/{projectName}/sessions.db` and ensure the Phase 35 +
+ * 38 schema is applied. Unlike Phase 35's `openSessionsDB` (which resolves
+ * under `homedir()/vault/...` and ignores arbitrary vault paths), this helper
+ * honours the caller-provided `vaultPath` so the CLI's `--vault` flag and
+ * test-time temp vaults both work.
  */
 function openDefaultDb(opts: MigrateOptions): Database.Database {
   const dbFile = join(
@@ -273,9 +277,11 @@ function openDefaultDb(opts: MigrateOptions): Database.Database {
     opts.projectName,
     'sessions.db',
   );
+  mkdirSync(dirname(dbFile), { recursive: true });
   const db = new Database(dbFile);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  runPendingMigrations(db);
   return db;
 }
 

@@ -11,7 +11,10 @@ import { openRawDb, type RawDatabase } from './internal/db.js';
 // Re-export MigrationError (owned by the runner) through the public barrel so
 // callers can `catch (e if e instanceof MigrationError)` at the public surface
 // without dipping into the internal/ namespace.
-export { MigrationError } from './internal/migrations/runner.js';
+export {
+  MigrationError,
+  runPendingMigrations,
+} from './internal/migrations/runner.js';
 
 // ---------------------------------------------------------------------------
 // Error hierarchy

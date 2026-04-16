@@ -50,6 +50,10 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack mcp remove${c.reset}            ${c.dim}Remove MCP servers${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mcp serve${c.reset}             ${c.dim}Run the CDS MCP server (stdio, for Claude Code integration)${c.reset}`);
   console.log('');
+  console.log(`  ${c.cyan}${c.bold}Migrate${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack migrate sessions${c.reset}        ${c.dim}Port markdown sessions into SQLite (dry-run default)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack migrate sessions --apply${c.reset} ${c.dim}Apply the migration${c.reset}`);
+  console.log('');
   console.log(`  ${c.cyan}${c.bold}Templates${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack new${c.reset}                   ${c.dim}Generate context.md from stack template${c.reset}`);
   console.log(`    ${c.dim}14 stacks: Next.js, Nuxt, SvelteKit, Astro, React, FastAPI, Express,${c.reset}`);
@@ -161,6 +165,16 @@ async function run() {
         // Existing third-party MCP catalog (install/remove/list/bare)
         const { main } = await import('../lib/mcp.mjs');
         await main(args.slice(1));
+      }
+      break;
+    }
+
+    // ── Migrate ──
+    case 'migrate': {
+      const { main } = await import('../packages/cds-migrate/dist/cli.js');
+      const exitCode = await main(args.slice(1));
+      if (typeof exitCode === 'number' && exitCode !== 0) {
+        process.exit(exitCode);
       }
       break;
     }

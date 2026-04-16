@@ -8,6 +8,7 @@ export {
   VaultError,
   SchemaVersionError,
   MigrationError,
+  runPendingMigrations,
   FtsUnavailableError,
   DbOpenError,
 } from './sessions.js';
