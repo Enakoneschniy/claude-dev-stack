@@ -12,22 +12,33 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v1.0 — CDS-Core Independence (Planning)
+## Current Milestone: v1.0 — CDS-Core Independence (Phase A)
 
-**Goal:** Carve `@cds/core`, `@cds/cli`, `@cds/migrate`, `@cds/s3-backend` into a pnpm monorepo; port memory primitives to Claude Agent SDK; ship `claude-dev-stack@1.0.0-alpha.1` via `--tag alpha`.
+**Goal:** Carve `claude-dev-stack` into a pnpm monorepo on Claude Agent SDK with tiered vault architecture (markdown for cold docs, SQLite for warm session memory, markdown for hot context) and auto session capture replacing the manual `/end` flow. Ship as `claude-dev-stack@1.0.0-alpha.1` via `npm publish --tag alpha`.
 
-**Phase A scope (from `docs/cds-core-independence-plan.md` + SEED-004):**
-- pnpm workspaces monorepo scaffolding with TS project references + vitest + CI
-- Pi SDK hello-world — first Claude Agent SDK dispatch
-- Core primitives: agent-dispatcher, context, cost-tracker
-- Tiered vault (hot/warm/cold) + auto session capture with Haiku entity extraction
-- `/cds-quick` end-to-end demo
-- Docs + alpha release via `npm publish --tag alpha`
+**Target features (Phase A scope from SEED-004 + plan doc D-28):**
+- **Monorepo scaffolding** — pnpm workspaces with `@cds/core`, `@cds/cli`, `@cds/migrate`, `@cds/s3-backend` packages, TS project references, vitest, CI matrix
+- **Pi SDK integration** — `@anthropic-ai/claude-agent-sdk` hello-world agent dispatch (replaces fragile `claude -p` subprocess pattern)
+- **Core primitives** — `agent-dispatcher`, `context`, `cost-tracker` modules under `@cds/core`
+- **Tiered vault Tier 2** — SQLite session DB with FTS5 schema (sessions, observations, entities, relations) per-project at `~/vault/projects/{name}/sessions.db`
+- **Auto session capture** — Stop hook → SDK Haiku call → structured observations → SQLite write (replaces manual `/end`, fail-silent)
+- **MCP adapter** — `sessions.search/timeline/get_observations`, `docs.search`, `planning.status` tools registered in `.claude/settings.json` via wizard
+- **Backfill migration** — `@cds/migrate` ports existing 30+ markdown sessions into SQLite via Haiku entity extraction
+- **`/cds-quick` end-to-end demo** — first user-facing flow on the new stack proving the full pipeline
+- **Alpha release** — `claude-dev-stack@1.0.0-alpha.1` via `npm publish --tag alpha` (does NOT replace `@latest` users)
 
-**Open questions for Phase A kickoff:**
-- `@anthropic-ai/claude-agent-sdk` license verification (Apache-2.0 / MIT — confirm)
-- SQLite driver choice: `better-sqlite3` vs `bun:sqlite`
-- Backfill strategy: migrate existing 30+ markdown sessions into SQLite via Haiku entity extraction
+**Phase numbering:** continues from v0.12 (last phase: 32) → v1.0 starts at **Phase 33**
+**Branching:** `phase` → `gsd/phase-{N}-{slug}`, PR-only to main
+**Test baseline:** 928/931 (3 pre-existing `detect.test.mjs` failures untouched, will be addressed in dedicated quick task)
+
+**Open questions for Phase 33 planning:**
+- `@anthropic-ai/claude-agent-sdk` license verification (claimed Apache-2.0 / MIT — confirm before code import)
+- SQLite driver choice: `better-sqlite3` (battle-tested, native compile) vs `bun:sqlite` (only if Pi SDK / bundled infra runs on Bun)
+
+**Out of scope for v1.0 (deferred to v1.1+):**
+- 8 of 9 plan-doc target refactors: `.planning/` location migration, branching auto-detect, teams/parallel execute v2, skills/hooks boundary v2, config system overhaul, statusline replacement, update notification, GSD update mechanism dissolution
+- SEED-003 S3 vault backend (depends on `.planning/` location migration first — Refactor #1 in plan)
+- SEED-001 cloud agent integration (mostly shipped in v0.12 already; Cloud agent piece deferred)
 
 <details>
 <summary>v0.12 — Hooks & Limits — SHIPPED ✅ (2026-04-16)</summary>
