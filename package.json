@@ -67,6 +67,7 @@
     "templates/",
     "README.md",
     "LICENSE",
-    "NOTICES.md"
+    "NOTICES.md",
+    "CHANGELOG.md"
   ]
 }
