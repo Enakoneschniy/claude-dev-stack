@@ -4,3 +4,12 @@ node_modules/
 
 # Claude Code local files (per-developer, not committed)
 .claude/
+
+# Monorepo build artifacts (Phase 33+)
+**/dist/
+**/*.tsbuildinfo
+packages/*/node_modules/
+pnpm-debug.log*
+
+# GSD bounce artifacts (should already be globally gitignored, confirm locally)
+*.pre-bounce.md

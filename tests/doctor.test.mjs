@@ -7,7 +7,7 @@
  * controlled temp directory so doctor reads a known manifest state.
  */
 
-import { describe, it, afterEach } from 'node:test';
+import { describe, it, afterEach } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   mkdtempSync, mkdirSync, rmSync, writeFileSync, chmodSync, existsSync,

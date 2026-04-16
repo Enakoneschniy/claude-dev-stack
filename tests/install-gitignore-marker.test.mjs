@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -10,11 +10,11 @@ import { addSessionMarkerToGitignore } from '../lib/install/hooks.mjs';
 describe('install-gitignore-marker (Phase 28 / SSR-01 SC#4)', () => {
   let fixtureRoot;
 
-  before(() => {
+  beforeAll(() => {
     fixtureRoot = mkdtempSync(join(tmpdir(), 'ssr01-gi-'));
   });
 
-  after(() => {
+  afterAll(() => {
     if (fixtureRoot && existsSync(fixtureRoot)) {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }

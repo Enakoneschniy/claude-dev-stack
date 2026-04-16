@@ -9,7 +9,7 @@
  * resume after interrupt, Phase B CliError swallow.
  */
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   mkdtempSync,

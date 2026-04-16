@@ -1,0 +1,9 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/cds-core" },
+    { "path": "./packages/cds-cli" },
+    { "path": "./packages/cds-migrate" },
+    { "path": "./packages/cds-s3-backend" }
+  ]
+}

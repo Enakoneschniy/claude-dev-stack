@@ -8,7 +8,7 @@
  * BUG-07 verb for any status value, including unknown/future ones.
  */
 
-import { describe, it } from 'node:test';
+import { describe, it } from 'vitest';
 import assert from 'node:assert/strict';
 
 import { formatClaudeMdStatus } from '../lib/install/claude-md.mjs';
@@ -75,13 +75,16 @@ describe('printClaudeMdStatus wiring (D-06)', () => {
   it('is exported and callable without throwing for any status', async () => {
     const { printClaudeMdStatus } = await import('../lib/install/claude-md.mjs');
     assert.equal(typeof printClaudeMdStatus, 'function');
-    // Capture stdout so the test output stays clean
-    const originalWrite = process.stdout.write.bind(process.stdout);
+    // Capture console.log (printClaudeMdStatus routes through info/ok/warn
+    // which call console.log). Under vitest's fork pool, overriding
+    // process.stdout.write does not intercept console.log because vitest
+    // patches console separately for test output capture. Overriding
+    // console.log works under both node:test and vitest.
+    const originalLog = console.log;
     try {
       let captured = '';
-      process.stdout.write = (chunk) => {
-        captured += chunk;
-        return true;
+      console.log = (...args) => {
+        captured += args.join(' ') + '\n';
       };
       for (const status of ['created', 'updated', 'appended', 'unchanged', 'mystery']) {
         printClaudeMdStatus('smoke-test', status);
@@ -89,7 +92,7 @@ describe('printClaudeMdStatus wiring (D-06)', () => {
       assert.ok(!captured.toLowerCase().includes(FORBIDDEN));
       assert.ok(captured.includes('smoke-test'));
     } finally {
-      process.stdout.write = originalWrite;
+      console.log = originalLog;
     }
   });
 });

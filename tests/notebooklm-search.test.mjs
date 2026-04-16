@@ -11,7 +11,7 @@
  * Uses injectable _listFn and _askFn — no live CLI calls.
  */
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, expect } from 'vitest';
 import assert from 'node:assert/strict';
 
 import { runSearch } from '../lib/notebooklm-cli.mjs';

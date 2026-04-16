@@ -1,7 +1,7 @@
 /**
  * Tests for lib/notebooklm-stats.mjs — query usage counter read/write.
  */
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach, onTestFinished } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -19,7 +19,7 @@ const STATS_FILE = '.notebooklm-stats.json';
 describe('readQueryStats', () => {
   it('returns defaults when file absent', (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     const stats = readQueryStats(dir);
     assert.deepEqual(stats, {
       version: 1,
@@ -31,7 +31,7 @@ describe('readQueryStats', () => {
 
   it('returns defaults for corrupt JSON', (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     writeFileSync(join(dir, STATS_FILE), 'not-json', 'utf8');
     const stats = readQueryStats(dir);
     assert.equal(stats.questions_asked, 0);
@@ -39,7 +39,7 @@ describe('readQueryStats', () => {
 
   it('returns stored values when file exists', (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     writeFileSync(join(dir, STATS_FILE), JSON.stringify({
       version: 1, questions_asked: 5, artifacts_generated: 2, last_query_at: '2026-04-10T10:00:00.000Z'
     }), 'utf8');
@@ -52,7 +52,7 @@ describe('readQueryStats', () => {
 describe('incrementQueryStats', () => {
   it('creates file when absent and increments question', (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     incrementQueryStats(dir, 'question');
     const stats = readQueryStats(dir);
     assert.equal(stats.questions_asked, 1);
@@ -62,7 +62,7 @@ describe('incrementQueryStats', () => {
 
   it('increments artifact without touching question count', (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     incrementQueryStats(dir, 'artifact');
     const stats = readQueryStats(dir);
     assert.equal(stats.artifacts_generated, 1);
@@ -71,7 +71,7 @@ describe('incrementQueryStats', () => {
 
   it('increments existing counts', (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     incrementQueryStats(dir, 'question');
     incrementQueryStats(dir, 'question');
     const stats = readQueryStats(dir);

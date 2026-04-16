@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it, onTestFinished } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync } from 'fs';
 import { join } from 'path';
@@ -13,7 +13,7 @@ function makeTempDir() {
 describe('importDatabase', () => {
   it('returns zero counts for empty database', async (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     const fetchFn = async () => ({ pages: [], has_more: false, next_cursor: null });
     const result = await importDatabase('db-id', dir, fetchFn);
     assert.deepEqual(result, { created: 0, updated: 0, unchanged: 0, conflict: 0, total: 0 });
@@ -21,7 +21,7 @@ describe('importDatabase', () => {
 
   it('imports single page and returns created:1', async (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     const fetchFn = async () => ({
       pages: [{ page_id: 'page-001', title: 'My Page', markdown: '# My Page\n\nContent.' }],
       has_more: false,
@@ -34,7 +34,7 @@ describe('importDatabase', () => {
 
   it('handles pagination — calls fetchFn with cursor on second call', async (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     const calls = [];
     const fetchFn = async (dbId, cursor) => {
       calls.push({ dbId, cursor });
@@ -59,7 +59,7 @@ describe('importDatabase', () => {
 
   it('uses page_id as filename when title is empty', async (t) => {
     const { dir, cleanup } = makeTempDir();
-    t.after(cleanup);
+    onTestFinished(cleanup);
     const fetchFn = async () => ({
       pages: [{ page_id: 'abc123def456', title: '', markdown: 'Content.' }],
       has_more: false,

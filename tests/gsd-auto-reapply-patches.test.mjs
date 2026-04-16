@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { execFileSync } from 'child_process';
@@ -24,7 +24,7 @@ describe('gsd-auto-reapply-patches', () => {
   let gsdDir;
   let homeDir;
 
-  before(() => {
+  beforeAll(() => {
     workdir = mkdtempSync(join(tmpdir(), 'gsd-patches-'));
     patchesDir = join(workdir, 'patches');
     gsdDir = join(workdir, 'gsd');
@@ -34,7 +34,7 @@ describe('gsd-auto-reapply-patches', () => {
     mkdirSync(homeDir, { recursive: true });
   });
 
-  after(() => {
+  afterAll(() => {
     rmSync(workdir, { recursive: true, force: true });
   });
 

@@ -1,4 +1,4 @@
-import { describe, it, after, beforeEach } from 'node:test';
+import { describe, it, afterAll, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
@@ -35,7 +35,7 @@ describe('lib/notebooklm-manifest.mjs', () => {
     resetFixture();
   });
 
-  after(() => {
+  afterAll(() => {
     if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
   });
 

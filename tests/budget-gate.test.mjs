@@ -1,7 +1,7 @@
 // tests/budget-gate.test.mjs — Phase 25 LIMIT-05 SC#1/SC#2
 // Unit tests for hooks/budget-gate.mjs (PreToolUse Skill gate).
 
-import { describe, it, before, after, beforeEach } from 'node:test';
+import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -36,7 +36,7 @@ describe('hooks/budget-gate.mjs', () => {
     tmpHome = mkdtempSync(join(tmpdir(), 'bg-test-'));
   });
 
-  after(() => {
+  afterAll(() => {
     // cleanup is per-test via fresh mkdtemp; no global teardown needed
   });
 

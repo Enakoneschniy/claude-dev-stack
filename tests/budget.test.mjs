@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -123,7 +123,7 @@ describe('lib/budget.mjs config and state (isolated)', () => {
   let originalHome;
   let originalEnv;
 
-  before(() => {
+  beforeAll(() => {
     tmpHome = join(tmpdir(), `cds-budget-test-${process.pid}`);
     mkdirSync(join(tmpHome, '.claude'), { recursive: true });
     originalHome = process.env.HOME;
@@ -132,7 +132,7 @@ describe('lib/budget.mjs config and state (isolated)', () => {
     delete process.env.BUDGET_THRESHOLD_PERCENT;
   });
 
-  after(() => {
+  afterAll(() => {
     process.env.HOME = originalHome;
     if (originalEnv !== undefined) {
       process.env.BUDGET_THRESHOLD_PERCENT = originalEnv;

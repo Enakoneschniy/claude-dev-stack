@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'fs';
@@ -14,7 +14,7 @@ describe('setupAllProjects', () => {
   const existingProject = join(tmpBase, 'real-project');
   const missingProject = join(tmpBase, 'ghost-project');
 
-  before(() => {
+  beforeAll(() => {
     // Fresh sandbox
     if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
     mkdirSync(vaultPath, { recursive: true });
@@ -30,7 +30,7 @@ describe('setupAllProjects', () => {
     writeFileSync(join(vaultPath, 'project-map.json'), JSON.stringify(map, null, 2));
   });
 
-  after(() => {
+  afterAll(() => {
     if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
   });
 
@@ -76,13 +76,13 @@ const __dirname_test = dirname(__filename);
 describe('TEST-02: notebooklm status on fresh vault (smoke)', () => {
   let freshVault;
 
-  before(() => {
+  beforeAll(() => {
     freshVault = mkdtempSync(join(tmpdir(), 'nb-status-fresh-'));
     mkdirSync(join(freshVault, 'projects'), { recursive: true });
     mkdirSync(join(freshVault, 'meta'), { recursive: true });
   });
 
-  after(() => {
+  afterAll(() => {
     try { rmSync(freshVault, { recursive: true, force: true }); } catch {}
   });
 
@@ -108,12 +108,12 @@ describe('TEST-02: notebooklm status on fresh vault (smoke)', () => {
 describe('updateProjectClaudeMd — Output Style Override section (260411-u3g)', () => {
   const tmpProj = join(tmpdir(), `claude-test-csmd-${process.pid}-${Date.now()}`);
 
-  before(() => {
+  beforeAll(() => {
     if (existsSync(tmpProj)) rmSync(tmpProj, { recursive: true, force: true });
     mkdirSync(tmpProj, { recursive: true });
   });
 
-  after(() => {
+  afterAll(() => {
     if (existsSync(tmpProj)) rmSync(tmpProj, { recursive: true, force: true });
   });
 

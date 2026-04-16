@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'fs';
 import { join, dirname } from 'path';
@@ -13,7 +13,7 @@ describe('installSessionHook copies patches/ to ~/.claude/gsd-local-patches/', (
   let origHome;
   let installSessionHook;
 
-  before(async () => {
+  beforeAll(async () => {
     fakeHome = mkdtempSync(join(tmpdir(), 'cds-home-'));
     fakePkgRoot = mkdtempSync(join(tmpdir(), 'cds-pkg-'));
 
@@ -45,7 +45,7 @@ describe('installSessionHook copies patches/ to ~/.claude/gsd-local-patches/', (
     ({ installSessionHook } = await import('../lib/install/hooks.mjs'));
   });
 
-  after(() => {
+  afterAll(() => {
     if (origHome === undefined) delete process.env.HOME;
     else process.env.HOME = origHome;
     rmSync(fakeHome, { recursive: true, force: true });

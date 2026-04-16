@@ -1,4 +1,4 @@
-import { test, describe, before, after } from 'node:test';
+import { test, describe, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
@@ -48,7 +48,7 @@ describe('toSlug', () => {
 describe('fromSlug', () => {
   let tempDir;
 
-  before(() => {
+  beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'project-naming-test-'));
     const projectsDir = join(tempDir, 'projects');
     mkdirSync(projectsDir);
@@ -56,7 +56,7 @@ describe('fromSlug', () => {
     mkdirSync(join(projectsDir, 'another-project'));
   });
 
-  after(() => {
+  afterAll(() => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 

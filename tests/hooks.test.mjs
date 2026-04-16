@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync, chmodSync } from 'fs';
 import { execFileSync, spawnSync } from 'child_process';
@@ -102,7 +102,7 @@ describe('hooks', () => {
     const stubBinPath = join(stubDir, 'notebooklm');
     let tmpVault;
 
-    before(() => {
+    beforeAll(() => {
       tmpVault = join(tmpdir(), `cds-trigger-vault-${process.pid}`);
       mkdirSync(tmpVault, { recursive: true });
       mkdirSync(stubDir, { recursive: true });
@@ -111,7 +111,7 @@ describe('hooks', () => {
       chmodSync(stubBinPath, 0o755);
     });
 
-    after(() => {
+    afterAll(() => {
       if (existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
       if (existsSync(stubDir)) rmSync(stubDir, { recursive: true, force: true });
     });
@@ -158,7 +158,7 @@ describe('hooks', () => {
     let tmpVault;
     let stubBinDir;
 
-    before(() => {
+    beforeAll(() => {
       tmpVault = join(tmpdir(), `cds-runner-vault-${process.pid}`);
       stubBinDir = join(tmpdir(), `cds-runner-stub-bin-${process.pid}`);
       // Set up minimal vault structure
@@ -171,7 +171,7 @@ describe('hooks', () => {
       chmodSync(stubDest, 0o755);
     });
 
-    after(() => {
+    afterAll(() => {
       if (existsSync(tmpVault)) rmSync(tmpVault, { recursive: true, force: true });
       if (existsSync(stubBinDir)) rmSync(stubBinDir, { recursive: true, force: true });
     });
@@ -281,7 +281,7 @@ describe('hooks', () => {
     const sessionsDir = join(projectDir, 'sessions');
     const contextPath = join(projectDir, 'context.md');
 
-    before(() => {
+    beforeAll(() => {
       if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
       mkdirSync(sessionsDir, { recursive: true });
 
@@ -306,7 +306,7 @@ describe('hooks', () => {
       );
     });
 
-    after(() => {
+    afterAll(() => {
       if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
     });
 

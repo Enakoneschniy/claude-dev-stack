@@ -6,7 +6,7 @@
  * pre-flight conflict scan, per-project continue, and stats shape.
  */
 
-import { describe, it, before, beforeEach, after, afterEach } from 'node:test';
+import { describe, it, beforeAll, beforeEach, afterAll, afterEach, expect } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync, rmSync, existsSync, chmodSync, mkdtempSync, copyFileSync } from 'node:fs';
 import { join, dirname, delimiter } from 'node:path';
