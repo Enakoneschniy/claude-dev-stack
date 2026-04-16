@@ -93,7 +93,14 @@ export interface SearchHit {
 }
 
 export interface SessionsDB {
-  createSession(input: { project: string; summary?: string | null }): Session;
+  /**
+   * Insert a new session row. If `id` is provided (Phase 36 Stop hook passes
+   * the Claude Code CLAUDE_SESSION_ID so row joins stay stable across
+   * backfill/repair), that value is used; otherwise a random UUID is
+   * generated. Throws on UNIQUE constraint conflict — callers that need
+   * idempotency should catch and skip.
+   */
+  createSession(input: { id?: string; project: string; summary?: string | null }): Session;
   appendObservation(input: {
     sessionId: string;
     type: string;
@@ -237,8 +244,8 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
   );
 
   const handle: SessionsDB = {
-    createSession({ project: p, summary = null }) {
-      const id = randomUUID();
+    createSession({ id: providedId, project: p, summary = null }) {
+      const id = providedId ?? randomUUID();
       const start = new Date().toISOString();
       createSessionStmt.run(id, start, p, summary);
       return { id, start_time: start, end_time: null, project: p, summary };

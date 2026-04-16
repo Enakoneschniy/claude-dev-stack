@@ -25,7 +25,7 @@
 
 // Primitive: dispatchAgent
 export { dispatchAgent } from './agent-dispatcher.js';
-export type { DispatchOptions, DispatchResult } from './agent-dispatcher.js';
+export type { DispatchOptions, DispatchResult, ToolUseBlock } from './agent-dispatcher.js';
 
 // Primitive: Context
 export { Context, contextFilePath } from './context.js';

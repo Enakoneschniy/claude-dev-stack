@@ -20,7 +20,9 @@
   },
   "packageManager": "pnpm@10.6.3",
   "scripts": {
+    "pretest": "node scripts/check-no-shell-interpolation.mjs hooks/session-end-capture.mjs",
     "test": "vitest run",
+    "test:structural": "node scripts/check-no-shell-interpolation.mjs hooks/session-end-capture.mjs",
     "build": "tsc --build"
   },
   "bin": {
@@ -34,6 +36,7 @@
     "prompts": "^2.4.2"
   },
   "devDependencies": {
+    "@cds/core": "workspace:*",
     "@types/node": "25.6.0",
     "typescript": "6.0.2",
     "vitest": "3.2.4"
