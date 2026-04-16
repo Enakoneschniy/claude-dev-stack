@@ -2,16 +2,22 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: CDS-Core Independence (Phase A)
-status: executing
-stopped_at: Phase 34 context gathered (Phase 33 executing in background)
-last_updated: "2026-04-16T13:30:57.014Z"
+status: blocked
+stopped_at: Phase 34 Plan 01 Task 3 — LGPL transitive via sharp platform binding
+last_updated: "2026-04-16T17:00:00.000Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 8
-  completed_plans: 2
-  percent: 25
+  completed_plans: 4
+  percent: 50
+blockers:
+  - id: 34-01-lgpl-sharp
+    phase: 34
+    plan: 34-01
+    file: .planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md
+    summary: "@img/sharp-libvips-darwin-arm64 (LGPL-3.0-or-later) pulled via SDK optionalDependencies; plan audit hard-blocks LGPL but Pitfall 6 only names GPL/AGPL/SSPL. Needs user decision on allowlist vs replan."
 ---
 
 # Project State: claude-dev-stack
@@ -27,16 +33,20 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-16 after v0.12)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** v1.0 Phase A — pnpm monorepo + Claude Agent SDK + tiered vault (SQLite Tier 2) + auto session capture + alpha release on `@alpha` npm tag.
+**Current focus:** Phase 34 — sdk-integration-core-primitives
 
 ---
 
 ## Current Position
 
-Phase: **33 — Monorepo Foundation** (Not started)
-Plan: —
-Status: Ready to execute
-Last activity: 2026-04-16 -- Phase 34 planning complete
+Phase: 34 (sdk-integration-core-primitives) — BLOCKED mid-Plan-01
+Plan: 1 of 4 (Task 3 halted on transitive license audit)
+Status: Blocked — LGPL-3.0-or-later via `@img/sharp-libvips-darwin-arm64` (optional SDK binding)
+Last activity: 2026-04-16 -- Phase 34 execution paused, blocker artifact written
+
+### Blocker detail
+
+See `.planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md` for full context and decision options. tl;dr: the SDK pulls `sharp` platform bindings as `optionalDependencies`; one of those is LGPL-3.0-or-later. Plan 01's forbidden-license list widened Pitfall 6 (GPL/AGPL/SSPL) to include LGPL, so the audit blocked. User decision needed on: allowlist LGPL with NOTICES disclosure, drop LGPL from the blocklist, exclude sharp via pnpm overrides, or replan.
 
 ### Active Milestone Phases (v1.0 Phase A)
 
