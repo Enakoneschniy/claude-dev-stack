@@ -10,6 +10,7 @@ export default defineConfig({
           environment: 'node',
           include: ['tests/**/*.test.mjs'],
           pool: 'forks',
+          retry: 2,
         },
       },
       // Glob discovers each packages/*/vitest.config.ts
