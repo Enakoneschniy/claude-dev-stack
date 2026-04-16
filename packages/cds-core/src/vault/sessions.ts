@@ -11,7 +11,10 @@ import { openRawDb, type RawDatabase } from './internal/db.js';
 // Re-export MigrationError (owned by the runner) through the public barrel so
 // callers can `catch (e if e instanceof MigrationError)` at the public surface
 // without dipping into the internal/ namespace.
-export { MigrationError } from './internal/migrations/runner.js';
+export {
+  MigrationError,
+  runPendingMigrations,
+} from './internal/migrations/runner.js';
 
 // ---------------------------------------------------------------------------
 // Error hierarchy
@@ -73,7 +76,14 @@ export interface Observation {
 
 export interface Entity {
   id: number;
+  /** Normalized (trim().toLowerCase()) UNIQUE key — Phase 38 D-103/D-105. */
   name: string;
+  /**
+   * Phase 38: first-seen original casing (trimmed but not lowercased). Stable
+   * display string — NOT updated on subsequent upserts of the same entity.
+   * Nullable on rows created before migration 002 but backfilled to `name`.
+   */
+  display_name: string | null;
   type: string;
   first_seen: string;
   last_updated: string;
@@ -215,10 +225,18 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
   const appendObsStmt = db.prepare(
     'INSERT INTO observations (session_id, type, content, entities, created_at) VALUES (?, ?, ?, ?, ?)',
   );
+  // Phase 38 D-105: `name` stores the normalized (trim().toLowerCase()) UNIQUE
+  // key; `display_name` stores the first-seen original (trimmed) casing. On
+  // conflict we UPDATE last_updated + COALESCE type (preserves an existing
+  // non-null type if the caller passes a new one), but we DO NOT overwrite
+  // display_name — first-seen casing wins per D-104.
   const upsertEntityStmt = db.prepare(
-    'INSERT INTO entities (name, type, first_seen, last_updated) VALUES (?, ?, ?, ?) ' +
-      'ON CONFLICT(name) DO UPDATE SET type=excluded.type, last_updated=excluded.last_updated ' +
-      'RETURNING id, name, type, first_seen, last_updated',
+    'INSERT INTO entities (name, display_name, type, first_seen, last_updated) ' +
+      'VALUES (?, ?, ?, ?, ?) ' +
+      'ON CONFLICT(name) DO UPDATE SET ' +
+      'type = COALESCE(entities.type, excluded.type), ' +
+      'last_updated = excluded.last_updated ' +
+      'RETURNING id, name, display_name, type, first_seen, last_updated',
   );
   const linkRelationStmt = db.prepare(
     'INSERT OR IGNORE INTO relations (from_entity, to_entity, relation_type, observed_in_session) VALUES (?, ?, ?, ?)',
@@ -279,8 +297,15 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
     },
 
     upsertEntity({ name, type }) {
+      // Phase 38 D-103/D-105: normalize raw input for the UNIQUE key while
+      // preserving the original casing in display_name (first-seen wins).
+      const trimmed = name.trim();
+      if (trimmed === '') {
+        throw new VaultError('upsertEntity: name cannot be empty after trim');
+      }
+      const normalized = trimmed.toLowerCase();
       const now = new Date().toISOString();
-      return upsertEntityStmt.get(name, type, now, now) as Entity;
+      return upsertEntityStmt.get(normalized, trimmed, type, now, now) as Entity;
     },
 
     linkRelation({ fromEntity, toEntity, relationType, sessionId }) {

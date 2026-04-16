@@ -173,9 +173,15 @@ export function truncateToolResult(content: unknown, toolName: string): string |
  * `TIER_2_MAX_TOKENS` AND the transcript is long enough that head+tail
  * elision still leaves something meaningful.
  *
- * `mode` defaults to `'transcript'`; Phase 38 will call with `'backfill'`.
+ * Phase 38 rename: this is the ParsedMessage[]-shaped builder for the live
+ * Stop-hook pathway. The flat-string `buildExtractionPrompt({mode, input})`
+ * helper in `./prompts.ts` is the canonical entry for Phase 38's backfill
+ * migrator. Both paths share the same underlying system prompt + tool schema.
+ *
+ * `mode` defaults to `'transcript'`; Phase 38 callers with raw markdown use
+ * `buildExtractionPrompt` from `./prompts.js` instead.
  */
-export function buildExtractionPrompt(
+export function buildExtractionPromptFromMessages(
   messages: ParsedMessage[],
   mode: CaptureMode = 'transcript',
 ): { systemPrompt: string; userPrompt: string; estimatedTokens: number } {

@@ -116,6 +116,80 @@ test('upsertEntity is idempotent on name conflict', () => {
   expect(e1.id).toBe(e2.id);
 });
 
+// ---------------------------------------------------------------------------
+// Phase 38 — upsertEntity normalization + display_name preservation (D-103/D-105)
+// ---------------------------------------------------------------------------
+
+test('Phase 38 — upsertEntity normalizes name to lowercase and preserves display_name on first insert', () => {
+  const db = openSessionsDB(projectPath);
+  const row = db.upsertEntity({ name: 'Claude Code', type: 'agent' });
+  expect(row.name).toBe('claude code');
+  expect(row.display_name).toBe('Claude Code');
+});
+
+test('Phase 38 — upsertEntity returns the same id on second call with different casing (first-seen display_name wins)', () => {
+  const db = openSessionsDB(projectPath);
+  const first = db.upsertEntity({ name: 'Claude Code', type: 'agent' });
+  const second = db.upsertEntity({ name: 'CLAUDE CODE', type: 'agent' });
+  expect(first.id).toBe(second.id);
+
+  // display_name MUST remain the first-seen trimmed casing.
+  const raw = new Database(dbPath(), { readonly: true });
+  try {
+    const stored = raw
+      .prepare('SELECT name, display_name FROM entities WHERE id = ?')
+      .get(first.id) as { name: string; display_name: string };
+    expect(stored.name).toBe('claude code');
+    expect(stored.display_name).toBe('Claude Code');
+  } finally {
+    raw.close();
+  }
+});
+
+test('Phase 38 — upsertEntity trims leading/trailing whitespace before normalizing', () => {
+  const db = openSessionsDB(projectPath);
+  const row = db.upsertEntity({ name: '  Foo Bar  ', type: 'tool' });
+  expect(row.name).toBe('foo bar');
+  expect(row.display_name).toBe('Foo Bar');
+});
+
+test('Phase 38 — upsertEntity throws VaultError when name is empty or whitespace-only', () => {
+  const db = openSessionsDB(projectPath);
+  expect(() => db.upsertEntity({ name: '   ', type: 'agent' })).toThrow(
+    /cannot be empty/,
+  );
+  expect(() => db.upsertEntity({ name: '', type: 'agent' })).toThrow(
+    /cannot be empty/,
+  );
+});
+
+test('Phase 38 — upsertEntity preserves Cyrillic display_name and lowercases name', () => {
+  const db = openSessionsDB(projectPath);
+  const row = db.upsertEntity({ name: 'Павел', type: 'person' });
+  expect(row.name).toBe('павел');
+  expect(row.display_name).toBe('Павел');
+});
+
+test('Phase 38 — upsertEntity COALESCE preserves existing non-null type on conflict', () => {
+  const db = openSessionsDB(projectPath);
+  // First upsert establishes type='agent'.
+  const first = db.upsertEntity({ name: 'manual', type: 'agent' });
+  // Second upsert with a different type must NOT overwrite the existing one
+  // per the COALESCE path in the ON CONFLICT clause (D-105).
+  const second = db.upsertEntity({ name: 'manual', type: 'person' });
+  expect(second.id).toBe(first.id);
+
+  const raw = new Database(dbPath(), { readonly: true });
+  try {
+    const stored = raw
+      .prepare('SELECT type FROM entities WHERE id = ?')
+      .get(first.id) as { type: string };
+    expect(stored.type).toBe('agent');
+  } finally {
+    raw.close();
+  }
+});
+
 test('appendObservation rejects non-integer entities', () => {
   const db = openSessionsDB(projectPath);
   const s = db.createSession({ project: 'proj' });

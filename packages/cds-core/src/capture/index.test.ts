@@ -5,8 +5,11 @@ describe('@cds/core/capture barrel', () => {
   it('exports loadTranscript function', () => {
     expect(typeof capture.loadTranscript).toBe('function');
   });
-  it('exports buildExtractionPrompt function', () => {
+  it('exports buildExtractionPrompt function (Phase 38 flat-string entry)', () => {
     expect(typeof capture.buildExtractionPrompt).toBe('function');
+  });
+  it('exports buildExtractionPromptFromMessages function (Phase 36 transcript entry)', () => {
+    expect(typeof capture.buildExtractionPromptFromMessages).toBe('function');
   });
   it('exports emitObservationsTool with name emit_observations', () => {
     expect(capture.emitObservationsTool.name).toBe('emit_observations');
