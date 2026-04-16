@@ -155,7 +155,7 @@
 | 36. Auto Session Capture | 0/? | Not started | — |
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
-| 39. `/cds-quick` Demo & Alpha Release | 1/5 | In Progress|  |
+| 39. `/cds-quick` Demo & Alpha Release | 3/5 | In Progress|  |
 
 ---
 
