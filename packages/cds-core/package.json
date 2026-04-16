@@ -11,8 +11,11 @@
       "types": "./dist/index.d.ts"
     }
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node scripts/copy-migrations.mjs",
     "test": "vitest run"
   },
   "dependencies": {
