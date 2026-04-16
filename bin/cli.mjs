@@ -201,8 +201,8 @@ async function run() {
     // ── Migrate ──
     case 'migrate': {
       const migrate = await import(resolveDistPath('migrate/cli.js'));
-      await migrate.main(args.slice(1));
-      break;
+      const exitCode = await migrate.main(args.slice(1));
+      process.exit(exitCode);
     }
 
     // ── NotebookLM ──
