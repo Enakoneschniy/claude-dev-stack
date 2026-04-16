@@ -1,8 +1,27 @@
 /**
- * @cds/migrate — Markdown → SQLite session backfill for claude-dev-stack.
+ * @cds/migrate — Phase 38 Backfill Migration surface.
  *
- * Phase 33 stub. Real implementation in Phase 38:
- * - sessions-md-to-sqlite migrator (MIGRATE-01)
- * - CLI subcommand `claude-dev-stack migrate sessions` (MIGRATE-02)
+ * Public entry points:
+ *   - `migrateMarkdownSessions` — library function (MIGRATE-01).
+ *   - `hashFile` / `estimateTokens` / `estimateCost` — utilities used by the
+ *     Plan 03 CLI for the dry-run table + cost preview.
+ *
+ * Plan 03 additionally exports `cliMain` from `./cli.js`.
  */
-export const CDS_MIGRATE_VERSION = '0.0.0-stub';
+export { migrateMarkdownSessions } from './sessions-md-to-sqlite.js';
+export type {
+  DispatchAgentFn,
+  DispatchResultLike,
+  FileInput,
+  MigrateOptions,
+  MigrationFileResult,
+  MigrationFileStatus,
+  MigrationReport,
+} from './types.js';
+export { hashFile, hashString } from './file-hash.js';
+export {
+  estimateCost,
+  estimateTokens,
+  formatCost,
+  formatSize,
+} from './token-estimate.js';

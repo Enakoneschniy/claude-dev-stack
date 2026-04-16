@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     name: 'cds-migrate',
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    testTimeout: 10_000,
   },
 });
