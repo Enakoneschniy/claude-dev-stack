@@ -7,6 +7,10 @@
 // Plan 01 produces the scaffold with stubs — Plan 04 replaces the stubs with
 // real delegating calls to the tool modules built in Plans 02 and 03.
 
+import { statSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { basename, join } from 'node:path';
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -16,10 +20,27 @@ import {
   McpError,
 } from '@modelcontextprotocol/sdk/types.js';
 
-// Shared error hierarchy — imported so subsequent plans and tests can
-// narrow by `instanceof`.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { CdsMcpError } from './mcp-tools/shared.js';
+import {
+  docsSearch,
+  type DocsSearchArgs,
+} from './mcp-tools/docs-search.js';
+import {
+  planningStatus,
+  type PlanningStatusArgs,
+} from './mcp-tools/planning-status.js';
+import {
+  sessionsGetObservations,
+  type GetObservationsArgs,
+} from './mcp-tools/sessions-get-observations.js';
+import {
+  sessionsSearch,
+  type SessionsSearchArgs,
+} from './mcp-tools/sessions-search.js';
+import {
+  sessionsTimeline,
+  type SessionsTimelineArgs,
+} from './mcp-tools/sessions-timeline.js';
+import { VaultNotFoundError } from './mcp-tools/shared.js';
 
 // ---------------------------------------------------------------------------
 // Tool catalog (D-77..D-81). Kept here rather than inline in setRequestHandler
@@ -180,17 +201,28 @@ export const TOOL_DEFINITIONS = [
 export const TOOL_NAMES = TOOL_DEFINITIONS.map((t) => t.name) as readonly string[];
 
 // ---------------------------------------------------------------------------
-// Stub tool handlers — Plan 04 replaces these with real imports from
-// packages/cds-cli/src/mcp-tools/{sessions-search, sessions-timeline, ...}.
-// Keeping stubs here during Plan 01 so the scaffold compiles + registers
-// tool definitions end-to-end.
+// Sessions DB resolver — session-scoped tools need a path to the project's
+// `sessions.db`. The `CDS_TEST_VAULT` env override keeps tests deterministic
+// (no writes to real ~/vault).
 // ---------------------------------------------------------------------------
 
-function notImplementedStub(toolName: string): never {
-  throw new McpError(
-    ErrorCode.InternalError,
-    `Tool '${toolName}' not yet implemented (Plan 04 wires handlers).`,
-  );
+function resolveSessionsDBPath(): string {
+  const base =
+    process.env['CDS_TEST_VAULT'] ??
+    join(homedir(), 'vault', 'projects', basename(process.cwd()));
+  const dbPath = join(base, 'sessions.db');
+  try {
+    statSync(dbPath);
+  } catch {
+    throw new VaultNotFoundError(`Sessions DB not found at ${dbPath}`);
+  }
+  return dbPath;
+}
+
+function textEnvelope(value: unknown): {
+  content: Array<{ type: 'text'; text: string }>;
+} {
+  return { content: [{ type: 'text', text: JSON.stringify(value) }] };
 }
 
 // ---------------------------------------------------------------------------
@@ -213,19 +245,38 @@ export function createServer(): Server {
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name } = request.params;
+    const { name, arguments: rawArgs } = request.params;
+    const args = (rawArgs ?? {}) as Record<string, unknown>;
     try {
       switch (name) {
-        case 'sessions.search':
-          return notImplementedStub('sessions.search');
-        case 'sessions.timeline':
-          return notImplementedStub('sessions.timeline');
-        case 'sessions.get_observations':
-          return notImplementedStub('sessions.get_observations');
-        case 'docs.search':
-          return notImplementedStub('docs.search');
-        case 'planning.status':
-          return notImplementedStub('planning.status');
+        case 'sessions.search': {
+          const result = await sessionsSearch(args as unknown as SessionsSearchArgs, {
+            dbPath: resolveSessionsDBPath(),
+          });
+          return textEnvelope(result);
+        }
+        case 'sessions.timeline': {
+          const result = await sessionsTimeline(
+            args as unknown as SessionsTimelineArgs,
+            { dbPath: resolveSessionsDBPath() },
+          );
+          return textEnvelope(result);
+        }
+        case 'sessions.get_observations': {
+          const result = await sessionsGetObservations(
+            args as unknown as GetObservationsArgs,
+            { dbPath: resolveSessionsDBPath() },
+          );
+          return textEnvelope(result);
+        }
+        case 'docs.search': {
+          const result = await docsSearch(args as unknown as DocsSearchArgs);
+          return textEnvelope(result);
+        }
+        case 'planning.status': {
+          const result = await planningStatus(args as unknown as PlanningStatusArgs);
+          return textEnvelope(result);
+        }
         default:
           throw new McpError(
             ErrorCode.MethodNotFound,

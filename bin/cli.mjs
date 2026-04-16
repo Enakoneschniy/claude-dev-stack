@@ -48,6 +48,7 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack mcp${c.reset}                   ${c.dim}List configured MCP servers${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mcp install${c.reset}           ${c.dim}Install from catalog${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mcp remove${c.reset}            ${c.dim}Remove MCP servers${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack mcp serve${c.reset}             ${c.dim}Run the CDS MCP server (stdio, for Claude Code integration)${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Templates${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack new${c.reset}                   ${c.dim}Generate context.md from stack template${c.reset}`);
@@ -152,8 +153,15 @@ async function run() {
 
     // ── MCP ──
     case 'mcp': {
-      const { main } = await import('../lib/mcp.mjs');
-      await main(args.slice(1));
+      if (args[1] === 'serve') {
+        // Phase 37 MCP-02: route to the CDS MCP server under packages/cds-cli/
+        const { main } = await import('../packages/cds-cli/dist/mcp-server.js');
+        await main(args.slice(2));
+      } else {
+        // Existing third-party MCP catalog (install/remove/list/bare)
+        const { main } = await import('../lib/mcp.mjs');
+        await main(args.slice(1));
+      }
       break;
     }
 

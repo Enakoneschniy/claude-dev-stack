@@ -1,10 +1,15 @@
-// Phase 37 Plan 01 Task 37-01-05 — unit tests for mcp-server scaffold.
+// Phase 37 Plan 01 Task 37-01-05 + Plan 04 Task 37-04-06 — unit tests for
+// the mcp-server scaffold + wired CallTool dispatch.
 //
 // Uses SDK's InMemoryTransport.createLinkedPair() so tests exercise the full
 // ListTools/CallTool round-trip the same way Claude Code does over stdio,
 // just without spawning a child process.
 
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import {
@@ -15,6 +20,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { createServer, TOOL_DEFINITIONS, TOOL_NAMES } from './mcp-server.js';
+import {
+  buildFixtureSessionsDB,
+  type FixtureHandle,
+} from './mcp-tools/__fixtures__/build-sessions-db.js';
 
 const EXPECTED_TOOL_NAMES = new Set([
   'sessions.search',
@@ -78,7 +87,7 @@ describe('mcp-server — ListTools', () => {
   });
 });
 
-describe('mcp-server — CallTool dispatch (Plan 01 stub phase)', () => {
+describe('mcp-server — CallTool dispatch', () => {
   it('CallTool with unknown name throws McpError MethodNotFound', async () => {
     const { client } = await connectedClient();
     let caught: unknown;
@@ -98,26 +107,102 @@ describe('mcp-server — CallTool dispatch (Plan 01 stub phase)', () => {
     await client.close();
   });
 
-  // NOTE: this test is scaffold-phase specific — Plan 04 Task 37-04-06 removes
-  // it and replaces with content-envelope assertions once tool handlers are
-  // wired to real implementations.
-  it('CallTool with known name throws InternalError (stub phase)', async () => {
-    const { client } = await connectedClient();
-    let caught: unknown;
-    try {
-      await client.request(
+  describe('wired tools (Plan 04)', () => {
+    let sessionsFixture: FixtureHandle;
+    let vaultDir: string;
+    let priorEnv: string | undefined;
+
+    beforeEach(() => {
+      // Build an isolated sessions.db for sessions.search to read.
+      sessionsFixture = buildFixtureSessionsDB({
+        sessions: [
+          {
+            id: 'session-1',
+            start_time: '2026-04-16T10:00:00.000Z',
+            end_time: null,
+            project: 'alpha',
+            summary: 'alpha',
+          },
+        ],
+        observations: [
+          {
+            id: 1,
+            session_id: 'session-1',
+            type: 'decision',
+            content: 'monorepo test observation',
+            entities: '[]',
+            created_at: '2026-04-16T10:00:00.000Z',
+          },
+        ],
+      });
+
+      // Arrange a CDS_TEST_VAULT pointing at the fixture's parent dir so
+      // resolveSessionsDBPath() picks up the fixture sessions.db.
+      vaultDir = sessionsFixture.dbPath.slice(
+        0,
+        sessionsFixture.dbPath.length - '/sessions.db'.length,
+      );
+      priorEnv = process.env['CDS_TEST_VAULT'];
+      process.env['CDS_TEST_VAULT'] = vaultDir;
+    });
+
+    afterEach(() => {
+      sessionsFixture.cleanup();
+      if (priorEnv === undefined) delete process.env['CDS_TEST_VAULT'];
+      else process.env['CDS_TEST_VAULT'] = priorEnv;
+    });
+
+    it('CallTool with sessions.search returns text-content envelope', async () => {
+      const { client } = await connectedClient();
+      const result = await client.request(
         {
           method: 'tools/call',
-          params: { name: 'sessions.search', arguments: { query: 'test' } },
+          params: {
+            name: 'sessions.search',
+            arguments: { query: 'monorepo' },
+          },
         },
         CallToolResultSchema,
       );
-    } catch (err) {
-      caught = err;
-    }
-    expect(caught).toBeInstanceOf(McpError);
-    expect((caught as McpError).code).toBe(ErrorCode.InternalError);
-    expect((caught as McpError).message).toMatch(/not yet implemented/);
-    await client.close();
+      expect(Array.isArray(result.content)).toBe(true);
+      expect(result.content[0]?.type).toBe('text');
+      const first = result.content[0];
+      if (!first || first.type !== 'text') throw new Error('unexpected envelope');
+      const parsed = JSON.parse(first.text) as { hits: unknown[] };
+      expect(Array.isArray(parsed.hits)).toBe(true);
+      expect(parsed.hits.length).toBeGreaterThanOrEqual(1);
+      await client.close();
+    });
+
+    it('CallTool with planning.status throws NotAGsdProjectError on unknown project', async () => {
+      // Point CDS_TEST_VAULT at an empty tmpdir so planning.status resolution fails.
+      const emptyVault = mkdtempSync(join(tmpdir(), 'cds-empty-vault-'));
+      process.env['CDS_TEST_VAULT'] = emptyVault;
+      try {
+        const { client } = await connectedClient();
+        let caught: unknown;
+        try {
+          await client.request(
+            {
+              method: 'tools/call',
+              params: {
+                name: 'planning.status',
+                arguments: { project: 'does-not-exist' },
+              },
+            },
+            CallToolResultSchema,
+          );
+        } catch (err) {
+          caught = err;
+        }
+        expect(caught).toBeInstanceOf(McpError);
+        // data.kind preserves the domain error class name across JSON-RPC.
+        const data = (caught as McpError).data as { kind?: string } | undefined;
+        expect(data?.kind).toBe('NotAGsdProjectError');
+        await client.close();
+      } finally {
+        rmSync(emptyVault, { recursive: true, force: true });
+      }
+    });
   });
 });
