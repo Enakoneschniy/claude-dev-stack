@@ -33,8 +33,10 @@ See: `.planning/PROJECT.md` (updated 2026-04-16 after v0.12)
 
 ## Current Position
 
-Phase: — (between milestones)
-Status: v0.12 shipped and archived. Next step is `/gsd-new-milestone v1.0 "CDS-Core Independence"` to generate roadmap from `docs/cds-core-independence-plan.md` + SEED-004.
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.0 Phase A (CDS-Core Independence). 9 target features per SEED-004.
+Last activity: 2026-04-16 — Milestone v1.0 started via `/gsd-new-milestone`.
 
 ### Known Gaps from v0.12 (carried to v0.13 / v1.0 planning)
 
