@@ -40,6 +40,9 @@ importers:
       '@types/better-sqlite3':
         specifier: ^7.6.13
         version: 7.6.13
+      ajv:
+        specifier: ^8.18.0
+        version: 8.18.0
 
   packages/cds-migrate:
     dependencies:

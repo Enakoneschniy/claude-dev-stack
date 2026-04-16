@@ -1,0 +1,10 @@
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t1","name":"Read","input":{"file_path":"src/foo.ts"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t1","name":"Read","content":"export const foo = 1;"}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t2","name":"Grep","input":{"pattern":"bar","path":"src"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t2","name":"Grep","content":"src/foo.ts:1:export const foo = 1;"}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t3","name":"Read","input":{"file_path":"src/bar.ts"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t3","name":"Read","content":"export const bar = 2;"}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t4","name":"Bash","input":{"command":"ls src"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t4","name":"Bash","content":"foo.ts\nbar.ts"}]}}
+{"type":"assistant","message":{"content":[{"type":"tool_use","id":"t5","name":"Grep","input":{"pattern":"baz","path":"src"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"t5","name":"Grep","content":"(no matches)"}]}}
