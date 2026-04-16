@@ -2,9 +2,11 @@ import { describe, it, expect } from 'vitest';
 import Ajv from 'ajv';
 
 import {
+  BACKFILL_PREAMBLE,
+  buildExtractionPrompt,
+  buildSystemPrompt,
   emitObservationsTool,
   SYSTEM_PROMPT,
-  buildSystemPrompt,
 } from './prompts.js';
 import { OBSERVATION_TYPES, type EmitObservationsInput } from './types.js';
 
@@ -139,5 +141,65 @@ describe('SYSTEM_PROMPT + buildSystemPrompt', () => {
     expect(backfill.length).toBeGreaterThan(SYSTEM_PROMPT.length);
     expect(backfill).toContain(SYSTEM_PROMPT);
     expect(backfill.toLowerCase()).toContain('backfill');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Phase 38 D-91/D-92/D-93 — buildExtractionPrompt (flat-string entry)
+// ---------------------------------------------------------------------------
+
+describe('buildExtractionPrompt — mode: backfill', () => {
+  it('prepends the D-92 backfill preamble to the user prompt when mode is backfill', () => {
+    const result = buildExtractionPrompt({
+      mode: 'backfill',
+      input: 'Sample markdown',
+    });
+    expect(result.userPrompt.startsWith('You are processing a human-written session summary')).toBe(true);
+    expect(result.userPrompt).toContain('Sample markdown');
+    expect(result.userPrompt).toContain('low recall is acceptable; low precision is not');
+  });
+
+  it('does NOT prepend backfill preamble when mode is transcript', () => {
+    const result = buildExtractionPrompt({
+      mode: 'transcript',
+      input: 'Sample markdown',
+    });
+    expect(
+      result.userPrompt.startsWith('You are processing a human-written session summary'),
+    ).toBe(false);
+    expect(result.userPrompt).toContain('Sample markdown');
+  });
+
+  it('BACKFILL_PREAMBLE is the verbatim D-92 text', () => {
+    // Guard against accidental wording drift — this contract is snapshot-stable.
+    expect(BACKFILL_PREAMBLE).toContain('You are processing a human-written session summary');
+    expect(BACKFILL_PREAMBLE).toContain('low recall is acceptable; low precision is not');
+    // Preserve the em-dash character.
+    expect(BACKFILL_PREAMBLE).toContain('—');
+  });
+
+  it('returns identical tools across transcript and backfill modes (bit-exact)', () => {
+    const t = buildExtractionPrompt({ mode: 'transcript', input: 'x' });
+    const b = buildExtractionPrompt({ mode: 'backfill', input: 'x' });
+    expect(JSON.stringify(b.tools)).toBe(JSON.stringify(t.tools));
+    // Tool bundle is a one-element array containing emit_observations.
+    expect(b.tools).toHaveLength(1);
+    expect(b.tools[0]?.name).toBe('emit_observations');
+  });
+
+  it('systemPrompt for backfill is the buildSystemPrompt("backfill") variant', () => {
+    const result = buildExtractionPrompt({ mode: 'backfill', input: 'x' });
+    expect(result.systemPrompt).toBe(buildSystemPrompt('backfill'));
+  });
+
+  it('systemPrompt for transcript is the base SYSTEM_PROMPT (Phase 36 parity)', () => {
+    const result = buildExtractionPrompt({ mode: 'transcript', input: 'x' });
+    expect(result.systemPrompt).toBe(SYSTEM_PROMPT);
+  });
+
+  it('preserves the caller-supplied input verbatim (no rewriting)', () => {
+    const input = 'Line 1\nLine 2\nLine 3 with <tags> & emoji 🎉';
+    const result = buildExtractionPrompt({ mode: 'backfill', input });
+    expect(result.userPrompt.endsWith(input)).toBe(true);
   });
 });

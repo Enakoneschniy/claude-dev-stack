@@ -58,14 +58,16 @@ test('fresh DB: runPendingMigrations creates schema_version + all tables + FTS5'
   const count = db
     .prepare('SELECT COUNT(*) AS c FROM schema_version')
     .get() as { c: number };
-  expect(count.c).toBe(1);
+  // Phase 38: migration 002-entity-display-name.sql now lands alongside
+  // 001-initial.sql, so a fresh DB records two versions.
+  expect(count.c).toBe(2);
 
   const versions = (
     db
       .prepare('SELECT version FROM schema_version ORDER BY version')
       .all() as Array<{ version: number }>
   ).map((r) => r.version);
-  expect(versions).toEqual([1]);
+  expect(versions).toEqual([1, 2]);
 });
 
 test('second call is idempotent — no new schema_version rows', () => {
@@ -74,7 +76,8 @@ test('second call is idempotent — no new schema_version rows', () => {
   const count = db
     .prepare('SELECT COUNT(*) AS c FROM schema_version')
     .get() as { c: number };
-  expect(count.c).toBe(1);
+  // Phase 38: two migrations ship now; idempotent re-run keeps exactly 2 rows.
+  expect(count.c).toBe(2);
 });
 
 test('triggers: inserting into observations populates observations_fts', () => {

@@ -72,6 +72,66 @@ export function buildSystemPrompt(mode: CaptureMode = 'transcript'): string {
 }
 
 /**
+ * Phase 38 D-92: verbatim backfill preamble prepended to the user prompt when
+ * `mode === 'backfill'`. Do not edit the text — it is snapshot-tested for
+ * bit-exact match against the D-92 contract.
+ */
+export const BACKFILL_PREAMBLE = `You are processing a human-written session summary, not a live transcript.
+The author has already distilled the session into prose. Extract ONLY decisions,
+blockers, todos, and entities that are EXPLICITLY stated. Do not infer file touches
+from casual prose mentions. Do not fabricate observations. If the summary is thin,
+return few observations — low recall is acceptable; low precision is not.`;
+
+/**
+ * Shape returned by {@link buildExtractionPrompt} when called with a flat
+ * string input (Phase 38 backfill migrator pathway).
+ *
+ * The sibling overload in `transcript.ts` that accepts `ParsedMessage[]`
+ * returns a different shape (`{ systemPrompt, userPrompt, estimatedTokens }`)
+ * because it applies tier-2 head+tail truncation under a token budget. The
+ * flat-string entry defined here skips tier-2 (markdown inputs are small)
+ * and includes the tool schema bundle directly for convenience at the
+ * `dispatchAgent` boundary.
+ */
+export interface BuiltPrompt {
+  systemPrompt: string;
+  userPrompt: string;
+  tools: Tool[];
+}
+
+/**
+ * Phase 38 D-91/D-93: the flat-string extraction prompt builder.
+ *
+ * Returns `{ systemPrompt, userPrompt, tools }`. The core tool schema
+ * (`emit_observations`) and system prompt are identical across modes —
+ * only the user prompt differs:
+ *   - `mode: 'transcript'` → `input` passed through verbatim.
+ *   - `mode: 'backfill'`   → {@link BACKFILL_PREAMBLE} prepended before `input`.
+ *
+ * This is the entry point consumed by the Phase 38 backfill migrator. The
+ * Phase 36 live-capture Stop hook uses the ParsedMessage[]-shaped
+ * `buildExtractionPrompt` re-exported from `./transcript.ts`.
+ *
+ * Both entry points share the same underlying system prompt + tool schema
+ * so sessions.db stays consistent across pathways (D-91).
+ */
+export function buildExtractionPrompt(opts: {
+  mode: CaptureMode;
+  input: string;
+}): BuiltPrompt {
+  const systemPrompt = buildSystemPrompt(opts.mode);
+  const userPrompt =
+    opts.mode === 'backfill'
+      ? `${BACKFILL_PREAMBLE}\n\n${opts.input}`
+      : opts.input;
+  return {
+    systemPrompt,
+    userPrompt,
+    tools: [emitObservationsTool],
+  };
+}
+
+/**
  * The `emit_observations` tool schema. Passed as `tools: [emitObservationsTool]`
  * to `dispatchAgent`. `additionalProperties: false` on every object type rejects
  * schema drift at the API boundary rather than silently accepting extra fields.

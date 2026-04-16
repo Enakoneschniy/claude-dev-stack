@@ -46,15 +46,20 @@ let dispatchAgent;
 let CostTracker;
 let openSessionsDB;
 let loadTranscript;
-let buildExtractionPrompt;
+let buildExtractionPromptFromMessages;
 let emitObservationsTool;
 let updateContextHistory;
 
 try {
   ({ dispatchAgent, CostTracker, openSessionsDB } = await import('@cds/core'));
-  ({ loadTranscript, buildExtractionPrompt, emitObservationsTool } = await import(
-    '@cds/core/capture'
-  ));
+  ({
+    loadTranscript,
+    // Phase 38 rename: Phase 36's message-shaped builder is now
+    // buildExtractionPromptFromMessages; flat-string callers use
+    // buildExtractionPrompt from @cds/core/capture instead.
+    buildExtractionPromptFromMessages,
+    emitObservationsTool,
+  } = await import('@cds/core/capture'));
   // Relative specifier resolves against this module's URL both in-repo
   // (hooks/ → ../lib/session-context.mjs) and after wizard install
   // (~/.claude/hooks/ → ~/.claude/lib/session-context.mjs). Vitest mocks
@@ -257,7 +262,7 @@ async function runCapture() {
     throw Object.assign(new Error('transcript empty'), { silent: true });
   }
 
-  const { systemPrompt, userPrompt } = buildExtractionPrompt(messages);
+  const { systemPrompt, userPrompt } = buildExtractionPromptFromMessages(messages);
 
   // 60s budget (D-65)
   const controller = new AbortController();

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import {
   loadTranscript,
   parseTranscriptText,
-  buildExtractionPrompt,
+  buildExtractionPromptFromMessages,
   truncateToolResult,
   summarizeToolCall,
   TOOL_TRUNCATE_CAP,
@@ -137,13 +137,13 @@ describe('loadTranscript — filesystem wiring', () => {
   });
 });
 
-describe('buildExtractionPrompt', () => {
+describe('buildExtractionPromptFromMessages', () => {
   it('wraps messages in <role> tags and reports token estimate (no elision)', () => {
     const messages: ParsedMessage[] = [
       { role: 'user', content: 'fix the bug' },
       { role: 'assistant', content: 'will do' },
     ];
-    const out = buildExtractionPrompt(messages);
+    const out = buildExtractionPromptFromMessages(messages);
     expect(out.userPrompt).toContain('<user>');
     expect(out.userPrompt).toContain('</user>');
     expect(out.userPrompt).toContain('<assistant>');
@@ -155,7 +155,7 @@ describe('buildExtractionPrompt', () => {
     const raw = await readFile(join(FIXTURES_DIR, 'large-session.jsonl'), 'utf8');
     const messages = parseTranscriptText(raw);
     expect(messages.length).toBeGreaterThan(TIER_2_HEAD + TIER_2_TAIL);
-    const out = buildExtractionPrompt(messages);
+    const out = buildExtractionPromptFromMessages(messages);
     expect(out.userPrompt).toMatch(/\.\.\. \[\d+ messages elided for cost\] \.\.\./);
     // Estimate stays bounded — after truncation we should only have HEAD+TAIL messages.
     // Allow a reasonable margin above the max for the preserved messages + system prompt.
@@ -164,8 +164,8 @@ describe('buildExtractionPrompt', () => {
 
   it('backfill mode prepends a preamble to the system prompt', () => {
     const messages: ParsedMessage[] = [{ role: 'user', content: 'hi' }];
-    const transcriptOut = buildExtractionPrompt(messages, 'transcript');
-    const backfillOut = buildExtractionPrompt(messages, 'backfill');
+    const transcriptOut = buildExtractionPromptFromMessages(messages, 'transcript');
+    const backfillOut = buildExtractionPromptFromMessages(messages, 'backfill');
     expect(backfillOut.systemPrompt.length).toBeGreaterThan(transcriptOut.systemPrompt.length);
     expect(backfillOut.systemPrompt.toLowerCase()).toContain('backfill');
   });
