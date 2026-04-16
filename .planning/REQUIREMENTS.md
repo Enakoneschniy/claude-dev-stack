@@ -26,6 +26,10 @@
 
 - [ ] **SDK-01**: `@anthropic-ai/claude-agent-sdk` license verified (Apache-2.0 or MIT confirmed compatible with CDS distribution model). License compatibility documented in a new `NOTICES.md` at the repo root listing every runtime dependency and its license. SDK is added to `packages/cds-core/package.json` dependencies (NOT `prompts` — `prompts` stays single-dep for the CLI surface).
 
+  **Correction (2026-04-16, Phase 34 execution):** `@anthropic-ai/claude-agent-sdk@0.2.111` is licensed under Anthropic Commercial Terms of Service (NOT Apache-2.0/MIT as originally assumed). Accepted as internal infrastructure dependency per Phase 34 CONTEXT.md D-13..D-16 and documented in `NOTICES.md`. Corrected acceptance phrasing: "license confirmed compatible with CDS distribution model (Anthropic Commercial ToS for claude-agent-sdk, documented in NOTICES.md)".
+
+  **LGPL transitive allowlist note (2026-04-16):** `@img/sharp-libvips-*` packages (LGPL-3.0-or-later) are pulled transitively via `@modelcontextprotocol/sdk → sharp` as optional platform bindings. Allowlisted per dynamic-linking convention (libvips standard), documented under "LGPL-3.0-or-later (dynamic-linked native bindings — allowlisted)" in `NOTICES.md`.
+
 - [ ] **SDK-02**: `packages/cds-core/src/agent-dispatcher.ts` exports `dispatchAgent({ model, prompt, system?, tools? })` that wraps `@anthropic-ai/claude-agent-sdk` agent invocation. Returns structured result `{ output: string, tokens: { input, output }, cost_usd }`. Replaces the failing `claude -p` subprocess pattern from `lib/adr-bridge-session.mjs`. Hello-world test: dispatching Haiku with a simple prompt returns expected output and non-zero token counts.
 
 ### Core Primitives (CORE)
