@@ -29,3 +29,17 @@ export class LicenseKeyError extends DispatchError {
     super(message);
   }
 }
+
+/**
+ * Thrown by CostTracker.record() when the model is not present in the
+ * bundled+override pricing table (D-29). Callers can catch and fall back
+ * to a zero-cost estimate, or let it bubble to expose pricing drift.
+ */
+export class UnknownModelError extends DispatchError {
+  constructor(public readonly model: string) {
+    super(
+      `No pricing entry for model "${model}". Add a pattern to ~/.claude/anthropic-pricing.json or update @cds/core's bundled pricing table.`,
+    );
+    this.name = 'UnknownModelError';
+  }
+}
