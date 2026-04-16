@@ -135,6 +135,33 @@
   2. `npm install claude-dev-stack@alpha` installs `1.0.0-alpha.1`; `npm install claude-dev-stack` (no tag) still installs the latest `0.12.x`.
   3. `docs/migration-v0-to-v1-alpha.md` exists and documents settings.json schema changes, hook name changes, and the new SQLite dependency.
   4. The GitHub release for `v1.0.0-alpha.1` links the migration guide and calls out alpha-status caveats (auto-capture is the only canonical session writer; manual `/end` is fallback only).
+**Plans**: 5 (complete 2026-04-16)
+
+### Phase 40: v1.0 Alpha Polish & Blockers
+**Goal**: Bring v1.0.0-alpha.1 release-ready by closing CI blockers, hardening the subagent permission model that broke during Phase 39 execution, and gating the release behind formal verification + code review. After this phase, alpha is one PR + one GitHub release away from `@alpha` on npm.
+**Depends on**: Phase 39 (demo + release plumbing)
+**Requirements**: derived from Phase 39 follow-ups + 999.2 promotion + carried v0.12 known gap
+**Scope**:
+  1. **CI blocker** — fix 3 pre-existing `tests/detect.test.mjs` failures (carried since v0.12; new `publish.yml` runs `pnpm test` and they now block release).
+  2. **CC 2.1.x subagent permission hardening** (promoted from backlog 999.2):
+     - Auto-pass `mode=bypassPermissions` to `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md`
+     - `claude-dev-stack doctor --gsd-permissions` populates `.claude/settings.local.json` allowlist (pnpm:*, npx:*, node:*, git merge-base:*, git reset:*, git status:*, tsc:*, vitest:*)
+     - Worktree base check Read-fallback (read `.git/HEAD` directly when Bash denied)
+     - Post-worktree-merge `pnpm install` step in `execute-phase.md`
+     - Wizard CC 2.x detection + automatic permission allowlist setup
+  3. **Verification gates** for Phase 39:
+     - `/gsd-verify-work` UAT pass for Phase 39
+     - `/gsd-code-review` for Phase 39 new code (`packages/cds-cli/src/quick.ts`, `packages/cds-cli/src/capture-standalone.ts`, `lib/install/hooks.mjs::registerCaptureHook`, `bin/install.mjs` Node check wiring)
+  4. **Documentation polish**:
+     - README update: v1.0 install instructions + cross-link to `docs/migration-v0-to-v1-alpha.md`
+     - Manual end-to-end smoke wizard on a clean test project (install + project setup + Stop hook installed + migrate sessions dry-run)
+  5. **Phase 35 follow-up**: `db.pragma('busy_timeout = 5000')` in `openRawDb` (helps avoid SQLITE_BUSY under concurrent CLAUDE_SESSION_ID writes; non-blocking but ships before alpha for sturdiness).
+**Success Criteria** (what must be TRUE):
+  1. `pnpm test` is fully green at HEAD — no failing tests on macOS/Linux Node 20+.
+  2. A fresh `claude-dev-stack` install on a clean macOS or Linux machine completes the wizard end-to-end without any silent permission failures (executors run, hooks register, MCP server appears in `mcp.servers.cds`).
+  3. `/gsd-verify-work` for Phase 39 returns PASS; `/gsd-code-review` produces a clean REVIEW.md (no severity-blocking findings).
+  4. README front-matter mentions v1.0.0-alpha.1 install instructions and links the migration guide.
+  5. `openRawDb` sets `busy_timeout = 5000` and a regression test confirms the pragma persists across reopens.
 **Plans**: TBD
 
 ### Risks & Critical Flags
@@ -156,6 +183,7 @@
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
 | 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
+| 40. v1.0 Alpha Polish & Blockers | 0/? | Not started | — |
 
 ---
 
@@ -216,7 +244,7 @@ Archive: `.planning/milestones/v0.12-ROADMAP.md`
 
 Unsequenced items captured from session work — promote to active milestone via `/gsd-review-backlog`.
 
-### Phase 999.2: CC 2.1.x Subagent Permission Hardening (BACKLOG)
+### Phase 999.2: CC 2.1.x Subagent Permission Hardening (PROMOTED → Phase 40)
 
 **Goal:** Eliminate the silent Bash-permission failure that breaks `gsd-executor` spawns under Claude Code 2.1.x.
 
