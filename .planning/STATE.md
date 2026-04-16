@@ -1,13 +1,13 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: CDS-Core Independence (planning)
-status: milestone-planning
-stopped_at: v0.12 archived; v1.0 roadmap pending via /gsd-new-milestone
-last_updated: "2026-04-16T11:30:00.000Z"
+milestone_name: CDS-Core Independence (Phase A)
+status: in-progress
+stopped_at: Phase 33 not yet started; roadmap approved 2026-04-16
+last_updated: "2026-04-16T12:00:00.000Z"
 last_activity: 2026-04-16
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -16,9 +16,9 @@ progress:
 
 # Project State: claude-dev-stack
 
-**Last updated:** 2026-04-16 — v0.12 Hooks & Limits archived (13 phases, 32 plans, 912 tests, shipped on npm as `@0.12.0` + `@0.12.1`).
+**Last updated:** 2026-04-16 — v1.0 CDS-Core Independence (Phase A) roadmap created (7 phases 33–39, 19 v1 requirements, 100% coverage).
 
-**Last activity:** 2026-04-16 — Closing v0.12 milestone; preparing for v1.0 CDS-Core Independence kickoff.
+**Last activity:** 2026-04-16 — Roadmap derived from REQUIREMENTS.md + SEED-004 + cds-core-independence-plan.md (D-28 Phase A scope). Ready for `/gsd-plan-phase 33`.
 
 ---
 
@@ -27,37 +27,58 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-16 after v0.12)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Planning v1.0 — carve `@cds/core` / `@cds/cli` / `@cds/migrate` / `@cds/s3-backend` pnpm monorepo on Claude Agent SDK.
+**Current focus:** v1.0 Phase A — pnpm monorepo + Claude Agent SDK + tiered vault (SQLite Tier 2) + auto session capture + alpha release on `@alpha` npm tag.
 
 ---
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: **33 — Monorepo Foundation** (Not started)
 Plan: —
-Status: Defining requirements for v1.0 Phase A (CDS-Core Independence). 9 target features per SEED-004.
-Last activity: 2026-04-16 — Milestone v1.0 started via `/gsd-new-milestone`.
+Status: Roadmap approved. Awaiting `/gsd-plan-phase 33` to decompose MONO-01..04 into executable plans.
+Last activity: 2026-04-16 — Roadmap created via `/gsd-new-milestone` flow.
 
-### Known Gaps from v0.12 (carried to v0.13 / v1.0 planning)
+### Active Milestone Phases (v1.0 Phase A)
 
-- **ADR-02 UAT** — auto-ADR bridge code ships in Phase 26 but `/end → Haiku → ADR write` round-trip has not been verified in a live session. Prior attempts failed with `claude -p --model haiku --bare --output-format text` subprocess error. Needs debugging before v1.0 kickoff.
-- **SSR-01 UAT** — SessionStart marker mtime + 60-min skip-reload not live-verified.
-- **Phase 21 / Phase 25 SUMMARY.md backfill** — shipped inline, no retrospective written. Accepted tech debt.
-- **`detect.test.mjs` pre-existing failures** — 3 subtests fail on `profile must be null in v1`; route to bugfix quick task in v0.13.
-- **NotebookLM recursive `docs/*/` scan bug** — discovered during SEED migration. Surface in v1.0 planning.
+| # | Phase | Reqs | Status |
+|---|-------|------|--------|
+| 33 | Monorepo Foundation | MONO-01..04 | Not started |
+| 34 | SDK Integration & Core Primitives | SDK-01, SDK-02, CORE-01, CORE-02 | Not started |
+| 35 | Tiered Vault — Tier 2 SQLite | VAULT-01..03 | Not started |
+| 36 | Auto Session Capture | CAPTURE-05, CAPTURE-06 | Not started |
+| 37 | MCP Adapter | MCP-01, MCP-02 | Not started |
+| 38 | Backfill Migration | MIGRATE-01, MIGRATE-02 | Not started |
+| 39 | `/cds-quick` Demo & Alpha Release | DEMO-01, RELEASE-01 | Not started |
+
+### Critical Risks Surfaced During Planning
+
+- **SDK-01 license verification is a soft blocker on every downstream phase.** Phase 34 must start with the license check before any SDK import — if non-MIT/Apache-2.0, escalate before code lands.
+- **CAPTURE-05 closes v0.12 ADR-02 Known Gap retroactively.** The failing `claude -p` subprocess pattern is replaced by SDK in Phase 36 — call out in Phase 36 SUMMARY + v1.0 release notes.
+- **DEMO-01 gates RELEASE-01.** Phase 39 cannot ship `1.0.0-alpha.1` without a working `/cds-quick` round-trip.
+- **VAULT-01 driver choice (`better-sqlite3`) is locked** per SEED-004 + REQUIREMENTS. Do NOT re-open during Phase 35 planning.
+
+### Known Gaps from v0.12 (still carried)
+
+- **ADR-02 UAT** — closed retroactively by Phase 36 (auto-capture replaces failing `claude -p` subprocess pattern).
+- **SSR-01 UAT** — SessionStart marker mtime + 60-min skip-reload not live-verified. Route to v1.x quick task.
+- **Phase 21 / Phase 25 SUMMARY.md backfill** — accepted tech debt, not blocking.
+- **`detect.test.mjs` pre-existing failures** — 3 subtests fail on `profile must be null in v1`; route to bugfix quick task in v1.x.
+- **NotebookLM recursive `docs/*/` scan bug** — discovered during SEED migration. Surface in v1.x planning.
 
 ---
 
 ## Accumulated Context
 
-### Decisions (carried forward)
+### Decisions (carried forward + new for v1.0)
 
-- **Single-dep constraint preserved**: `prompts@^2.4.2` only.
+- **Single-dep constraint preserved**: `prompts@^2.4.2` only on the CLI surface. SDK is internal infrastructure dep on `cds-core`.
 - **NotebookLM via `notebooklm-py` CLI wrapper** — ADR-0001.
 - **Branching strategy**: `phase` → `gsd/phase-{phase}-{slug}`. PR-only to main (never direct commit).
-- **SEED-001**: Integrate Claude primitives (Managed Agents, Dispatch, /schedule, CronCreate), don't build custom infra.
 - **Hooks architecture**: Project-level `.claude/settings.json`, never global.
-- **v1.0 direction**: pnpm workspaces monorepo + TS project references + vitest + Pi SDK port. See `docs/cds-core-independence-plan.md`.
+- **v1.0 architecture**: pnpm workspaces monorepo + TS project references + vitest + Pi SDK port. See `docs/cds-core-independence-plan.md`.
+- **Tiered vault**: Tier 1 (markdown docs/decisions/planning) + Tier 2 (SQLite sessions, **better-sqlite3 locked**) + Tier 3 (markdown context.md/STATE.md). SEED-004.
+- **Auto-capture cutover**: from v1.0, Stop hook writes ONLY to SQLite. Manual `/end` deprecated but kept as fallback. Markdown sessions backfilled (Phase 38), originals frozen on disk.
+- **Alpha release tag**: `npm publish --tag alpha` so existing v0.12.x users on `@latest` are NOT auto-upgraded.
 
 ### Quick Tasks Completed (v0.12)
 
@@ -70,6 +91,6 @@ Last activity: 2026-04-16 — Milestone v1.0 started via `/gsd-new-milestone`.
 
 ## Session Continuity
 
-Last session: 2026-04-16 — closing v0.12 milestone.
-Stopped at: milestone archival in progress.
-Resume file: None (between milestones).
+Last session: 2026-04-16 — v1.0 Phase A roadmap creation.
+Stopped at: ROADMAP.md + STATE.md + REQUIREMENTS.md traceability written; ready for Phase 33 planning.
+Resume file: None — next action is `/gsd-plan-phase 33`.

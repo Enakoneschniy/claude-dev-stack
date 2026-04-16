@@ -99,22 +99,24 @@
 
 | REQ-ID | Phase | Plan | Status |
 |--------|-------|------|--------|
-| MONO-01 | TBD | — | pending |
-| MONO-02 | TBD | — | pending |
-| MONO-03 | TBD | — | pending |
-| MONO-04 | TBD | — | pending |
-| SDK-01 | TBD | — | pending |
-| SDK-02 | TBD | — | pending |
-| CORE-01 | TBD | — | pending |
-| CORE-02 | TBD | — | pending |
-| VAULT-01 | TBD | — | pending |
-| VAULT-02 | TBD | — | pending |
-| VAULT-03 | TBD | — | pending |
-| CAPTURE-05 | TBD | — | pending |
-| CAPTURE-06 | TBD | — | pending |
-| MCP-01 | TBD | — | pending |
-| MCP-02 | TBD | — | pending |
-| MIGRATE-01 | TBD | — | pending |
-| MIGRATE-02 | TBD | — | pending |
-| DEMO-01 | TBD | — | pending |
-| RELEASE-01 | TBD | — | pending |
+| MONO-01 | Phase 33 | — | pending |
+| MONO-02 | Phase 33 | — | pending |
+| MONO-03 | Phase 33 | — | pending |
+| MONO-04 | Phase 33 | — | pending |
+| SDK-01 | Phase 34 | — | pending |
+| SDK-02 | Phase 34 | — | pending |
+| CORE-01 | Phase 34 | — | pending |
+| CORE-02 | Phase 34 | — | pending |
+| VAULT-01 | Phase 35 | — | pending |
+| VAULT-02 | Phase 35 | — | pending |
+| VAULT-03 | Phase 35 | — | pending |
+| CAPTURE-05 | Phase 36 | — | pending |
+| CAPTURE-06 | Phase 36 | — | pending |
+| MCP-01 | Phase 37 | — | pending |
+| MCP-02 | Phase 37 | — | pending |
+| MIGRATE-01 | Phase 38 | — | pending |
+| MIGRATE-02 | Phase 38 | — | pending |
+| DEMO-01 | Phase 39 | — | pending |
+| RELEASE-01 | Phase 39 | — | pending |
+
+**Coverage check**: 19/19 v1 requirements mapped to exactly one phase across Phases 33–39. Zero orphans, zero duplicates.
