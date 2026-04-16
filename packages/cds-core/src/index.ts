@@ -52,3 +52,4 @@ export type { SdkMcpToolDefinition as Tool } from '@anthropic-ai/claude-agent-sd
 
 // Version constant — useful for diagnostic output (replaces Phase 33 stub).
 export const CDS_CORE_VERSION = '0.1.0-phase34';
+export * from "./vault/index.js";

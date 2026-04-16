@@ -40,11 +40,11 @@
 
 ### Tiered Vault — Tier 2 SQLite (VAULT)
 
-- [ ] **VAULT-01**: `packages/cds-core/src/vault/sqlite.ts` exports `openSessionsDB(projectPath)` returning a `better-sqlite3` connection to `~/vault/projects/{name}/sessions.db`. Driver choice: **better-sqlite3** (synchronous, native compile, battle-tested; rejected `bun:sqlite` because we are not on Bun runtime). DB created on first call with WAL mode + FTS5 extension verified.
+- [x] **VAULT-01**: `packages/cds-core/src/vault/sqlite.ts` exports `openSessionsDB(projectPath)` returning a `better-sqlite3` connection to `~/vault/projects/{name}/sessions.db`. Driver choice: **better-sqlite3** (synchronous, native compile, battle-tested; rejected `bun:sqlite` because we are not on Bun runtime). DB created on first call with WAL mode + FTS5 extension verified. _(Implemented in Phase 35 as `packages/cds-core/src/vault/sessions.ts` — module name adjusted for clarity; API contract preserved.)_
 
-- [ ] **VAULT-02**: SQLite schema initialized on DB open: tables `sessions(id PK, start_time, end_time, project, summary)`, `observations(id PK, session_id FK, type, content, entities JSON, created_at)`, `entities(id PK, name, type, first_seen, last_updated)`, `relations(from_entity FK, to_entity FK, relation_type, observed_in_session FK)`. FTS5 virtual table `observations_fts` indexes `observations.content` and `sessions.summary`. Schema migrations are versioned in `packages/cds-core/src/vault/migrations/` with a `schema_version` table enforcing forward-only upgrades.
+- [x] **VAULT-02**: SQLite schema initialized on DB open: tables `sessions(id PK, start_time, end_time, project, summary)`, `observations(id PK, session_id FK, type, content, entities JSON, created_at)`, `entities(id PK, name, type, first_seen, last_updated)`, `relations(from_entity FK, to_entity FK, relation_type, observed_in_session FK)`. FTS5 virtual table `observations_fts` indexes `observations.content` and `sessions.summary`. Schema migrations are versioned in `packages/cds-core/src/vault/migrations/` with a `schema_version` table enforcing forward-only upgrades. _(Implemented in Phase 35; migrations folder is `packages/cds-core/src/vault/internal/migrations/`.)_
 
-- [ ] **VAULT-03**: Tier boundary enforcement — only `packages/cds-core/src/vault/sessions.ts` API methods write to SQLite. Any direct `INSERT` outside this module fails type-check (no exported raw `db` handle). Markdown vault writers (`lib/notebooklm-sync.mjs`, `lib/adr-bridge-session.mjs`, etc.) cannot accidentally write to SQLite. Decisions/docs/planning remain markdown-only — no migration path that moves them into SQLite.
+- [x] **VAULT-03**: Tier boundary enforcement — only `packages/cds-core/src/vault/sessions.ts` API methods write to SQLite. Any direct `INSERT` outside this module fails type-check (no exported raw `db` handle). Markdown vault writers (`lib/notebooklm-sync.mjs`, `lib/adr-bridge-session.mjs`, etc.) cannot accidentally write to SQLite. Decisions/docs/planning remain markdown-only — no migration path that moves them into SQLite. _(Implemented in Phase 35 via folder-convention boundary; `vault.boundary.test.ts` scans consumers for illicit imports.)_
 
 ### Auto Session Capture (CAPTURE)
 
@@ -111,9 +111,9 @@
 | SDK-02 | Phase 34 | — | pending |
 | CORE-01 | Phase 34 | — | pending |
 | CORE-02 | Phase 34 | — | pending |
-| VAULT-01 | Phase 35 | — | pending |
-| VAULT-02 | Phase 35 | — | pending |
-| VAULT-03 | Phase 35 | — | pending |
+| VAULT-01 | Phase 35 | 35-01, 35-03, 35-04 | verified |
+| VAULT-02 | Phase 35 | 35-02, 35-04 | verified |
+| VAULT-03 | Phase 35 | 35-03, 35-04 | verified |
 | CAPTURE-05 | Phase 36 | — | pending |
 | CAPTURE-06 | Phase 36 | — | pending |
 | MCP-01 | Phase 37 | — | pending |

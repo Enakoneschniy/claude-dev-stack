@@ -135,6 +135,13 @@ License summary: Apache-2.0 (1), BSD-2-Clause (1), BSD-3-Clause (2), ISC (7), LG
 LGPL-3.0-or-later permits linking from permissively-licensed software when the library is dynamically linked — libvips is the canonical example. This posture does not affect CDS's MIT license nor Anthropic's Commercial ToS applied to the SDK.
 <!-- TRANSITIVE_RUNTIME_DEPS_END -->
 
+### better-sqlite3
+- **Version constraint:** `^12.9.0`
+- **License:** MIT
+- **License URL:** https://github.com/WiseLibs/better-sqlite3/blob/master/LICENSE
+- **Used by:** `@cds/core` — Tier 2 SQLite session memory (per Phase 35 VAULT-01).
+- **Native bindings note:** better-sqlite3 ships platform-specific prebuilds via `prebuild-install`. The pulled `@img/sharp-libvips-*` LGPL binding (see below) is a separate concern from better-sqlite3 itself (MIT native C++ bindings for SQLite, no LGPL linkage).
+
 ## Development Dependencies
 
 Development tooling (`vitest`, `typescript`, `@types/node`) is **not redistributed**

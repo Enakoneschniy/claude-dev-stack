@@ -26,7 +26,7 @@
 
 - [ ] **Phase 33: Monorepo Foundation** — pnpm workspaces, TS project references, vitest, CI matrix
 - [ ] **Phase 34: SDK Integration & Core Primitives** — Claude Agent SDK license check + agent-dispatcher + context + cost-tracker
-- [ ] **Phase 35: Tiered Vault — Tier 2 SQLite** — better-sqlite3 sessions DB + FTS5 schema + boundary enforcement
+- [x] **Phase 35: Tiered Vault — Tier 2 SQLite** — better-sqlite3 sessions DB + FTS5 schema + boundary enforcement (completed 2026-04-16)
 - [ ] **Phase 36: Auto Session Capture** — Stop hook → SDK Haiku → SQLite (closes v0.12 ADR-02 Known Gap retroactively)
 - [ ] **Phase 37: MCP Adapter** — sessions.search/timeline/get_observations + docs.search + planning.status tools
 - [ ] **Phase 38: Backfill Migration** — port existing markdown sessions into SQLite via Haiku entity extraction
@@ -151,7 +151,7 @@
 |-------|----------------|--------|-----------|
 | 33. Monorepo Foundation | 0/? | Not started | — |
 | 34. SDK Integration & Core Primitives | 0/? | Not started | — |
-| 35. Tiered Vault — Tier 2 SQLite | 0/? | Not started | — |
+| 35. Tiered Vault — Tier 2 SQLite | 4/4 | Complete    | 2026-04-16 |
 | 36. Auto Session Capture | 0/? | Not started | — |
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |

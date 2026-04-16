@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: CDS-Core Independence (Phase A)
-status: in-progress
-stopped_at: Phase 34 Plan 01 resumed after LGPL allowlist decision (option 1)
-last_updated: "2026-04-16T17:30:00.000Z"
+status: executing
+stopped_at: Phase 35 context gathered (Phase 33 executing, Phase 34 planning)
+last_updated: "2026-04-16T17:02:39.029Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 7
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 4
-  percent: 50
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State: claude-dev-stack
@@ -27,20 +27,16 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-04-16 after v0.12)
 
 **Core value:** Claude Code can resume work across sessions as if it remembered everything.
-**Current focus:** Phase 34 — sdk-integration-core-primitives
+**Current focus:** Phase 35 — tiered-vault-tier-2-sqlite
 
 ---
 
 ## Current Position
 
-Phase: 34 (sdk-integration-core-primitives) — BLOCKED mid-Plan-01
-Plan: 1 of 4 (Task 3 halted on transitive license audit)
-Status: Blocked — LGPL-3.0-or-later via `@img/sharp-libvips-darwin-arm64` (optional SDK binding)
-Last activity: 2026-04-16 -- Phase 34 execution paused, blocker artifact written
-
-### Blocker detail
-
-See `.planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md` for full context and decision options. tl;dr: the SDK pulls `sharp` platform bindings as `optionalDependencies`; one of those is LGPL-3.0-or-later. Plan 01's forbidden-license list widened Pitfall 6 (GPL/AGPL/SSPL) to include LGPL, so the audit blocked. User decision needed on: allowlist LGPL with NOTICES disclosure, drop LGPL from the blocklist, exclude sharp via pnpm overrides, or replan.
+Phase: 36
+Plan: Not started
+Status: Executing Phase 35
+Last activity: 2026-04-16 -- Phase 35 execution started
 
 ### Active Milestone Phases (v1.0 Phase A)
 
@@ -95,6 +91,6 @@ See `.planning/phases/34-sdk-integration-core-primitives/34-01-BLOCKER.md` for f
 
 ## Session Continuity
 
-Last session: 2026-04-16T13:01:32.627Z
-Stopped at: Phase 34 context gathered (Phase 33 executing in background)
-Resume file: .planning/phases/34-sdk-integration-core-primitives/34-CONTEXT.md
+Last session: 2026-04-16T13:12:02.491Z
+Stopped at: Phase 35 context gathered (Phase 33 executing, Phase 34 planning)
+Resume file: .planning/phases/35-tiered-vault-tier-2-sqlite/35-CONTEXT.md
