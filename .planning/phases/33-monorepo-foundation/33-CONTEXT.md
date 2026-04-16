@@ -45,8 +45,10 @@ Convert single-package repository into a pnpm workspaces monorepo with TypeScrip
 
 ### CI Strategy (D-10 … D-12)
 - **D-10:** CI uses pnpm native affected detection: `pnpm --filter '...[origin/main]' run <task>` for packages. Requires GitHub Actions `actions/checkout@v4` with `fetch-depth: 0` to resolve `origin/main`.
-- **D-11:** Root `tests/*.test.mjs` are not in any workspace package, so their run is guarded separately via `dorny/paths-filter@v3` watching `lib/**`, `bin/**`, `hooks/**`, `tests/**`, `package.json`, `package-lock.json`. When any of those change, CI runs `pnpm vitest run tests/` as an additional job. When only `packages/**` change, root-tests job is skipped.
-- **D-12:** Matrix = `[node 18, 20, 22] × [affected-packages-job, root-tests-job]`. Both jobs cache pnpm store via `actions/setup-node@v4` `cache: 'pnpm'`. Fails build on any TS error or test failure. Replaces existing `.github/workflows/test.yml` in place (not duplicated).
+- **D-11:** Root `tests/*.test.mjs` are not in any workspace package, so their run is guarded separately via `dorny/paths-filter@v4` watching `lib/**`, `bin/**`, `hooks/**`, `tests/**`, `package.json`, `pnpm-lock.yaml`. When any of those change, CI runs `pnpm -w vitest run --project root` as an additional job. When only `packages/**` change, root-tests-job is skipped.
+- **D-12:** Matrix = `[node 18, 20, 22] × [packages-job, root-tests-job]`. Both jobs cache pnpm store via `actions/setup-node@v4` `cache: 'pnpm'`. Fails build on any TS error or test failure. Replaces existing `.github/workflows/ci.yml` in place (not duplicated).
+
+> **Correction note (2026-04-16, during plan-phase verification):** The original discuss-phase draft of D-11 said `@v3` and D-12 referenced `test.yml`. Both were factual errors in auto-filled values. Real existing workflow filename is `.github/workflows/ci.yml` (verified), and `dorny/paths-filter@v4.0.1` is current stable (per RESEARCH.md §Supporting Stack). Corrections do not change the intent of the decisions — only the factual values they were pointing at.
 
 ### Claude's Discretion
 - Exact `tsconfig.base.json` compiler options: ESM output (`"module": "ES2022"`, `"moduleResolution": "Bundler"`), strict mode on (`"strict": true`), `"declaration": true`, `"composite": true`. Final values left to planner.
@@ -103,7 +105,7 @@ None — phase-matched todo count was 0. Open questions from PROJECT.md (SDK lic
 
 ### Integration Points
 - `package.json` root — `"workspaces"`-style field not used today; will add `pnpm-workspace.yaml` sibling file
-- `.github/workflows/test.yml` — replace in place, don't duplicate
+- `.github/workflows/ci.yml` — replace in place, don't duplicate
 - `.github/workflows/publish.yml` — untouched in Phase 33 (publish pipeline changes come with Phase 39 alpha)
 - Root `package.json` `"files"` array controls what npm tarball ships — **must NOT change in Phase 33** so v0.12.x users on `@latest` keep working if a hotfix is needed mid-v1.0 development
 
