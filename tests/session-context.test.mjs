@@ -1,4 +1,4 @@
-import { describe, it, before, after, beforeEach } from 'node:test';
+import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -33,7 +33,7 @@ describe('lib/session-context.mjs', () => {
     resetFixture();
   });
 
-  after(() => {
+  afterAll(() => {
     if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
   });
 

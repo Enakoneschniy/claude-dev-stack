@@ -12,7 +12,7 @@
  *      export the expected functions.
  */
 
-import { describe, it, before } from 'node:test';
+import { describe, it, beforeAll } from 'vitest';
 import assert from 'node:assert/strict';
 import {
   mkdtempSync, mkdirSync, rmSync, writeFileSync, chmodSync, readFileSync, existsSync,
@@ -802,7 +802,7 @@ describe('hooks/gsd-auto-reapply-patches.sh — auto-reapply GSD patches (BUG-06
 describe('Phase 23 — readInstallProfile (DX-07 / D-01 / D-03)', () => {
   let tmpVault;
 
-  before(() => {
+  beforeAll(() => {
     tmpVault = mkdtempSync(join(tmpdir(), 'vault-test-'));
     mkdirSync(join(tmpVault, 'meta'), { recursive: true });
   });

@@ -12,7 +12,7 @@
  *   4. Log output goes to ~/vault/.notebooklm-sync.log
  */
 
-import { describe, it } from 'node:test';
+import { describe, it } from 'vitest';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';

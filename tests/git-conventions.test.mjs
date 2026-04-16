@@ -4,7 +4,7 @@
  * CLI dispatch tests for the scopes subcommand.
  */
 
-import { describe, it, before, after, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -76,10 +76,10 @@ describe('main() help', () => {
 
 describe('main(["list"])', () => {
   let origCwd;
-  before(() => {
+  beforeAll(() => {
     origCwd = process.cwd();
   });
-  after(() => {
+  afterAll(() => {
     process.chdir(origCwd);
   });
 
@@ -129,10 +129,10 @@ describe('main(["list"])', () => {
 
 describe('main(["add", scopeName])', () => {
   let origCwd;
-  before(() => {
+  beforeAll(() => {
     origCwd = process.cwd();
   });
-  after(() => {
+  afterAll(() => {
     process.chdir(origCwd);
   });
 
@@ -156,10 +156,10 @@ describe('main(["add", scopeName])', () => {
 
 describe('main(["remove", scopeName])', () => {
   let origCwd;
-  before(() => {
+  beforeAll(() => {
     origCwd = process.cwd();
   });
-  after(() => {
+  afterAll(() => {
     process.chdir(origCwd);
   });
 
@@ -201,8 +201,8 @@ describe('main(["unknown"])', () => {
 
 describe('cmdGitAction', () => {
   let origCwd;
-  before(() => { origCwd = process.cwd(); });
-  after(() => { process.chdir(origCwd); });
+  beforeAll(() => { origCwd = process.cwd(); });
+  afterAll(() => { process.chdir(origCwd); });
 
   it('guard path: does not write commitlint.yml when no git-scopes.json present', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'cds-gitaction-guard-'));
@@ -222,8 +222,8 @@ describe('cmdGitAction', () => {
 
 describe('cmdMigrateClaude', () => {
   let origCwd;
-  before(() => { origCwd = process.cwd(); });
-  after(() => { process.chdir(origCwd); });
+  beforeAll(() => { origCwd = process.cwd(); });
+  afterAll(() => { process.chdir(origCwd); });
 
   it('guard path: does not write git-scopes.json when no CLAUDE.md found', async () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'cds-migrate-guard-'));

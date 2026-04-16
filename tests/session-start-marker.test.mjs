@@ -1,4 +1,4 @@
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync, mkdirSync, statSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { execFileSync } from 'child_process';
@@ -30,7 +30,7 @@ describe('session-start-marker (Phase 28 / SSR-01 SC#3)', () => {
   let projectDir;
   let vaultDir;
 
-  before(() => {
+  beforeAll(() => {
     fixtureRoot = mkdtempSync(join(tmpdir(), 'ssr01-marker-'));
     projectDir = join(fixtureRoot, 'myproject');
     vaultDir = join(fixtureRoot, 'vault');
@@ -45,7 +45,7 @@ describe('session-start-marker (Phase 28 / SSR-01 SC#3)', () => {
     writeFileSync(join(vaultProject, 'context.md'), '# test context\n');
   });
 
-  after(() => {
+  afterAll(() => {
     if (fixtureRoot && existsSync(fixtureRoot)) {
       rmSync(fixtureRoot, { recursive: true, force: true });
     }

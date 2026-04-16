@@ -1,4 +1,4 @@
-import { describe, it, after } from 'node:test';
+import { describe, it, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync, readFileSync } from 'fs';
 import { join } from 'path';
@@ -121,7 +121,7 @@ describe('shared utilities', () => {
   describe('atomicWriteJson', () => {
     let tmpDir;
 
-    after(() => {
+    afterAll(() => {
       if (tmpDir && existsSync(tmpDir)) {
         rmSync(tmpDir, { recursive: true, force: true });
       }

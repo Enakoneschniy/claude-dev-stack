@@ -4,7 +4,7 @@
 // keywords against payload.prompt, emits ≤200-char routing hint as stdout (which Claude
 // Code prepends as additionalContext). Fail-silent on all error paths.
 
-import { describe, it } from 'node:test';
+import { describe, it } from 'vitest';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'child_process';
 import { join, dirname } from 'path';

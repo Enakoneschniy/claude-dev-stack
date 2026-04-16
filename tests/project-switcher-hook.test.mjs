@@ -4,7 +4,7 @@
 // emits a switch hint when the prompt mentions a project DIFFERENT from the current
 // cwd-resolved project. Silent on current-project match.
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
@@ -31,7 +31,7 @@ describe('project-switcher hook (SKL-03)', () => {
   let bikoProjectDir;
   let cdsProjectDir;
 
-  before(() => {
+  beforeAll(() => {
     tmpBase = mkdtempSync(join(tmpdir(), 'cds-project-switcher-'));
     vaultPath = join(tmpBase, 'vault');
     bikoProjectDir = join(tmpBase, 'Projects', 'biko-pro');
@@ -52,7 +52,7 @@ describe('project-switcher hook (SKL-03)', () => {
     writeFileSync(join(vaultPath, 'project-map.json'), JSON.stringify(projectMap, null, 2));
   });
 
-  after(() => {
+  afterAll(() => {
     if (tmpBase) rmSync(tmpBase, { recursive: true, force: true });
   });
 

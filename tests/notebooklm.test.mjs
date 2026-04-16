@@ -1,4 +1,4 @@
-import { describe, it, before, beforeEach, after } from 'node:test';
+import { describe, it, beforeAll, beforeEach, afterAll, expect } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdirSync, rmSync, copyFileSync, chmodSync, existsSync, readFileSync, mkdtempSync, writeFileSync } from 'fs';
 import { join, dirname, delimiter } from 'path';
@@ -10,7 +10,7 @@ const fixturesDir = join(__dirname, 'fixtures');
 const stubSource = join(fixturesDir, 'notebooklm-stub.sh');
 
 // Dedicated directory on PATH containing ONLY the stub renamed to `notebooklm`.
-// Prepended to process.env.PATH during before(); restored in after().
+// Prepended to process.env.PATH during beforeAll(); restored in afterAll().
 const stubDir = join(tmpdir(), `notebooklm-stub-dir-${process.pid}`);
 const stubInstall = join(stubDir, 'notebooklm');
 
@@ -21,7 +21,7 @@ let originalPath;
 // _resetBinaryCache is the chosen approach).
 let nblm;
 
-before(async () => {
+beforeAll(async () => {
   // Install the stub as a fake `notebooklm` binary in a dedicated PATH dir.
   if (existsSync(stubDir)) rmSync(stubDir, { recursive: true, force: true });
   mkdirSync(stubDir, { recursive: true });
@@ -46,7 +46,7 @@ beforeEach(() => {
   nblm._resetBinaryCache();
 });
 
-after(() => {
+afterAll(() => {
   process.env.PATH = originalPath;
   if (existsSync(stubDir)) rmSync(stubDir, { recursive: true, force: true });
 });

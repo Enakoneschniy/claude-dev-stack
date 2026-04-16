@@ -1,4 +1,4 @@
-import { describe, it, before, after, beforeEach } from 'node:test';
+import { describe, it, beforeAll, afterAll, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync, existsSync, mkdtempSync } from 'node:fs';
 import { join, dirname } from 'node:path';
@@ -34,7 +34,7 @@ function haiku(payload) {
 describe('bridgeSession() — happy path (SC#1 + SC#4)', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('creates ADR with YAML frontmatter and Context/Decision/Consequences sections', async () => {
     const callHaiku = haiku({
@@ -81,7 +81,7 @@ describe('bridgeSession() — happy path (SC#1 + SC#4)', () => {
 describe('bridgeSession() — confidence gating (D-03)', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('writes status: proposed for confidence=medium; discards confidence=low', async () => {
     const callHaiku = haiku({
@@ -113,7 +113,7 @@ describe('bridgeSession() — confidence gating (D-03)', () => {
 describe('bridgeSession() — duplicate via frontmatter', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('updates the existing ADR and appends Superseded note', async () => {
     const existingPath = join(t.decisionsDir, '0013-logging-strategy.md');
@@ -168,7 +168,7 @@ old consequences
 describe('bridgeSession() — old-format filename match (D-07)', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('matches by filename and promotes old format to new format', async () => {
     const existingPath = join(t.decisionsDir, '0005-logging-strategy.md');
@@ -212,7 +212,7 @@ old
 describe('bridgeSession() — numbering', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('new unrelated ADR gets max+1 (zero-padded)', async () => {
     writeFileSync(join(t.decisionsDir, '0001-a.md'), '# x');
@@ -243,7 +243,7 @@ describe('bridgeSession() — numbering', () => {
 describe('bridgeSession() — Haiku error fail-open (D-06)', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('returns error string and writes no files', async () => {
     const before = readdirSync(t.decisionsDir);
@@ -270,7 +270,7 @@ describe('bridgeSession() — Haiku error fail-open (D-06)', () => {
 describe('bridgeSession() — malformed Haiku response', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('returns error and writes no files when response has no <decisions> block', async () => {
     const callHaiku = async () => 'sorry I cannot help with that';
@@ -308,7 +308,7 @@ describe('extractTranscriptText()', () => {
 describe('bridgeSession() — topic path traversal', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('sanitizes topic; no file outside decisionsDir', async () => {
     const callHaiku = haiku({
@@ -350,7 +350,7 @@ describe('bridgeSession() — topic path traversal', () => {
 describe('bridgeSession() — projectName traversal guard', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('returns error for projectName with slash or dot-dot', async () => {
     const callHaiku = haiku({ decisions: [] });
@@ -373,7 +373,7 @@ describe('bridgeSession() — projectName traversal guard', () => {
 describe('bridgeSession() — source.commit fallback', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('omits commit when git rev-parse fails; still writes file', async () => {
     // use tmp dir that's not a git repo as cwd → git rev-parse fails
@@ -421,7 +421,7 @@ describe('parseHaikuResponse()', () => {
 describe('topicMatchesExistingAdr()', () => {
   let t;
   beforeEach(() => { t = makeTmp(); });
-  after(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
+  afterAll(() => { try { rmSync(t.dir, { recursive: true, force: true }); } catch {} });
 
   it('matches new-format by frontmatter topic:', () => {
     const file = join(t.decisionsDir, '0013-logging-strategy.md');

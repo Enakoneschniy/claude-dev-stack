@@ -1,7 +1,7 @@
 // tests/budget-history.test.mjs — Phase 25 LIMIT-05 SC#2 cost-estimation tracking
 // Unit tests for hooks/budget-history.mjs (PostToolUse Skill history recorder).
 
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it, beforeEach } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, writeFileSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';

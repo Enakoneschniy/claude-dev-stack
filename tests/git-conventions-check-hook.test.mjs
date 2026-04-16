@@ -5,7 +5,7 @@
 // validates against conventional commits regex. Warn-only by default; strict mode
 // (exit 2) when .planning/config.json has workflow.commit_validation: "strict".
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'fs';
@@ -38,7 +38,7 @@ describe('git-conventions-check hook (SKL-04)', () => {
   let strictDir; // cwd with strict config
   let badCfgDir; // cwd with malformed config.json
 
-  before(() => {
+  beforeAll(() => {
     const base = mkdtempSync(join(tmpdir(), 'cds-git-conv-'));
     warnDir = join(base, 'warn');
     strictDir = join(base, 'strict');
@@ -56,7 +56,7 @@ describe('git-conventions-check hook (SKL-04)', () => {
     );
   });
 
-  after(() => {
+  afterAll(() => {
     // Leave tmpdir to be cleaned by OS; avoid aggressive rm in case of cwd collision
     try { rmSync(dirname(warnDir), { recursive: true, force: true }); } catch {}
   });

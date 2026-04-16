@@ -1,4 +1,4 @@
-import { describe, it, before, beforeEach, after, afterEach } from 'node:test';
+import { describe, it, beforeAll, beforeEach, afterAll, afterEach, expect } from 'vitest';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, chmodSync, copyFileSync, writeFileSync, readFileSync } from 'node:fs';
@@ -103,7 +103,7 @@ describe('lib/notebooklm-sync.mjs — walkProjectFiles (D-11, D-17, D-18, D-19)'
   }
 
   beforeEach(() => resetWalkVault());
-  after(() => {
+  afterAll(() => {
     if (existsSync(walkTmpBase)) rmSync(walkTmpBase, { recursive: true, force: true });
   });
 
@@ -217,7 +217,7 @@ describe('tests/fixtures/notebooklm-sync-stub.sh — argv-aware modes', () => {
   const stubInstallDir = join(tmpBase, 'stub-dir');
   const stubInstall = join(stubInstallDir, 'notebooklm');
 
-  before(() => {
+  beforeAll(() => {
     if (existsSync(stubInstallDir)) rmSync(stubInstallDir, { recursive: true, force: true });
     mkdirSync(stubInstallDir, { recursive: true });
     copyFileSync(syncStubSource, stubInstall);
@@ -231,7 +231,7 @@ describe('tests/fixtures/notebooklm-sync-stub.sh — argv-aware modes', () => {
     }
   });
 
-  after(() => {
+  afterAll(() => {
     if (existsSync(tmpBase)) rmSync(tmpBase, { recursive: true, force: true });
   });
 
@@ -287,7 +287,7 @@ describe('lib/notebooklm-sync.mjs — ensureNotebook (D-09)', () => {
   const ensureStubInstall = join(ensureStubDir, 'notebooklm');
   let ensureOriginalPath;
 
-  before(() => {
+  beforeAll(() => {
     if (existsSync(ensureStubDir)) rmSync(ensureStubDir, { recursive: true, force: true });
     mkdirSync(ensureStubDir, { recursive: true });
     copyFileSync(syncStubSource, ensureStubInstall);
@@ -303,7 +303,7 @@ describe('lib/notebooklm-sync.mjs — ensureNotebook (D-09)', () => {
     _resetNotebooklmBinary();
   });
 
-  after(() => {
+  afterAll(() => {
     process.env.PATH = ensureOriginalPath;
     if (existsSync(ensureStubDir)) rmSync(ensureStubDir, { recursive: true, force: true });
   });
@@ -386,7 +386,7 @@ describe('lib/notebooklm-sync.mjs — syncOneFile (D-07, D-08, D-12, D-13, D-14)
     return { uploaded: 0, skipped: 0, failed: 0, errors: [], planned: [] };
   }
 
-  before(() => {
+  beforeAll(() => {
     if (existsSync(syncOneStubDir)) rmSync(syncOneStubDir, { recursive: true, force: true });
     mkdirSync(syncOneStubDir, { recursive: true });
     copyFileSync(syncStubSource, syncOneStubInstall);
@@ -403,7 +403,7 @@ describe('lib/notebooklm-sync.mjs — syncOneFile (D-07, D-08, D-12, D-13, D-14)
     _resetNotebooklmBinary();
   });
 
-  after(() => {
+  afterAll(() => {
     process.env.PATH = syncOneOriginalPath;
     if (existsSync(syncOneStubDir)) rmSync(syncOneStubDir, { recursive: true, force: true });
   });
@@ -563,7 +563,7 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     });
   }
 
-  before(() => {
+  beforeAll(() => {
     if (existsSync(integrationStubDir)) rmSync(integrationStubDir, { recursive: true, force: true });
     mkdirSync(integrationStubDir, { recursive: true });
     copyFileSync(syncStubSource, integrationStubInstall);
@@ -582,7 +582,7 @@ describe('lib/notebooklm-sync.mjs — syncVault integration (NBLM-07..13, ROADMA
     _resetNotebooklmBinary();
   });
 
-  after(() => {
+  afterAll(() => {
     process.env.PATH = integrationOriginalPath;
     if (existsSync(integrationStubDir)) rmSync(integrationStubDir, { recursive: true, force: true });
   });

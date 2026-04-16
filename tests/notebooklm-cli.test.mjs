@@ -6,7 +6,7 @@
  * Validation rows: 5-01-01 (NBLM-19 + NBLM-20), QUERY-02.
  */
 
-import { describe, it, beforeEach, afterEach } from 'node:test';
+import { describe, it, beforeEach, afterEach, expect } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, chmodSync } from 'node:fs';
 import { delimiter } from 'node:path';

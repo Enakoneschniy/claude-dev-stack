@@ -4,7 +4,7 @@
  * Detection fixture matrix + schema validation + installSkill tests.
  */
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -167,10 +167,10 @@ describe('detectStack', () => {
 
 describe('readScopes + writeScopes', () => {
   let tempDir;
-  before(() => {
+  beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'cds-scopes-'));
   });
-  after(() => {
+  afterAll(() => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
@@ -213,10 +213,10 @@ describe('readScopes + writeScopes', () => {
 
 describe('installSkill', () => {
   let tempDir;
-  before(() => {
+  beforeAll(() => {
     tempDir = mkdtempSync(join(tmpdir(), 'cds-install-'));
   });
-  after(() => {
+  afterAll(() => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
@@ -512,7 +512,7 @@ describe('parseClauda', () => {
 
 describe('detectStack — Go detector skips heavy directories (WR-03)', () => {
   let tempDir;
-  after(() => {
+  afterAll(() => {
     if (tempDir) rmSync(tempDir, { recursive: true, force: true });
   });
 

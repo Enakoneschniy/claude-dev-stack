@@ -1,6 +1,6 @@
 // tests/detect.test.mjs — Unit tests for lib/install/detect.mjs (D-23)
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -173,11 +173,11 @@ describe('detectInstallState() — hooksInstalled detection (D-16)', () => {
 describe('detectInstallState() — functional: no vault (isolated HOME)', () => {
   let fakeHome;
 
-  before(() => {
+  beforeAll(() => {
     fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-novault-'));
   });
 
-  after(() => {
+  afterAll(() => {
     rmSync(fakeHome, { recursive: true, force: true });
   });
 
@@ -200,14 +200,14 @@ describe('detectInstallState() — functional: no vault (isolated HOME)', () => 
 describe('detectInstallState() — functional: vault present (isolated HOME)', () => {
   let fakeHome;
 
-  before(() => {
+  beforeAll(() => {
     fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-vault-'));
     // Create valid vault structure at ~/vault
     mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
     mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
   });
 
-  after(() => {
+  afterAll(() => {
     rmSync(fakeHome, { recursive: true, force: true });
   });
 
@@ -235,14 +235,14 @@ describe('detectInstallState() — functional: vault present (isolated HOME)', (
 describe('detectInstallState() — functional: hooks detection (isolated HOME)', () => {
   let fakeHome;
 
-  before(() => {
+  beforeAll(() => {
     fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-hooks-'));
     mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
     mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
     mkdirSync(join(fakeHome, '.claude'), { recursive: true });
   });
 
-  after(() => {
+  afterAll(() => {
     rmSync(fakeHome, { recursive: true, force: true });
   });
 
@@ -280,7 +280,7 @@ describe('detectInstallState() — functional: hooks detection (isolated HOME)',
 describe('detectInstallState() — functional: projects parsing (isolated HOME)', () => {
   let fakeHome;
 
-  before(() => {
+  beforeAll(() => {
     fakeHome = mkdtempSync(join(tmpdir(), 'detect-func-projects-'));
     mkdirSync(join(fakeHome, 'vault', 'meta'), { recursive: true });
     mkdirSync(join(fakeHome, 'vault', 'projects'), { recursive: true });
@@ -296,7 +296,7 @@ describe('detectInstallState() — functional: projects parsing (isolated HOME)'
     writeFileSync(join(fakeHome, 'vault', 'meta', 'project-registry.md'), registryContent);
   });
 
-  after(() => {
+  afterAll(() => {
     rmSync(fakeHome, { recursive: true, force: true });
   });
 
