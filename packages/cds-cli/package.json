@@ -18,7 +18,8 @@
   "dependencies": {
     "@cds/core": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "better-sqlite3": "^12.9.0"
+    "better-sqlite3": "^12.9.0",
+    "minisearch": "^7.2.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13"
