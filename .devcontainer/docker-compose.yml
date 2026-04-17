@@ -3,18 +3,27 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+      args:
+        SSH_PUBLIC_KEY: ${SSH_PUBLIC_KEY}
     container_name: cds-uat-dev
     volumes:
       - ..:/workspace:cached
       - claude-config:/root/.claude
+      # SSH agent forwarding (macOS Docker Desktop)
+      - type: bind
+        source: ${SSH_AUTH_SOCK:-/run/host-services/ssh-auth.sock}
+        target: /ssh-agent
+        read_only: true
     ports:
-      - "127.0.0.1:49200:49200"
+      - "127.0.0.1:2201:22"
+      - "127.0.0.1:49201:49201"
     environment:
-      - MCP_OAUTH_CALLBACK_PORT=49200
+      - MCP_OAUTH_CALLBACK_PORT=49201
       - NODE_OPTIONS=--max-old-space-size=4096
-    command: sleep infinity
+      - SSH_AUTH_SOCK=/ssh-agent
     mem_limit: 4g
     cpus: 2
+    restart: unless-stopped
 
 volumes:
   claude-config:
