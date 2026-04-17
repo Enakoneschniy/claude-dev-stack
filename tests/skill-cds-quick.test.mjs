@@ -1,6 +1,6 @@
 // tests/skill-cds-quick.test.mjs
 // Structural tests on skills/cds-quick/SKILL.md.
-// Source: Phase 39 VALIDATION §Task 39-03-01, 39-03-02
+// Updated after Phase 39 rewrite: skill now uses Agent tool, not CLI subprocess.
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -37,33 +37,21 @@ describe('skills/cds-quick/SKILL.md', () => {
     expect(content).toMatch(/-\s*quick task:/);
   });
 
-  it('body references the claude-dev-stack quick CLI command', () => {
-    expect(content).toMatch(/claude-dev-stack quick\s+"\$ARGUMENTS"\s+--json/);
+  it('body uses Agent tool with haiku model', () => {
+    expect(content).toMatch(/Agent\(/);
+    expect(content).toMatch(/model:\s*"haiku"/);
   });
 
   it('body uses $ARGUMENTS placeholder', () => {
     expect(content).toMatch(/\$ARGUMENTS/);
   });
 
-  it('body references session-end-capture (auto-capture explanation)', () => {
-    expect(content).toMatch(/session-end-capture/);
+  it('body instructs to display response verbatim', () => {
+    expect(content).toMatch(/verbatim/i);
   });
 
-  it('body instructs to NOT trigger capture manually', () => {
-    expect(content).toMatch(/Do NOT trigger capture manually/i);
-  });
-
-  it('body mentions cost output format ($ USD + tokens)', () => {
-    expect(content).toMatch(/cost_usd/);
-    expect(content).toMatch(/tokens/);
-  });
-
-  it('body has a bash code fence for the CLI invocation', () => {
-    expect(content).toMatch(/```bash[\s\S]+claude-dev-stack quick[\s\S]+```/);
-  });
-
-  it('body notes alpha status and issue tracker link', () => {
-    expect(content).toMatch(/1\.0\.0-alpha\.1/);
-    expect(content).toMatch(/github\.com\/Enakoneschniy\/claude-dev-stack/);
+  it('body has "when to use" guidance', () => {
+    expect(content).toMatch(/When to use/i);
+    expect(content).toMatch(/Do NOT use for/i);
   });
 });
