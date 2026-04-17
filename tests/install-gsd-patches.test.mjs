@@ -54,8 +54,9 @@ describe('patches/gsd-execute-phase-bypassperms.patch — structural', () => {
   });
 
   it('hunks include adequate context (>= 3 unchanged lines)', () => {
-    // Each unchanged line in unified diff starts with a single space followed by content.
-    const contextLines = body.split(/\r?\n/).filter((l) => /^ \S/.test(l));
+    // Each unchanged line in unified diff starts with a single space (context marker).
+    // For indented code, the line is " <spaces><content>" — so we match "^ " but exclude +/-/@.
+    const contextLines = body.split(/\r?\n/).filter((l) => l.length > 0 && l[0] === ' ');
     assert.ok(contextLines.length >= 3, `unified diff must have >= 3 context lines total, got ${contextLines.length}`);
   });
 });
