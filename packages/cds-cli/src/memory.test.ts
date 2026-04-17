@@ -2,10 +2,10 @@
 // Unit tests for memory CLI command (D-140 / D-146).
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-const { mockListSessions, mockGetSessionObsCount, mockSearchObs, mockClose } = vi.hoisted(() => ({
+const { mockListSessions, mockGetSessionObsCount, mockListObs, mockClose } = vi.hoisted(() => ({
   mockListSessions: vi.fn(() => []),
   mockGetSessionObsCount: vi.fn(() => 0),
-  mockSearchObs: vi.fn(() => []),
+  mockListObs: vi.fn(() => []),
   mockClose: vi.fn(),
 }));
 
@@ -13,7 +13,7 @@ vi.mock('@cds/core', () => ({
   openSessionsDB: vi.fn(() => ({
     listSessions: mockListSessions,
     getSessionObservationCount: mockGetSessionObsCount,
-    searchObservations: mockSearchObs,
+    listObservations: mockListObs,
     close: mockClose,
   })),
   closeSessionsDB: vi.fn(),
@@ -25,7 +25,7 @@ describe('memory.ts', () => {
   beforeEach(() => {
     mockListSessions.mockClear();
     mockGetSessionObsCount.mockClear();
-    mockSearchObs.mockClear();
+    mockListObs.mockClear();
     mockClose.mockClear();
   });
 
@@ -42,13 +42,13 @@ describe('memory.ts', () => {
       { id: 'b', start_time: '2026-04-16T09:00:00Z', end_time: null, project: 'test', summary: 'Phase 41 UAT' },
     ]);
     mockGetSessionObsCount.mockReturnValueOnce(3).mockReturnValueOnce(5);
-    mockSearchObs
+    mockListObs
       .mockReturnValueOnce([
-        { observation: { id: 1, session_id: 'a', type: 'decision', content: 'Phase 41 UAT complete', entities: [], created_at: '' }, rank: 0, sessionSummary: null },
-        { observation: { id: 2, session_id: 'a', type: 'pattern', content: 'Docker devcontainer setup', entities: [], created_at: '' }, rank: 0, sessionSummary: null },
+        { id: 1, session_id: 'a', type: 'decision', content: 'Phase 41 UAT complete', entities: [], created_at: '' },
+        { id: 2, session_id: 'a', type: 'pattern', content: 'Docker devcontainer setup', entities: [], created_at: '' },
       ])
       .mockReturnValueOnce([
-        { observation: { id: 3, session_id: 'b', type: 'decision', content: 'Phase 39 execute started', entities: [], created_at: '' }, rank: 0, sessionSummary: null },
+        { id: 3, session_id: 'b', type: 'decision', content: 'Phase 39 execute started', entities: [], created_at: '' },
       ]);
     const out = formatMemorySummary({ projectPath: '/fake' });
     expect(out).toContain('Session 2026-04-17: [3 observations] --');
@@ -67,7 +67,7 @@ describe('memory.ts', () => {
       { id: 'a', start_time: '2026-04-17T10:00:00Z', end_time: null, project: 'test', summary: 'Phase 42 planning' },
     ]);
     mockGetSessionObsCount.mockReturnValue(0);
-    mockSearchObs.mockReturnValue([]);
+    mockListObs.mockReturnValue([]);
     const out = formatMemorySummary({ projectPath: '/fake' });
     expect(out).toContain('[0 observations]');
     expect(out).toContain('Phase 42 planning');
@@ -78,7 +78,7 @@ describe('memory.ts', () => {
       { id: 'a', start_time: '2026-04-17T10:00:00Z', end_time: null, project: 'test', summary: null },
     ]);
     mockGetSessionObsCount.mockReturnValue(0);
-    mockSearchObs.mockReturnValue([]);
+    mockListObs.mockReturnValue([]);
     const out = formatMemorySummary({ projectPath: '/fake' });
     expect(out).toContain('no summary');
   });
@@ -88,7 +88,7 @@ describe('memory.ts', () => {
       { id: 'a', start_time: '2026-04-17T10:00:00Z', end_time: null, project: 'test', summary: 'test session' },
     ]);
     mockGetSessionObsCount.mockReturnValue(1);
-    mockSearchObs.mockReturnValue([]);
+    mockListObs.mockReturnValue([]);
     const out = formatMemorySummary({ projectPath: '/fake' });
     expect(out).toContain('Use sessions.search MCP tool for deeper queries.');
   });

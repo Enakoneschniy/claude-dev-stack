@@ -20,11 +20,12 @@ export function formatMemorySummary(options: MemoryOptions): string {
       const date = s.start_time.slice(0, 10);
       // Per D-140: format is "Session DATE: [N observations] -- topic1, topic2, topic3"
       const obsCount = db.getSessionObservationCount(s.id);
-      // Get topic excerpts: search observations for this session, take first few content strings
-      const obs = db.searchObservations('session', { sessionId: s.id, limit: 3 });
+      // Get topic excerpts: list most recent observations for this session (WR-03 fix —
+      // using searchObservations with 'session' keyword excluded non-matching content).
+      const obs = db.listObservations({ sessionId: s.id, limit: 3 });
       const topics =
         obs.length > 0
-          ? obs.map((o) => (o.observation.content.split('\n')[0] ?? '').slice(0, 40)).join(', ')
+          ? obs.map((o) => (o.content.split('\n')[0] ?? '').slice(0, 40)).join(', ')
           : (s.summary ?? 'no summary');
       lines.push(`Session ${date}: [${obsCount} observations] -- ${topics}`);
     }
