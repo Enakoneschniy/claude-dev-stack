@@ -147,7 +147,7 @@ Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
   4. `searchAllProjects()` in `@cds/core` uses SQLite `ATTACH` in batches of 9 and returns ranked results across all configured project vaults.
 **Plans**: 2 plans
 Plans:
-- [ ] 43-01-PLAN.md — VaultBackend interface + FsBackend + getEntityGraph()
+- [x] 43-01-PLAN.md — VaultBackend interface + FsBackend + getEntityGraph()
 - [ ] 43-02-PLAN.md — searchAllProjects() + barrel exports + boundary test
 
 ### Phase 44: S3 Backend
@@ -224,7 +224,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 43. Core Vault Primitives | v1.1 | 0/2 | Planning | — |
+| 43. Core Vault Primitives | v1.1 | 1/2 | In Progress|  |
 | 44. S3 Backend | v1.1 | 0/? | Not started | — |
 | 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 0/? | Not started | — |
 | 46. SDK Dispatch + DEMO-01 Fix | v1.1 | 0/? | Not started | — |
