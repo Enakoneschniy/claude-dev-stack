@@ -9,3 +9,7 @@ export const CDS_CLI_VERSION = '0.0.0-stub';
 // Phase 37 MCP-01: expose the MCP server main() so bin/cli.mjs can
 // dynamic-import and run it on `claude-dev-stack mcp serve`.
 export { main as mcpServerMain, createServer as createMcpServer } from './mcp-server.js';
+
+// Phase 44: vault setup and sync commands
+export { vaultSetup } from './vault-setup.js';
+export { vaultSync } from './vault-sync.js';

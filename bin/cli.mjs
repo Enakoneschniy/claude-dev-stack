@@ -330,6 +330,23 @@ async function run() {
       break;
     }
 
+    // ── Vault ──
+    case 'vault': {
+      if (args[1] === 'setup') {
+        const mod = await import(resolveDistPath('cli/vault-setup.js'));
+        const backend = args.find((a, i) => args[i - 1] === '--backend') ?? 's3';
+        await mod.vaultSetup(backend);
+      } else if (args[1] === 'sync') {
+        const mod = await import(resolveDistPath('cli/vault-sync.js'));
+        const project = args.find((a, i) => args[i - 1] === '--project');
+        await mod.vaultSync({ project });
+      } else {
+        console.log('Usage: cds vault setup --backend s3');
+        console.log('       cds vault sync [--project <name>]');
+      }
+      break;
+    }
+
     // ── Meta ──
     case 'help':
     case '--help':
