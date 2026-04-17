@@ -12,7 +12,7 @@
     }
   },
   "scripts": {
-    "build": "tsc --build",
+    "build": "tsc --build && node src/copy-dashboard-assets.mjs",
     "test": "vitest run"
   },
   "dependencies": {
