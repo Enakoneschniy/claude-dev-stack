@@ -9,6 +9,10 @@
     ".": {
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./plugin-registry": {
+      "import": "./dist/plugin-registry.js",
+      "types": "./dist/plugin-registry.d.ts"
     }
   },
   "scripts": {
@@ -17,6 +21,7 @@
   },
   "dependencies": {
     "@cds/core": "workspace:*",
+    "@cds/plugin-sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "better-sqlite3": "^12.9.0"
   },

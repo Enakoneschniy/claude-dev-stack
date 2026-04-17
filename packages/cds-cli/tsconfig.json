@@ -9,6 +9,7 @@
   "include": ["src/**/*.ts"],
   "exclude": ["dist", "node_modules", "**/*.test.ts"],
   "references": [
-    { "path": "../cds-core" }
+    { "path": "../cds-core" },
+    { "path": "../cds-plugin-sdk" }
   ]
 }

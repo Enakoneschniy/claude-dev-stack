@@ -70,6 +70,16 @@ try {
   process.exit(0);
 }
 
+// Phase 47: Plugin registry for Stop hook extension point (DX-06).
+// Non-critical — capture works without plugins.
+let invokeSessionEndPlugins;
+try {
+  ({ invokeSessionEndPlugins } = await import('@cds/cli/plugin-registry'));
+} catch {
+  // Plugin registry not available — plugins won't run but capture still works.
+  invokeSessionEndPlugins = null;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -413,6 +423,42 @@ async function runCapture() {
 
   // Cost log (D-58 post-flight).
   await appendCaptureLog(costTracker.dump());
+
+  // Phase 47: Plugin extension point (DX-06).
+  // Invoke registered onSessionEnd handlers after all capture work completes.
+  // Plugin failures are isolated — they never affect session teardown.
+  if (typeof invokeSessionEndPlugins === 'function') {
+    try {
+      const pluginContext = {
+        projectName,
+        sessionId,
+        sessionDurationSec: undefined,
+        observationCount: (payload.observations ?? []).length,
+        vaultPath: undefined,
+        timestamp: new Date().toISOString(),
+      };
+      const pluginResults = await invokeSessionEndPlugins(pluginContext);
+      if (pluginResults.total > 0) {
+        await appendCaptureLog({
+          ts: new Date().toISOString(),
+          type: 'plugin-results',
+          total: pluginResults.total,
+          succeeded: pluginResults.succeeded,
+          failed: pluginResults.failed,
+          skipped: pluginResults.skipped,
+          details: pluginResults.results,
+        });
+      }
+    } catch (err) {
+      // Plugin system failure is non-fatal. Log and continue.
+      await appendCaptureLog({
+        ts: new Date().toISOString(),
+        tier: 'log',
+        type: 'plugin-system-error',
+        err: serializeError(err),
+      });
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
