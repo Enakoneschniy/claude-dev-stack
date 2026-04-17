@@ -145,7 +145,10 @@ Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
   2. `FsBackend` implements `VaultBackend` as a no-op (returns immediately) — existing behavior is preserved with zero regression.
   3. `getEntityGraph()` returns entity-relation data from a project's `sessions.db` (nodes, edges with types).
   4. `searchAllProjects()` in `@cds/core` uses SQLite `ATTACH` in batches of 9 and returns ranked results across all configured project vaults.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 43-01-PLAN.md — VaultBackend interface + FsBackend + getEntityGraph()
+- [ ] 43-02-PLAN.md — searchAllProjects() + barrel exports + boundary test
 
 ### Phase 44: S3 Backend
 **Goal**: Users can configure S3 as a vault backend and sync their SQLite sessions across devices with no silent data loss.
@@ -221,7 +224,7 @@ Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 43. Core Vault Primitives | v1.1 | 0/? | Not started | — |
+| 43. Core Vault Primitives | v1.1 | 0/2 | Planning | — |
 | 44. S3 Backend | v1.1 | 0/? | Not started | — |
 | 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 0/? | Not started | — |
 | 46. SDK Dispatch + DEMO-01 Fix | v1.1 | 0/? | Not started | — |
