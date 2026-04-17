@@ -152,7 +152,7 @@ async function main() {
   }
   if (components.gsd) {
     steps.push({ label: 'GSD', run: async (n, t) => {
-      if (await installGSD(n, t)) installed.push('GSD (Get Shit Done)');
+      if (await installGSD(n, t, PKG_ROOT)) installed.push('GSD (Get Shit Done)');
       else failed.push('GSD');
     }});
   }
