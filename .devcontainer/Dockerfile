@@ -19,6 +19,9 @@ RUN mkdir -p /root/.ssh && chmod 700 /root/.ssh && \
     fi && \
     chmod 600 /root/.ssh/authorized_keys 2>/dev/null || true
 
+# Add GitHub SSH host keys (plugins like supabase use git@github.com: submodules)
+RUN ssh-keyscan -t ed25519,rsa github.com >> /root/.ssh/known_hosts 2>/dev/null
+
 # Install pnpm
 RUN npm install -g pnpm@10
 
