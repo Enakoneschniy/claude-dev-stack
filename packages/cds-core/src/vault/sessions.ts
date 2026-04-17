@@ -129,6 +129,11 @@ export interface SessionsDB {
     options?: { limit?: number; sessionId?: string; type?: string },
   ): SearchHit[];
   timeline(anchorObservationId: number, window?: number): Observation[];
+  listSessions(options?: { limit?: number; project?: string }): Session[];
+  countObservationsByType(): Array<{ type: string; count: number }>;
+  countEntities(): number;
+  topEntities(limit?: number): Array<{ name: string; count: number }>;
+  getSessionObservationCount(sessionId: string): number;
   close(): void;
 }
 
@@ -260,6 +265,23 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
     'SELECT id, session_id, type, content, entities, created_at FROM observations ' +
       'WHERE session_id = ? AND id BETWEEN ? AND ? ORDER BY id ASC',
   );
+  const listSessionsStmt = db.prepare(
+    'SELECT id, start_time, end_time, project, summary FROM sessions ' +
+      'WHERE (@project IS NULL OR project = @project) ' +
+      'ORDER BY start_time DESC LIMIT @limit',
+  );
+  const countByTypeStmt = db.prepare(
+    'SELECT type, COUNT(*) AS count FROM observations GROUP BY type ORDER BY count DESC',
+  );
+  const countEntitiesStmt = db.prepare(
+    'SELECT COUNT(*) AS count FROM entities',
+  );
+  const topEntitiesStmt = db.prepare(
+    'SELECT name, COUNT(*) AS count FROM entities GROUP BY name ORDER BY count DESC LIMIT @limit',
+  );
+  const sessionObsCountStmt = db.prepare(
+    'SELECT COUNT(*) AS count FROM observations WHERE session_id = ?',
+  );
 
   const handle: SessionsDB = {
     createSession({ id: providedId, project: p, summary = null }) {
@@ -348,6 +370,28 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
         anchor.id + window,
       ) as ObservationRow[];
       return rows.map(parseObservation);
+    },
+
+    listSessions({ limit = 20, project } = {}) {
+      return listSessionsStmt.all({ project: project ?? null, limit }) as Session[];
+    },
+
+    countObservationsByType() {
+      return countByTypeStmt.all() as Array<{ type: string; count: number }>;
+    },
+
+    countEntities() {
+      const row = countEntitiesStmt.get() as { count: number } | undefined;
+      return row?.count ?? 0;
+    },
+
+    topEntities(limit = 5) {
+      return topEntitiesStmt.all({ limit }) as Array<{ name: string; count: number }>;
+    },
+
+    getSessionObservationCount(sessionId: string) {
+      const row = sessionObsCountStmt.get(sessionId) as { count: number } | undefined;
+      return row?.count ?? 0;
     },
 
     close() {
