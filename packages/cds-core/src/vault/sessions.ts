@@ -133,6 +133,13 @@ export interface SessionsDB {
   countObservationsByType(): Array<{ type: string; count: number }>;
   countEntities(): number;
   topEntities(limit?: number): Array<{ name: string; count: number }>;
+  /**
+   * List the most recent observations for a session without requiring an FTS
+   * query. Used by the session-start memory hook to retrieve per-session topic
+   * excerpts (WR-03 fix — using 'session' as an FTS MATCH term excluded
+   * observations that did not contain that literal word).
+   */
+  listObservations(options: { sessionId: string; limit?: number }): Observation[];
   getSessionObservationCount(sessionId: string): number;
   close(): void;
 }
@@ -250,13 +257,19 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
     'SELECT from_entity, to_entity, relation_type, observed_in_session FROM relations ' +
       'WHERE from_entity=? AND to_entity=? AND relation_type=? AND observed_in_session=?',
   );
+  // WR-01: sessionId and type filters are pushed into SQL so that LIMIT is
+  // applied AFTER filtering — prevents silent under-return when top N FTS hits
+  // all belong to a different session or type.
   const searchStmt = db.prepare(
     'SELECT o.id, o.session_id, o.type, o.content, o.entities, o.created_at, ' +
       's.summary AS session_summary, bm25(observations_fts) AS rank ' +
       'FROM observations_fts ' +
       'JOIN observations o ON o.id = observations_fts.rowid ' +
       'LEFT JOIN sessions s ON s.id = o.session_id ' +
-      'WHERE observations_fts MATCH ? ORDER BY rank LIMIT ?',
+      'WHERE observations_fts MATCH ? ' +
+      '  AND (? IS NULL OR o.session_id = ?) ' +
+      '  AND (? IS NULL OR o.type = ?) ' +
+      'ORDER BY rank LIMIT ?',
   );
   const anchorStmt = db.prepare(
     'SELECT session_id, id FROM observations WHERE id = ?',
@@ -276,11 +289,26 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
   const countEntitiesStmt = db.prepare(
     'SELECT COUNT(*) AS count FROM entities',
   );
+  // WR-02: count relation appearances instead of entity table rows.
+  // Because `name` is UNIQUE, GROUP BY name yields count=1 for every entity.
+  // We join through `relations` to count how many relation edges reference
+  // each entity, giving a meaningful "most referenced" ranking.
   const topEntitiesStmt = db.prepare(
-    'SELECT name, COUNT(*) AS count FROM entities GROUP BY name ORDER BY count DESC LIMIT @limit',
+    'SELECT e.name, COUNT(*) AS count ' +
+      'FROM entities e ' +
+      'JOIN relations r ON r.from_entity = e.id OR r.to_entity = e.id ' +
+      'GROUP BY e.id ' +
+      'ORDER BY count DESC ' +
+      'LIMIT @limit',
   );
   const sessionObsCountStmt = db.prepare(
     'SELECT COUNT(*) AS count FROM observations WHERE session_id = ?',
+  );
+  // WR-03: direct per-session listing that bypasses FTS so all observations
+  // are returned regardless of content (not just those matching a keyword).
+  const listObsStmt = db.prepare(
+    'SELECT id, session_id, type, content, entities, created_at ' +
+      'FROM observations WHERE session_id = ? ORDER BY id DESC LIMIT ?',
   );
 
   const handle: SessionsDB = {
@@ -342,17 +370,12 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
 
     searchObservations(query, options = {}) {
       const limit = Math.max(1, Math.min(options.limit ?? 20, 500));
-      const rows = searchStmt.all(query, limit) as SearchRow[];
+      const sessionId = options.sessionId ?? null;
+      const type = options.type ?? null;
+      // Pass filters as SQL parameters so LIMIT is applied after filtering (WR-01).
+      const rows = searchStmt.all(query, sessionId, sessionId, type, type, limit) as SearchRow[];
 
-      const sessionFilter = options.sessionId;
-      const typeFilter = options.type;
-      const filtered = rows.filter((r) => {
-        if (sessionFilter && r.session_id !== sessionFilter) return false;
-        if (typeFilter && r.type !== typeFilter) return false;
-        return true;
-      });
-
-      return filtered.map((r) => ({
+      return rows.map((r) => ({
         observation: parseObservation(r),
         rank: r.rank,
         sessionSummary: r.session_summary,
@@ -387,6 +410,11 @@ function buildSessionsHandle(db: RawDatabase, _project: string): SessionsDB {
 
     topEntities(limit = 5) {
       return topEntitiesStmt.all({ limit }) as Array<{ name: string; count: number }>;
+    },
+
+    listObservations({ sessionId, limit = 20 }) {
+      const rows = listObsStmt.all(sessionId, Math.max(1, Math.min(limit, 500))) as ObservationRow[];
+      return rows.map(parseObservation);
     },
 
     getSessionObservationCount(sessionId: string) {
