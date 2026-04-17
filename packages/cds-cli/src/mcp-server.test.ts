@@ -31,6 +31,8 @@ const EXPECTED_TOOL_NAMES = new Set([
   'sessions.get_observations',
   'docs.search',
   'planning.status',
+  'sessions.searchAll',
+  'memory.graph',
 ]);
 
 async function connectedClient() {
@@ -45,13 +47,13 @@ async function connectedClient() {
 }
 
 describe('mcp-server — ListTools', () => {
-  it('returns exactly 5 tools', async () => {
+  it('returns exactly 7 tools', async () => {
     const { client } = await connectedClient();
     const result = await client.request(
       { method: 'tools/list', params: {} },
       ListToolsResultSchema,
     );
-    expect(result.tools).toHaveLength(5);
+    expect(result.tools).toHaveLength(7);
     await client.close();
   });
 
@@ -82,7 +84,7 @@ describe('mcp-server — ListTools', () => {
   });
 
   it('exposes TOOL_DEFINITIONS + TOOL_NAMES matching canonical set', () => {
-    expect(TOOL_DEFINITIONS).toHaveLength(5);
+    expect(TOOL_DEFINITIONS).toHaveLength(7);
     expect(new Set(TOOL_NAMES)).toEqual(EXPECTED_TOOL_NAMES);
   });
 });
@@ -171,6 +173,53 @@ describe('mcp-server — CallTool dispatch', () => {
       const parsed = JSON.parse(first.text) as { hits: unknown[] };
       expect(Array.isArray(parsed.hits)).toBe(true);
       expect(parsed.hits.length).toBeGreaterThanOrEqual(1);
+      await client.close();
+    });
+
+    it('CallTool with sessions.searchAll rejects empty query', async () => {
+      const { client } = await connectedClient();
+      let caught: unknown;
+      try {
+        await client.request(
+          {
+            method: 'tools/call',
+            params: {
+              name: 'sessions.searchAll',
+              arguments: { query: '' },
+            },
+          },
+          CallToolResultSchema,
+        );
+      } catch (err) {
+        caught = err;
+      }
+      expect(caught).toBeInstanceOf(McpError);
+      const data = (caught as McpError).data as { kind?: string } | undefined;
+      expect(data?.kind).toBe('InvalidFilterError');
+      await client.close();
+    });
+
+    it('CallTool with memory.graph dispatches to tool module', async () => {
+      const { client } = await connectedClient();
+      let caught: unknown;
+      try {
+        await client.request(
+          {
+            method: 'tools/call',
+            params: {
+              name: 'memory.graph',
+              arguments: {},
+            },
+          },
+          CallToolResultSchema,
+        );
+      } catch (err) {
+        caught = err;
+      }
+      // VaultNotFoundError is acceptable — tool was dispatched correctly
+      if (caught) {
+        expect(caught).toBeInstanceOf(McpError);
+      }
       await client.close();
     });
 

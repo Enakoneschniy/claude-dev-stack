@@ -40,6 +40,14 @@ import {
   sessionsTimeline,
   type SessionsTimelineArgs,
 } from './mcp-tools/sessions-timeline.js';
+import {
+  sessionsSearchAll,
+  type SearchAllArgs,
+} from './mcp-tools/sessions-search-all.js';
+import {
+  memoryGraph,
+  type MemoryGraphArgs,
+} from './mcp-tools/memory-graph.js';
 import { VaultNotFoundError } from './mcp-tools/shared.js';
 
 // ---------------------------------------------------------------------------
@@ -196,6 +204,46 @@ export const TOOL_DEFINITIONS = [
       },
     },
   },
+  {
+    name: 'sessions.searchAll',
+    description:
+      'Cross-project full-text search over all project vaults. ' +
+      'Discovers sessions.db files under ~/vault/projects/, queries FTS5 per project, ' +
+      'and returns BM25-ranked results with project attribution.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        query: {
+          type: 'string',
+          description: 'FTS5 MATCH expression (e.g. "monorepo AND sqlite").',
+        },
+        limit: {
+          type: 'number',
+          minimum: 1,
+          maximum: 100,
+          description: 'Max total hits across all projects (default 20, max 100).',
+        },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'memory.graph',
+    description:
+      'Return entity relationship graph for a project. ' +
+      'Nodes have type labels; edges are directional with frequency-based weight.',
+    inputSchema: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        project: {
+          type: 'string',
+          description: 'Project basename (defaults to cwd project).',
+        },
+      },
+    },
+  },
 ] as const;
 
 export const TOOL_NAMES = TOOL_DEFINITIONS.map((t) => t.name) as readonly string[];
@@ -275,6 +323,14 @@ export function createServer(): Server {
         }
         case 'planning.status': {
           const result = await planningStatus(args as unknown as PlanningStatusArgs);
+          return textEnvelope(result);
+        }
+        case 'sessions.searchAll': {
+          const result = await sessionsSearchAll(args as unknown as SearchAllArgs);
+          return textEnvelope(result);
+        }
+        case 'memory.graph': {
+          const result = await memoryGraph(args as unknown as MemoryGraphArgs);
           return textEnvelope(result);
         }
         default:
