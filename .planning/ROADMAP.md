@@ -161,7 +161,14 @@
   3. `/gsd-code-review` produces a clean REVIEW.md (no severity-blocking findings) for Phase 39 code.
   4. README front-matter mentions v1.0.0-alpha.1 install instructions and links the migration guide + CHANGELOG.
   5. `openRawDb` sets `busy_timeout = 5000` and a regression test confirms the pragma persists across reopens.
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 40-01-PLAN.md — Fix detect.test.mjs failures (HOME isolation)
+- [ ] 40-02-PLAN.md — GSD execute-phase bypassPermissions patch
+- [ ] 40-03-PLAN.md — Doctor --gsd-permissions + wizard CC 2.x auto-config
+- [ ] 40-04-PLAN.md — SQLite busy_timeout regression test
+- [ ] 40-05-PLAN.md — README v1.0.0-alpha.1 update
+- [ ] 40-06-PLAN.md — Code review Phase 39+40
 
 ### Phase 41: v1.0 Alpha UAT & Sandbox
 **Goal**: Validate the v1.0.0-alpha.1 build end-to-end in a sandboxed environment so the release does NOT touch the maintainer's working Claude Code setup. This phase produces the Docker-based UAT harness, runs `/gsd-verify-work` for Phase 39 + Phase 40, and gates the release behind a green sandbox smoke.
@@ -203,7 +210,7 @@
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
 | 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
-| 40. v1.0 Alpha Implementation Polish | 0/? | Not started | — |
+| 40. v1.0 Alpha Implementation Polish | 0/6 | Planned    |  |
 | 41. v1.0 Alpha UAT & Sandbox | 0/? | Not started | — |
 
 ---

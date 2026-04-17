@@ -297,7 +297,7 @@ async function run() {
     case 'doctor':
     case 'check': {
       const { main } = await import('../lib/doctor.mjs');
-      await main();
+      await main({ gsdPermissions: args.includes('--gsd-permissions') });
       break;
     }
     case 'update':

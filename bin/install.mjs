@@ -213,6 +213,22 @@ async function main() {
     installCdsMcpServer(n, t, projectsData);
   }});
 
+  // Phase 40 D-129: auto-configure GSD executor permissions for CC 2.x.
+  // Writes Bash allowlist to each project's .claude/settings.local.json so
+  // gsd-executor subagents don't silently fail on Bash calls.
+  steps.push({ label: 'GSD permissions', run: async (n, t) => {
+    const { setupGsdPermissions, detectCCMajorVersion } = await import('../lib/install/permission-config.mjs');
+    const ccMajor = detectCCMajorVersion();
+    if (ccMajor === null || ccMajor < 2) return;
+    const projects = projectsData?.projects || [];
+    for (const p of projects) {
+      const result = setupGsdPermissions(p.path);
+      if (result.added.length > 0) {
+        info(`  GSD permissions: ${result.added.length} pattern(s) added for ${p.name}`);
+      }
+    }
+  }});
+
   // UX-05: totalSteps is derived from runtime array length.
   // Pre-flight steps (prereqs, profile, projects, components) ran earlier with earlyTotal='...'
   // placeholders; the dynamic counter begins at step 5 (plugins) and proceeds.
