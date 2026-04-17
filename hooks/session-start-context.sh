@@ -83,3 +83,10 @@ if [ -n "$BUDGET_OUT" ]; then
   echo ""
   echo "$BUDGET_OUT"
 fi
+
+# D-140: SQLite memory injection
+MEMORY_OUT=$(node "$HOOKS_DIR/../bin/cli.mjs" memory 2>/dev/null)
+if [ -n "$MEMORY_OUT" ]; then
+  echo ""
+  echo "$MEMORY_OUT"
+fi
