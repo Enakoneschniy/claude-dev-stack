@@ -94,6 +94,8 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack stats${c.reset}                 ${c.dim}Dashboard: sessions, context quality, recommendations${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack search <query>${c.reset}         ${c.dim}Search session observations (FTS5)${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mem-stats${c.reset}              ${c.dim}Session memory dashboard (SQLite)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack dashboard${c.reset}              ${c.dim}Open web dashboard (session timeline, costs, graph)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack dashboard stop${c.reset}         ${c.dim}Stop running dashboard server${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}NotebookLM Sync${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
@@ -221,6 +223,13 @@ async function run() {
       break;
     }
 
+    // -- Web Dashboard (DX-01, Phase 48) --
+    case 'dashboard': {
+      const mod = await import(resolveDistPath('cli/dashboard.js'));
+      await mod.main(args.slice(1));
+      break;
+    }
+
     // ── Migrate ──
     case 'migrate': {
       const migrate = await import(resolveDistPath('migrate/cli.js'));
@@ -327,23 +336,6 @@ async function run() {
     case 'upgrade': {
       const { main } = await import('../lib/update.mjs');
       await main();
-      break;
-    }
-
-    // ── Vault ──
-    case 'vault': {
-      if (args[1] === 'setup') {
-        const mod = await import(resolveDistPath('cli/vault-setup.js'));
-        const backend = args.find((a, i) => args[i - 1] === '--backend') ?? 's3';
-        await mod.vaultSetup(backend);
-      } else if (args[1] === 'sync') {
-        const mod = await import(resolveDistPath('cli/vault-sync.js'));
-        const project = args.find((a, i) => args[i - 1] === '--project');
-        await mod.vaultSync({ project });
-      } else {
-        console.log('Usage: cds vault setup --backend s3');
-        console.log('       cds vault sync [--project <name>]');
-      }
       break;
     }
 
