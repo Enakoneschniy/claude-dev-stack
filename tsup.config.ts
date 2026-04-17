@@ -7,6 +7,7 @@
 // Source: .planning/phases/39-cds-quick-demo-alpha-release/39-RESEARCH.md §Pattern 1.
 import { defineConfig } from 'tsup';
 import path from 'node:path';
+import { cpSync, mkdirSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,5 +48,18 @@ export default defineConfig({
       '@cds/core': path.join(__dirname, 'packages/cds-core/src/index.ts'),
       '@cds/core/capture': path.join(__dirname, 'packages/cds-core/src/capture/index.ts'),
     };
+  },
+  async onSuccess() {
+    // Copy SQL migration files to dist/core/ so the bundled migration runner
+    // (which uses dirname(import.meta.url) at runtime) can find them.
+    // Without this, scanMigrations() returns [] → no tables → SqliteError.
+    const src = path.join(__dirname, 'packages/cds-core/src/vault/internal/migrations');
+    const dest = path.join(__dirname, 'dist/core');
+    mkdirSync(dest, { recursive: true });
+    for (const f of readdirSync(src)) {
+      if (f.endsWith('.sql')) {
+        cpSync(path.join(src, f), path.join(dest, f));
+      }
+    }
   },
 });
