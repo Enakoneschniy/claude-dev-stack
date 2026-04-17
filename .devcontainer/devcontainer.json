@@ -1,0 +1,28 @@
+{
+  "name": "CDS UAT",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "dev-container",
+  "containerUser": "root",
+  "remoteUser": "root",
+  "workspaceFolder": "/workspace",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash"
+      }
+    }
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+
+  "remoteEnv": {
+    "NODE_OPTIONS": "--max-old-space-size=4096",
+    "MCP_OAUTH_CALLBACK_PORT": "49200"
+  }
+}

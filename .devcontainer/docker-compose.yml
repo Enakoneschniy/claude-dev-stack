@@ -1,0 +1,21 @@
+services:
+  dev-container:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    container_name: cds-uat-dev
+    volumes:
+      - ..:/workspace:cached
+      - claude-config:/root/.claude
+    ports:
+      - "127.0.0.1:49200:49200"
+    environment:
+      - MCP_OAUTH_CALLBACK_PORT=49200
+      - NODE_OPTIONS=--max-old-space-size=4096
+    command: sleep infinity
+    mem_limit: 4g
+    cpus: 2
+
+volumes:
+  claude-config:
+    name: cds-uat-claude
