@@ -453,22 +453,13 @@ This requires: session count, week-filtered count, observation counts by type (`
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **stats case name collision**
-   - What we know: `case 'stats':` already routes to `lib/analytics.mjs`
-   - What's unclear: Should Phase 42 stats override, extend, or use a different name?
-   - Recommendation: Modify existing `case 'stats'` to also call new `cli/db-stats.js` and merge output, OR use `case 'memory-stats':` / `case 'mem':` for the SQLite dashboard
+1. **stats case name collision** — RESOLVED: Use `case 'mem-stats':` to avoid collision with existing `case 'stats':` routing to `lib/analytics.mjs`.
 
-2. **`listSessions` return for observations summary in `memory` command**
-   - What we know: `SessionsDB` has no method to get "last 3 sessions with observation count + excerpt"
-   - What's unclear: Should this be a single SQL query with a join, or two queries (listSessions then searchObservations)?
-   - Recommendation: Add a dedicated `getSessionsSummary(limit: number): SessionSummary[]` method that JOINs sessions + observations in one query for efficiency
+2. **`listSessions` return for observations summary in `memory` command** — RESOLVED: Add `listSessions(limit)` to SessionsDB returning recent sessions with summary. Use two queries (listSessions + countObservationsByType per session) for clarity.
 
-3. **`sessions.timeline` vs `listSessions` for D-146**
-   - What we know: D-146 mentions querying `sessions.timeline` but that MCP tool takes an `anchor_observation_id` — not suited for "last N sessions"
-   - What's unclear: D-146 says "queries sessions.timeline" but the correct API is a new `listSessions` or direct SQL
-   - Recommendation: Interpret D-140/D-146 as "query recent sessions" using a new `listSessions` method; the word "timeline" in the decision refers to chronological order, not the specific MCP tool
+3. **`sessions.timeline` vs `listSessions` for D-146** — RESOLVED: Interpret D-140/D-146 "queries sessions.timeline" as "query recent sessions chronologically" using new `listSessions` method. The word "timeline" refers to chronological order, not the specific MCP tool.
 
 ---
 

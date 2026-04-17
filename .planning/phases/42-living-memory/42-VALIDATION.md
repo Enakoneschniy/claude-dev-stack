@@ -17,18 +17,18 @@ created: 2026-04-17
 
 | Property | Value |
 |----------|-------|
-| **Framework** | node:test (built-in) |
-| **Config file** | none — uses existing test setup |
-| **Quick run command** | `node --test tests/memory.test.mjs` |
-| **Full suite command** | `pnpm -r run build && node --test tests/*.test.mjs` |
+| **Framework** | vitest (workspace-aware) |
+| **Config file** | `vitest.config.ts` (root) |
+| **Quick run command** | `npx vitest run packages/cds-cli/src/memory.test.ts` |
+| **Full suite command** | `pnpm -r run build && npx vitest run packages/cds-cli/src/*.test.ts` |
 | **Estimated runtime** | ~5 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `node --test tests/memory.test.mjs`
-- **After every plan wave:** Run `pnpm -r run build && node --test tests/*.test.mjs`
+- **After every task commit:** Run `npx vitest run packages/cds-cli/src/memory.test.ts`
+- **After every plan wave:** Run `pnpm -r run build && npx vitest run packages/cds-cli/src/*.test.ts`
 - **Before `/gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 10 seconds
 
@@ -38,13 +38,12 @@ created: 2026-04-17
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 42-01-01 | 01 | 1 | D-146 | — | N/A | unit | `node --test tests/memory.test.mjs` | ❌ W0 | ⬜ pending |
-| 42-01-02 | 01 | 1 | D-140 | — | N/A | integration | `node --test tests/session-start.test.mjs` | ❌ W0 | ⬜ pending |
-| 42-02-01 | 02 | 1 | D-144 | — | N/A | unit | `node --test tests/search-cli.test.mjs` | ❌ W0 | ⬜ pending |
-| 42-02-02 | 02 | 1 | D-145 | — | N/A | unit | `node --test tests/stats-cli.test.mjs` | ❌ W0 | ⬜ pending |
-| 42-03-01 | 03 | 2 | D-142 | — | N/A | manual | skill invocation test | ❌ | ⬜ pending |
-| 42-03-02 | 03 | 2 | D-143 | — | N/A | manual | skill invocation test | ❌ | ⬜ pending |
-| 42-04-01 | 04 | 2 | D-141 | — | N/A | unit | `node --test tests/claude-md.test.mjs` | ❌ W0 | ⬜ pending |
+| 42-01-01 | 01 | 1 | D-146, D-140 | — | N/A | unit | `npx vitest run packages/cds-cli/src/memory.test.ts` | ❌ W0 | ⬜ pending |
+| 42-02-01 | 02 | 2 | D-144 | — | N/A | unit | `npx vitest run packages/cds-cli/src/search.test.ts` | ❌ W0 | ⬜ pending |
+| 42-02-02 | 02 | 2 | D-145 | — | N/A | unit | `npx vitest run packages/cds-cli/src/stats.test.ts` | ❌ W0 | ⬜ pending |
+| 42-03-01 | 03 | 3 | D-142 | — | N/A | manual | skill invocation test | ❌ | ⬜ pending |
+| 42-03-02 | 03 | 3 | D-143 | — | N/A | manual | skill invocation test | ❌ | ⬜ pending |
+| 42-04-01 | 04 | 2 | D-141 | — | N/A | unit | `grep -c 'sessions.search' lib/install/claude-md.mjs` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -52,11 +51,11 @@ created: 2026-04-17
 
 ## Wave 0 Requirements
 
-- [ ] `tests/memory.test.mjs` — stubs for D-146 memory CLI command
-- [ ] `tests/search-cli.test.mjs` — stubs for D-144 search CLI
-- [ ] `tests/stats-cli.test.mjs` — stubs for D-145 stats CLI
+- [ ] `packages/cds-cli/src/memory.test.ts` — stubs for D-146 memory CLI + D-140 hook integration
+- [ ] `packages/cds-cli/src/search.test.ts` — stubs for D-144 search CLI
+- [ ] `packages/cds-cli/src/stats.test.ts` — stubs for D-145 stats CLI
 
-*Existing test infrastructure (node:test) covers framework needs.*
+*Existing vitest infrastructure covers framework needs.*
 
 ---
 
