@@ -25,7 +25,8 @@
     "test:structural": "node scripts/check-no-shell-interpolation.mjs hooks/session-end-capture.mjs",
     "test:live": "INTEGRATION=1 vitest run tests/hooks/session-end-capture.live.test.mjs",
     "build": "tsup",
-    "typecheck": "tsc --build"
+    "typecheck": "tsc --build",
+    "uat": "pnpm pack && docker build -t cds-uat -f docker/uat/Dockerfile . && docker run --rm cds-uat"
   },
   "bin": {
     "claude-dev-stack": "./bin/cli.mjs"
