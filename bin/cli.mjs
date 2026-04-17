@@ -4,6 +4,27 @@
  * Claude Dev Stack CLI
  */
 
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Resolve bundled dist path. In prod (installed from npm), files are in dist/.
+ * In dev (CDS_DEV=1), files are in packages/cds-<pkg>/dist/ for fast iteration
+ * without repeat `pnpm tsup`.
+ *
+ * @param {string} subPath - e.g., "cli/quick.js" or "migrate/cli.js"
+ * @returns {string} absolute path
+ */
+function resolveDistPath(subPath) {
+  const [pkg, ...rest] = subPath.split('/');
+  const file = rest.join('/');
+  if (process.env.CDS_DEV === '1') {
+    return path.join(__dirname, '..', 'packages', `cds-${pkg}`, 'dist', file);
+  }
+  return path.join(__dirname, '..', 'dist', pkg, file);
+}
+
 const args = process.argv.slice(2);
 const command = args[0];
 
@@ -49,6 +70,9 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack mcp install${c.reset}           ${c.dim}Install from catalog${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mcp remove${c.reset}            ${c.dim}Remove MCP servers${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mcp serve${c.reset}             ${c.dim}Run the CDS MCP server (stdio, for Claude Code integration)${c.reset}`);
+  console.log('');
+  console.log(`  ${c.cyan}${c.bold}Quick Task${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack quick 'task'${c.reset}         ${c.dim}One-shot agent dispatch with cost report${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Migrate${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack migrate sessions${c.reset}        ${c.dim}Port markdown sessions into SQLite (dry-run default)${c.reset}`);
@@ -158,25 +182,27 @@ async function run() {
     // ── MCP ──
     case 'mcp': {
       if (args[1] === 'serve') {
-        // Phase 37 MCP-02: route to the CDS MCP server under packages/cds-cli/
-        const { main } = await import('../packages/cds-cli/dist/mcp-server.js');
-        await main(args.slice(2));
+        const mcp = await import(resolveDistPath('cli/mcp-server.js'));
+        await mcp.main(args.slice(2));
       } else {
-        // Existing third-party MCP catalog (install/remove/list/bare)
         const { main } = await import('../lib/mcp.mjs');
         await main(args.slice(1));
       }
       break;
     }
 
+    // ── Quick Task ──
+    case 'quick': {
+      const quick = await import(resolveDistPath('cli/quick.js'));
+      await quick.main(args.slice(1));
+      break;
+    }
+
     // ── Migrate ──
     case 'migrate': {
-      const { main } = await import('../packages/cds-migrate/dist/cli.js');
-      const exitCode = await main(args.slice(1));
-      if (typeof exitCode === 'number' && exitCode !== 0) {
-        process.exit(exitCode);
-      }
-      break;
+      const migrate = await import(resolveDistPath('migrate/cli.js'));
+      const exitCode = await migrate.main(args.slice(1));
+      process.exit(exitCode);
     }
 
     // ── NotebookLM ──

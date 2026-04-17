@@ -19,7 +19,9 @@ describe('bin/cli.mjs — migrate dispatch', () => {
 
   it('contains a migrate case dispatching to @cds/migrate dist', () => {
     expect(source).toMatch(/case\s+['"]migrate['"]\s*:/);
-    expect(source).toMatch(/packages\/cds-migrate\/dist\/cli\.js/);
+    // Phase 39 Plan 01 introduced resolveDistPath() indirection to support
+    // both prod (dist/migrate/cli.js) and dev (CDS_DEV=1 → packages/cds-migrate/dist/cli.js).
+    expect(source).toMatch(/resolveDistPath\(\s*['"]migrate\/cli\.js['"]\s*\)/);
   });
 
   it('slices args before passing to migrate main()', () => {

@@ -135,6 +135,53 @@
   2. `npm install claude-dev-stack@alpha` installs `1.0.0-alpha.1`; `npm install claude-dev-stack` (no tag) still installs the latest `0.12.x`.
   3. `docs/migration-v0-to-v1-alpha.md` exists and documents settings.json schema changes, hook name changes, and the new SQLite dependency.
   4. The GitHub release for `v1.0.0-alpha.1` links the migration guide and calls out alpha-status caveats (auto-capture is the only canonical session writer; manual `/end` is fallback only).
+**Plans**: 5 (complete 2026-04-16)
+
+### Phase 40: v1.0 Alpha Implementation Polish
+**Goal**: Close all implementation blockers for v1.0.0-alpha.1 release. After this phase, the codebase is ready for the formal UAT cycle in Phase 41.
+**Depends on**: Phase 39 (demo + release plumbing)
+**Requirements**: derived from Phase 39 follow-ups + 999.2 promotion + carried v0.12 known gap
+**Scope** (implementation only; testing/UAT lives in Phase 41):
+  1. **CI blocker** — fix 3 pre-existing `tests/detect.test.mjs` failures (carried since v0.12; new `publish.yml` runs `pnpm test` and they now block release).
+  2. **CC 2.1.x subagent permission hardening** (promoted from backlog 999.2):
+     - Auto-pass `mode=bypassPermissions` to `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md` (ships as a GSD workflow patch under `patches/` per Phase 27 patch infrastructure)
+     - `claude-dev-stack doctor --gsd-permissions` populates `.claude/settings.local.json` allowlist (pnpm:*, npx:*, node:*, git merge-base:*, git reset:*, git status:*, tsc:*, vitest:*)
+     - Worktree base check Read-fallback (read `.git/HEAD` directly when Bash denied)
+     - Post-worktree-merge `pnpm install` step in `execute-phase.md`
+     - Wizard CC 2.x detection + automatic permission allowlist setup at install time
+  3. **Code review gate** for Phase 39:
+     - `/gsd-code-review` for Phase 39 new code (`packages/cds-cli/src/quick.ts`, `packages/cds-cli/src/capture-standalone.ts`, `lib/install/hooks.mjs::registerCaptureHook`, `bin/install.mjs` Node check wiring)
+     - Apply remediation for any high-severity findings via `/gsd-code-review-fix`
+  4. **Documentation polish**:
+     - README update: v1.0 install instructions + cross-link to `docs/migration-v0-to-v1-alpha.md` + CHANGELOG link
+  5. **Phase 35 follow-up**: `db.pragma('busy_timeout = 5000')` in `openRawDb` (helps avoid SQLITE_BUSY under concurrent CLAUDE_SESSION_ID writes; non-blocking but ships before alpha for sturdiness).
+**Success Criteria** (what must be TRUE):
+  1. `pnpm test` is fully green at HEAD — no failing tests on macOS/Linux Node 20+.
+  2. `~/.claude/get-shit-done/workflows/execute-phase.md` (post-patch) and `claude-dev-stack doctor --gsd-permissions` together let a fresh user run `/gsd-execute-phase` without any silent Bash denial.
+  3. `/gsd-code-review` produces a clean REVIEW.md (no severity-blocking findings) for Phase 39 code.
+  4. README front-matter mentions v1.0.0-alpha.1 install instructions and links the migration guide + CHANGELOG.
+  5. `openRawDb` sets `busy_timeout = 5000` and a regression test confirms the pragma persists across reopens.
+**Plans**: TBD
+
+### Phase 41: v1.0 Alpha UAT & Sandbox
+**Goal**: Validate the v1.0.0-alpha.1 build end-to-end in a sandboxed environment so the release does NOT touch the maintainer's working Claude Code setup. This phase produces the Docker-based UAT harness, runs `/gsd-verify-work` for Phase 39 + Phase 40, and gates the release behind a green sandbox smoke.
+**Depends on**: Phase 40 (implementation polish complete)
+**Requirements**: RELEASE-01 testing tail
+**Scope**:
+  1. **Sandbox design** — Docker UAT harness:
+     - `docker/uat/Dockerfile` — Node 20 + git + minimal toolchain
+     - `docker/uat/run-smoke.sh` — installs `claude-dev-stack-1.0.0-alpha.1.tgz` inside container, runs wizard, asserts `.claude/settings.json` shape, runs every `bin/cli.mjs` subcommand, runs `migrate sessions --dry-run` against a synthetic vault, asserts MCP server entries
+     - `pnpm uat` script wired to invoke the Docker harness
+  2. **CLAUDE_CONFIG_DIR override** — verify whether Claude Code respects an env override for global config dir; if not, document workaround for safe smoke on host machine
+  3. **Verification gates**:
+     - `/gsd-verify-work` for Phase 39 (UAT)
+     - `/gsd-verify-work` for Phase 40 (UAT)
+  4. **Manual smoke procedure** — `docs/uat.md`: run Docker UAT first; only after green, optional manual smoke on host in `/tmp/cds-test-project-{uuid}/` with `CLAUDE_CONFIG_DIR=/tmp/cds-test-claude` to keep blast radius zero
+**Success Criteria**:
+  1. `pnpm uat` exits 0 on a clean machine — wizard completes, hooks registered, MCP server present, all CLI subcommands invokable, no warnings in container logs.
+  2. `/gsd-verify-work` returns PASS for both Phase 39 and Phase 40.
+  3. `docs/uat.md` documents the procedure such that a maintainer can repeat the UAT without referring to source.
+  4. Maintainer's own `~/.claude/` and `~/vault/` are provably untouched by the UAT (audit via shasum diff before/after).
 **Plans**: TBD
 
 ### Risks & Critical Flags
@@ -155,7 +202,9 @@
 | 36. Auto Session Capture | 0/? | Not started | — |
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
-| 39. `/cds-quick` Demo & Alpha Release | 0/? | Not started | — |
+| 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
+| 40. v1.0 Alpha Implementation Polish | 0/? | Not started | — |
+| 41. v1.0 Alpha UAT & Sandbox | 0/? | Not started | — |
 
 ---
 
@@ -209,6 +258,32 @@ What shipped:
 Archive: `.planning/milestones/v0.12-ROADMAP.md`
 
 </details>
+
+---
+
+## Backlog
+
+Unsequenced items captured from session work — promote to active milestone via `/gsd-review-backlog`.
+
+### Phase 999.2: CC 2.1.x Subagent Permission Hardening (PROMOTED → Phase 40)
+
+**Goal:** Eliminate the silent Bash-permission failure that breaks `gsd-executor` spawns under Claude Code 2.1.x.
+
+**Source:** 2026-04-16 Phase 39 Wave 2 — both Plan 02 + Plan 03 executors blocked despite using dedicated `gsd-executor` subagent_type. Confirmed `mode=bypassPermissions` on `Task()` does NOT escalate above parent's permission mode (security model).
+
+**Symptoms:**
+- Subagent spawned in worktree returns within seconds with "Bash denied" message
+- Worktree branch_check block requires Bash, so even base verification fails silently
+- After worktree merge, deps installed inside the worktree's `node_modules` are gone — root must `pnpm install` again
+
+**Sub-items (5):**
+1. **GSD workflow auto-pass `mode=bypassPermissions`** to all `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md` (necessary even if not sufficient — sets the right intent).
+2. **Auto-populate `.claude/settings.local.json` allowlist** for executor operations: `Bash(pnpm:*)`, `Bash(npx:*)`, `Bash(node:*)`, `Bash(git merge-base:*)`, `Bash(git reset:*)`, `Bash(git status:*)`, `Bash(tsc:*)`, `Bash(vitest:*)`. Could be a `claude-dev-stack doctor --gsd-permissions` command.
+3. **Worktree base check Read-fallback**: if Bash denied, executor reads `.git/HEAD` + `.git/refs/heads/<branch>` directly to verify base — no shell required.
+4. **Post-worktree-merge `pnpm install` step** in `execute-phase.md` (after `git worktree remove`) to recover deps installed inside the worktree's isolated `node_modules`.
+5. **Wizard / setup detection**: detect CC 2.x at install time, configure GSD-required permission allowlist, document the model change in `docs/migration-v0-to-v1-alpha.md`.
+
+**Plans:** 0 plans (TBD — promote with `/gsd-review-backlog` when ready)
 
 ---
 

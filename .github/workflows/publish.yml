@@ -14,13 +14,53 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - uses: actions/setup-node@v5
         with:
-          node-version: 24
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
 
-      - run: npm ci
+      - name: Install deps (frozen lockfile)
+        run: pnpm install --frozen-lockfile
 
-      - run: npm test
+      - name: Build bundles via tsup
+        run: pnpm tsup
 
-      - name: Publish with OIDC trusted publishing
-        run: npm publish --access public --provenance
+      - name: Run tests (all packages + root)
+        run: pnpm test
+
+      - name: Assert tarball size < 5 MB
+        run: |
+          pnpm pack --json > /tmp/pack.json
+          SIZE=$(node -e 'const d=require("/tmp/pack.json");console.log(d[0].size)')
+          if [ "$SIZE" -gt 5242880 ]; then
+            echo "::error::Tarball $SIZE bytes exceeds 5 MB budget"
+            exit 1
+          fi
+          echo "Tarball size OK: $SIZE bytes"
+
+      - name: Smoke install test
+        run: |
+          npm pack
+          npm install -g ./claude-dev-stack-1.0.0-alpha.1.tgz
+          claude-dev-stack --version | grep -q '1.0.0-alpha.1'
+
+      - name: Detect dist-tag (prerelease -> alpha, stable -> latest)
+        id: meta
+        env:
+          IS_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          if [ "$IS_PRERELEASE" = "true" ]; then
+            echo "tag=alpha" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish with OIDC + provenance
+        env:
+          DIST_TAG: ${{ steps.meta.outputs.tag }}
+        run: npm publish --tag "$DIST_TAG" --access public --provenance

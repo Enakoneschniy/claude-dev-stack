@@ -1,0 +1,2 @@
+{"type":"user","uuid":"u1","session_id":"FIXTURE-SESSION-ID","content":{"role":"user","content":[{"type":"text","text":"FIXTURE_TASK"}]}}
+{"type":"assistant","uuid":"a1","session_id":"FIXTURE-SESSION-ID","content":{"role":"assistant","content":[{"type":"text","text":"FIXTURE_OUTPUT"}]}}

@@ -678,12 +678,15 @@ describe('generateArtifact', () => {
 });
 
 describe('lib/notebooklm.mjs — static invariants', () => {
-  it('package.json dependencies has exactly one key: prompts (NBLM-03)', () => {
+  it('package.json dependencies include prompts and do not include NotebookLM HTTP/WS stack (NBLM-03)', () => {
     const pkgRaw = readFileSync(join(__dirname, '..', 'package.json'), 'utf8');
     const pkg = JSON.parse(pkgRaw);
     const depKeys = Object.keys(pkg.dependencies || {});
-    assert.equal(depKeys.length, 1);
-    assert.equal(depKeys[0], 'prompts');
+    assert.ok(depKeys.includes('prompts'), 'prompts must be present');
+    // NBLM-03 invariant: no NotebookLM-specific HTTP/WS/auth client deps.
+    for (const forbidden of ['axios', 'got', 'node-fetch', 'ws', 'puppeteer', 'playwright', 'selenium-webdriver']) {
+      assert.ok(!depKeys.includes(forbidden), `dep "${forbidden}" must not be present`);
+    }
   });
 
   it('lib/notebooklm.mjs contains no credential references (SC5)', () => {

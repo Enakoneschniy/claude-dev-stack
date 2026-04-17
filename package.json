@@ -1,6 +1,6 @@
 {
   "name": "claude-dev-stack",
-  "version": "0.12.1",
+  "version": "1.0.0-alpha.1",
   "description": "One command to set up a complete AI-powered development workflow with Claude Code. Persistent memory, session management, 35+ CLI tools.",
   "keywords": [
     "claude-code",
@@ -24,7 +24,8 @@
     "test": "vitest run",
     "test:structural": "node scripts/check-no-shell-interpolation.mjs hooks/session-end-capture.mjs",
     "test:live": "INTEGRATION=1 vitest run tests/hooks/session-end-capture.live.test.mjs",
-    "build": "tsc --build"
+    "build": "tsup",
+    "typecheck": "tsc --build"
   },
   "bin": {
     "claude-dev-stack": "./bin/cli.mjs"
@@ -34,11 +35,15 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.110",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "better-sqlite3": "^12.9.0",
     "prompts": "^2.4.2"
   },
   "devDependencies": {
     "@cds/core": "workspace:*",
     "@types/node": "25.6.0",
+    "tsup": "^8.3.0",
     "typescript": "6.0.2",
     "vitest": "3.2.4"
   },
@@ -54,12 +59,15 @@
   },
   "files": [
     "bin/",
-    "lib/",
+    "dist/",
     "hooks/",
+    "lib/",
     "patches/",
     "skills/",
     "templates/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICES.md",
+    "CHANGELOG.md"
   ]
 }

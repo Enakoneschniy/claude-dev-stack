@@ -40,7 +40,7 @@ describe('CLI', () => {
   describe('version', () => {
     it('prints version number', () => {
       const output = run(['version']);
-      assert.match(output.trim(), /^\d+\.\d+\.\d+$/);
+      assert.match(output.trim(), /^\d+\.\d+\.\d+(-[a-z0-9.]+)?$/);
     });
   });
 
