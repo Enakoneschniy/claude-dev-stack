@@ -210,10 +210,10 @@ Plans:
   5. Re-running wizard produces CLAUDE.md with Memory section referencing MCP tools.
 **Plans**: 4 plans
 Plans:
-- [ ] 42-01-PLAN.md -- SessionsDB extensions + memory command + hook wiring
-- [ ] 42-02-PLAN.md -- search + stats CLI commands
-- [ ] 42-03-PLAN.md -- /cds-search + /cds-stats skills
-- [ ] 42-04-PLAN.md -- CLAUDE.md template Memory section
+- [x] 42-01-PLAN.md -- SessionsDB extensions + memory command + hook wiring
+- [x] 42-02-PLAN.md -- search + stats CLI commands
+- [x] 42-03-PLAN.md -- /cds-search + /cds-stats skills
+- [x] 42-04-PLAN.md -- CLAUDE.md template Memory section
 
 ### Risks & Critical Flags
 
@@ -236,7 +236,7 @@ Plans:
 | 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
 | 40. v1.0 Alpha Implementation Polish | 0/6 | Planned    |  |
 | 41. v1.0 Alpha UAT & Sandbox | 2/2 | Complete   | 2026-04-17 |
-| 42. Living Memory | 0/4 | Planned    |  |
+| 42. Living Memory | 4/4 | Complete    | 2026-04-17 |
 
 ---
 
@@ -315,7 +315,7 @@ Unsequenced items captured from session work — promote to active milestone via
 4. **Post-worktree-merge `pnpm install` step** in `execute-phase.md` (after `git worktree remove`) to recover deps installed inside the worktree's isolated `node_modules`.
 5. **Wizard / setup detection**: detect CC 2.x at install time, configure GSD-required permission allowlist, document the model change in `docs/migration-v0-to-v1-alpha.md`.
 
-**Plans:** 0 plans (TBD — promote with `/gsd-review-backlog` when ready)
+**Plans:** 4/4 plans complete
 
 ---
 
