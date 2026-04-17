@@ -24,7 +24,7 @@ export function formatMemorySummary(options: MemoryOptions): string {
       const obs = db.searchObservations('session', { sessionId: s.id, limit: 3 });
       const topics =
         obs.length > 0
-          ? obs.map((o) => o.observation.content.split('\n')[0].slice(0, 40)).join(', ')
+          ? obs.map((o) => (o.observation.content.split('\n')[0] ?? '').slice(0, 40)).join(', ')
           : (s.summary ?? 'no summary');
       lines.push(`Session ${date}: [${obsCount} observations] -- ${topics}`);
     }
