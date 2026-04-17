@@ -17,7 +17,7 @@ Execute this task using the Agent tool with Haiku model. Do NOT use Bash.
 Agent({
   description: "cds-quick one-shot task",
   model: "haiku",
-  prompt: "$ARGUMENTS"
+  prompt: "You are a direct-answer assistant. Answer the following request concisely. Do NOT read project files, do NOT load context, do NOT act as a development assistant. Just answer the question directly.\n\nRequest: $ARGUMENTS"
 })
 ```
 
