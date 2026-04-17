@@ -104,7 +104,7 @@ Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
 - [ ] **Phase 45: Cross-Project Search + Graph + MCP Tools** — global search, entity graph, new MCP tools
 - [ ] **Phase 46: SDK Dispatch + DEMO-01 Fix** — /cds-quick through CLI quick.ts, credential resolver
 - [ ] **Phase 47: Plugin SDK** — @cds/plugin-sdk manifest-only interface, Stop hook extension points
-- [ ] **Phase 48: Web Dashboard** — local analytics dashboard with Hono server, entity graph viz
+- [x] **Phase 48: Web Dashboard** — local analytics dashboard with Hono server, entity graph viz (completed 2026-04-17)
 - [ ] **Phase 49: Release — npm @latest + MCP Marketplace** — staged rollout, migration validation, marketplace listings
 
 ### Dependency Graph
@@ -229,7 +229,7 @@ Plans:
 | 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 3/3 | Complete   | 2026-04-17 |
 | 46. SDK Dispatch + DEMO-01 Fix | v1.1 | 0/? | Not started | — |
 | 47. Plugin SDK | v1.1 | 0/? | Not started | — |
-| 48. Web Dashboard | v1.1 | 2/2 | Complete   | 2026-04-17 |
+| 48. Web Dashboard | v1.1 | 2/2 | Complete    | 2026-04-17 |
 | 49. Release — npm @latest + MCP Marketplace | v1.1 | 0/? | Not started | — |
 
 ---
