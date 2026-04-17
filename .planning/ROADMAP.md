@@ -234,7 +234,7 @@ Plans:
 | 37. MCP Adapter | 0/? | Not started | — |
 | 38. Backfill Migration | 0/? | Not started | — |
 | 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
-| 40. v1.0 Alpha Implementation Polish | 0/6 | Planned    |  |
+| 40. v1.0 Alpha Implementation Polish | 5/6 | Complete    | 2026-04-17 |
 | 41. v1.0 Alpha UAT & Sandbox | 2/2 | Complete   | 2026-04-17 |
 | 42. Living Memory | 4/4 | Complete    | 2026-04-17 |
 
@@ -315,7 +315,7 @@ Unsequenced items captured from session work — promote to active milestone via
 4. **Post-worktree-merge `pnpm install` step** in `execute-phase.md` (after `git worktree remove`) to recover deps installed inside the worktree's isolated `node_modules`.
 5. **Wizard / setup detection**: detect CC 2.x at install time, configure GSD-required permission allowlist, document the model change in `docs/migration-v0-to-v1-alpha.md`.
 
-**Plans:** 4/4 plans complete
+**Plans:** 5/6 plans complete
 
 ---
 
