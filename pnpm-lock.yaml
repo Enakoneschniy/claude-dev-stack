@@ -91,6 +91,8 @@ importers:
         specifier: ^2.4.9
         version: 2.4.9
 
+  packages/cds-plugin-sdk: {}
+
   packages/cds-s3-backend:
     dependencies:
       '@cds/core':
