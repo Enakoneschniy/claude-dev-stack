@@ -1,66 +1,36 @@
 ---
 name: cds-quick
 description: |
-  Run a quick one-shot task via the Claude Agent SDK and auto-capture the session to SQLite.
-  Single-dispatch agent run (no multi-turn). Returns a structured result summary with cost
-  and session ID. For multi-turn work, use Claude Code normally instead of /cds-quick.
+  Run a quick one-shot task using a fast model (Haiku). Single-dispatch,
+  no multi-turn. For complex work, use Claude Code normally instead.
 trigger_phrases:
   - /cds-quick
   - cds-quick
   - quick task:
 ---
 
-# /cds-quick — One-shot agent dispatch with cost reporting
+# /cds-quick — One-shot quick task
 
-**Task:** $ARGUMENTS
-
-Run the quick CLI and capture its JSON output. Use the Bash tool:
-
-```bash
-claude-dev-stack quick "$ARGUMENTS" --json
-```
-
-Parse the JSON output. It has three fields:
-
-- `output` — the agent's text response. Display this verbatim to the user, preserving
-  formatting. Do not paraphrase.
-- `cost` — an object `{ cost_usd: number, tokens: { input: number, output: number } }`.
-  Format as a short footer line:
-  `── cost: $<cost_usd to 4 decimals> · input <input> tokens · output <output> tokens`
-- `sessionId` — a UUID. Display as: `session: <uuid>`
-
-## Output format
-
-Show the response to the user as:
+Execute this task using the Agent tool with Haiku model. Do NOT use Bash.
 
 ```
-<output field verbatim>
-
-── cost: $0.0041 · input 50 tokens · output 25 tokens · session: abc-123
+Agent({
+  description: "cds-quick one-shot task",
+  model: "haiku",
+  prompt: "$ARGUMENTS"
+})
 ```
 
-## Capture behavior
-
-When this skill runs inside Claude Code, session auto-capture fires on the next session-end
-via the Stop hook (`~/.claude/hooks/session-end-capture.sh`, installed by the
-`claude-dev-stack` wizard). **Do NOT trigger capture manually** from this skill body.
-The capture writes structured observations to `~/vault/projects/<project>/sessions.db` and
-makes them queryable via the `sessions.search` MCP tool.
+Display the agent's response verbatim to the user. Do not paraphrase or summarize.
 
 ## When to use vs not
 
 Use `/cds-quick` for:
-- Short one-shot questions that don't need follow-up ("summarize X", "what's in this file",
-  "draft a commit message")
+- Short one-shot questions that don't need follow-up
 - Cost-conscious prompts where Haiku is sufficient
-- Demoing the claude-dev-stack pipeline end-to-end
+- Quick lookups, summaries, drafts
 
 Do NOT use for:
-- Multi-turn debugging conversations (use Claude Code normally)
-- Code edits that need file context (use Claude Code with the Edit/Write tools)
-- Long-running analysis that benefits from tool use (use the full agent loop)
-
-## Alpha notes
-
-This skill is part of `claude-dev-stack@1.0.0-alpha.1`. Feedback welcomed at
-[github.com/Enakoneschniy/claude-dev-stack/issues](https://github.com/Enakoneschniy/claude-dev-stack/issues).
+- Multi-turn debugging (use Claude Code normally)
+- Code edits requiring file context (use Edit/Write tools directly)
+- Tasks that need tools (Haiku agent has no tool access)
