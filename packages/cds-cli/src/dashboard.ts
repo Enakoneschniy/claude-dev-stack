@@ -139,9 +139,9 @@ export function createApp(projectPath: string): Hono {
           const inputMatch = o.content.match(/input[_ ]tokens?:?\s*([\d,]+)/i);
           const outputMatch = o.content.match(/output[_ ]tokens?:?\s*([\d,]+)/i);
           const costMatch = o.content.match(/cost(?:_usd)?:?\s*\$?([\d.]+)/i);
-          if (inputMatch) inputTokens += parseInt(inputMatch[1].replace(/,/g, ''), 10);
-          if (outputMatch) outputTokens += parseInt(outputMatch[1].replace(/,/g, ''), 10);
-          if (costMatch) costUsd += parseFloat(costMatch[1]);
+          if (inputMatch?.[1]) inputTokens += parseInt(inputMatch[1].replace(/,/g, ''), 10);
+          if (outputMatch?.[1]) outputTokens += parseInt(outputMatch[1].replace(/,/g, ''), 10);
+          if (costMatch?.[1]) costUsd += parseFloat(costMatch[1]);
         }
         return {
           sessionId: s.id,
@@ -297,7 +297,7 @@ export async function main(args: string[]): Promise<void> {
   }
 
   const portIdx = args.indexOf('--port');
-  const port = portIdx !== -1 ? parseInt(args[portIdx + 1], 10) : DEFAULT_PORT;
+  const port = portIdx !== -1 ? parseInt(args[portIdx + 1] ?? '', 10) || DEFAULT_PORT : DEFAULT_PORT;
   const noBrowser = args.includes('--no-browser');
 
   await startDashboard({ port, projectPath: process.cwd(), noBrowser });

@@ -94,6 +94,8 @@ function printHelp() {
   console.log(`    ${c.white}claude-dev-stack stats${c.reset}                 ${c.dim}Dashboard: sessions, context quality, recommendations${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack search <query>${c.reset}         ${c.dim}Search session observations (FTS5)${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack mem-stats${c.reset}              ${c.dim}Session memory dashboard (SQLite)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack dashboard${c.reset}              ${c.dim}Open web dashboard (session timeline, costs, graph)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack dashboard stop${c.reset}         ${c.dim}Stop running dashboard server${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}NotebookLM Sync${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
@@ -217,6 +219,13 @@ async function run() {
     // -- SQLite Stats dashboard (D-145) --
     case 'mem-stats': {
       const mod = await import(resolveDistPath('cli/stats.js'));
+      await mod.main(args.slice(1));
+      break;
+    }
+
+    // -- Web Dashboard (DX-01, Phase 48) --
+    case 'dashboard': {
+      const mod = await import(resolveDistPath('cli/dashboard.js'));
       await mod.main(args.slice(1));
       break;
     }
