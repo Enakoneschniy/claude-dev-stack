@@ -211,7 +211,7 @@ Plans:
 | 38. Backfill Migration | 0/? | Not started | — |
 | 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
 | 40. v1.0 Alpha Implementation Polish | 0/6 | Planned    |  |
-| 41. v1.0 Alpha UAT & Sandbox | 0/? | Not started | — |
+| 41. v1.0 Alpha UAT & Sandbox | 0/2 | Planned    |  |
 
 ---
 
