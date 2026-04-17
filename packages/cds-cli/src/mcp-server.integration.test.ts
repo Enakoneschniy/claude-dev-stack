@@ -47,7 +47,7 @@ const launcher = pickLauncher();
 
 describe('mcp-server — stdio integration', () => {
   it.skipIf(!launcher)(
-    'spawns server and lists 5 tools over stdio',
+    'spawns server and lists 7 tools over stdio',
     { timeout: 20000 },
     async () => {
       if (!launcher) return; // type narrow
@@ -66,7 +66,7 @@ describe('mcp-server — stdio integration', () => {
           { method: 'tools/list', params: {} },
           ListToolsResultSchema,
         );
-        expect(result.tools).toHaveLength(5);
+        expect(result.tools).toHaveLength(7);
         for (const t of result.tools) {
           expect(typeof t.name).toBe('string');
           expect(t.inputSchema).toBeDefined();
