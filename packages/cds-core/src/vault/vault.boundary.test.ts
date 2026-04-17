@@ -75,6 +75,11 @@ test('cds-core public surface DOES expose the documented sessions API', () => {
     'MigrationError',
     'FtsUnavailableError',
     'DbOpenError',
+    // Phase 43 additions
+    'FsBackend',
+    'ConflictStrategy',
+    'getEntityGraph',
+    'searchAllProjects',
   ];
   const keys = Object.keys(cdsCore);
   for (const name of expected) {
@@ -83,6 +88,17 @@ test('cds-core public surface DOES expose the documented sessions API', () => {
   expect(typeof cdsCore.openSessionsDB).toBe('function');
   expect(typeof cdsCore.closeSessionsDB).toBe('function');
   expect(Array.isArray(cdsCore.CANONICAL_ENTITY_TYPES)).toBe(true);
+});
+
+test('cds-core public surface DOES expose Phase 43 vault primitives', () => {
+  const keys = Object.keys(cdsCore);
+  expect(keys).toContain('FsBackend');
+  expect(keys).toContain('ConflictStrategy');
+  expect(keys).toContain('getEntityGraph');
+  expect(keys).toContain('searchAllProjects');
+  expect(typeof cdsCore.getEntityGraph).toBe('function');
+  expect(typeof cdsCore.searchAllProjects).toBe('function');
+  expect(typeof cdsCore.FsBackend).toBe('function'); // class constructor
 });
 
 test('no consumer file imports from @cds/core/vault/internal/*', () => {
