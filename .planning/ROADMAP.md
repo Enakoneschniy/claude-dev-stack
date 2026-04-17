@@ -226,7 +226,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 43. Core Vault Primitives | v1.1 | 2/2 | Complete   | 2026-04-17 |
 | 44. S3 Backend | v1.1 | 0/? | Not started | — |
-| 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 0/? | Not started | — |
+| 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 3/3 | Complete   | 2026-04-17 |
 | 46. SDK Dispatch + DEMO-01 Fix | v1.1 | 0/? | Not started | — |
 | 47. Plugin SDK | v1.1 | 0/? | Not started | — |
 | 48. Web Dashboard | v1.1 | 0/? | Not started | — |
