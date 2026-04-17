@@ -185,11 +185,21 @@ export async function dispatchAgent(opts: DispatchOptions): Promise<DispatchResu
 }
 
 /**
- * Detect if we're running inside a Claude Code session.
- * Claude Code sets CLAUDE_SESSION_ID for child processes spawned by tools.
+ * Detect if Claude Code CLI is available and authenticated.
+ * Uses `claude --version` as a lightweight probe — if it exits 0,
+ * `claude -p` can be used for dispatch with the stored auth.
  */
 function isInsideClaudeCode(): boolean {
-  return !!(process.env.CLAUDE_SESSION_ID || process.env.CLAUDE_PROJECT_DIR);
+  try {
+    const r = execFileSync('claude', ['--version'], {
+      encoding: 'utf8',
+      stdio: 'pipe',
+      timeout: 5000,
+    });
+    return r.length > 0;
+  } catch {
+    return false;
+  }
 }
 
 /**
