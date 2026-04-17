@@ -198,6 +198,13 @@ async function run() {
       break;
     }
 
+    // ── Memory (internal: called by SessionStart hook, D-146) ──
+    case 'memory': {
+      const mod = await import(resolveDistPath('cli/memory.js'));
+      await mod.main(args.slice(1));
+      break;
+    }
+
     // ── Migrate ──
     case 'migrate': {
       const migrate = await import(resolveDistPath('migrate/cli.js'));

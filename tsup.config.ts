@@ -17,6 +17,7 @@ export default defineConfig({
     'core/index': 'packages/cds-core/src/index.ts',
     'cli/index': 'packages/cds-cli/src/index.ts',
     'cli/quick': 'packages/cds-cli/src/quick.ts',
+    'cli/memory': 'packages/cds-cli/src/memory.ts',
     'cli/mcp-server': 'packages/cds-cli/src/mcp-server.ts',
     'migrate/index': 'packages/cds-migrate/src/index.ts',
     'migrate/cli': 'packages/cds-migrate/src/cli.ts',
