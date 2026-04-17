@@ -8,235 +8,226 @@
 - ✅ **v0.11 DX Polish & Ecosystem** — Phases 14–18.1 (shipped 2026-04-13)
 - ✅ **v0.12 Hooks & Limits** — Phases 19–32 (shipped 2026-04-16)
 - ✅ **v1.0 CDS-Core Independence (Phase A)** — Phases 33–42 (shipped 2026-04-17)
+- 🚧 **v1.1 Full-Stack Evolution** — Phases 43–49 (in progress)
 
 ---
 
 ## ✅ v1.0 — CDS-Core Independence (Phase A) — Shipped 2026-04-17
 
+<details>
+<summary>Phases 33–42 — 10 phases, 40 plans, 347 files changed, 55K+ LOC</summary>
+
 **Milestone Goal:** Carve `claude-dev-stack` into a pnpm monorepo on Claude Agent SDK with tiered vault architecture (markdown for cold docs, SQLite for warm session memory, markdown for hot context) and auto session capture replacing the manual `/end` flow. Ship as `claude-dev-stack@1.0.0-alpha.1` via `npm publish --tag alpha`.
 
-**Source of truth:** [`vault/projects/claude-dev-stack/docs/cds-core-independence-plan.md`](../../vault/projects/claude-dev-stack/docs/cds-core-independence-plan.md) (D-28 Phase A scope) + [`SEED-004`](seeds/SEED-004-tiered-vault-sessions-auto-capture.md).
+What shipped: pnpm monorepo + Agent SDK + SQLite vault + auto-capture + MCP adapter + backfill migration + /cds-quick demo + alpha release + doctor GSD permissions + Docker UAT harness + Living Memory (search/stats/skills/SessionStart hook).
 
-**Phase numbering:** continues from v0.12 (last phase: 32) → v1.0 starts at **Phase 33**
+Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
+
+### Phase 33: Monorepo Foundation
+**Goal**: Repository runs as a pnpm workspace with TypeScript project references, vitest, and CI on Node 18/20/22.
+**Requirements**: MONO-01, MONO-02, MONO-03, MONO-04
+**Plans**: Complete
+
+### Phase 34: SDK Integration & Core Primitives
+**Goal**: `@cds/core` exposes `dispatchAgent`, `Context`, and `CostTracker` backed by `@anthropic-ai/claude-agent-sdk`.
+**Requirements**: SDK-01, SDK-02, CORE-01, CORE-02
+**Plans**: Complete
+
+### Phase 35: Tiered Vault — Tier 2 SQLite
+**Goal**: A per-project `sessions.db` (better-sqlite3, WAL mode, FTS5) is the single write target for session memory.
+**Requirements**: VAULT-01, VAULT-02, VAULT-03
+**Plans**: 4/4 Complete
+
+### Phase 36: Auto Session Capture
+**Goal**: When a Claude Code session ends, structured observations land in SQLite without the user typing `/end`.
+**Requirements**: CAPTURE-05, CAPTURE-06
+**Plans**: Complete
+
+### Phase 37: MCP Adapter
+**Goal**: A Claude Code session can query session memory + docs + planning state through MCP tools.
+**Requirements**: MCP-01, MCP-02
+**Plans**: Complete
+
+### Phase 38: Backfill Migration
+**Goal**: Existing 30+ markdown session logs are queryable via SQLite.
+**Requirements**: MIGRATE-01, MIGRATE-02
+**Plans**: Complete
+
+### Phase 39: `/cds-quick` Demo & Alpha Release
+**Goal**: `/cds-quick` end-to-end on new stack + `claude-dev-stack@1.0.0-alpha.1` published.
+**Requirements**: DEMO-01, RELEASE-01
+**Plans**: 5/5 Complete
+
+### Phase 40: v1.0 Alpha Implementation Polish
+**Goal**: Close all implementation blockers for v1.0.0-alpha.1 release.
+**Plans**: 5/6 Complete
+
+### Phase 41: v1.0 Alpha UAT & Sandbox
+**Goal**: Validate v1.0.0-alpha.1 end-to-end in Docker sandbox.
+**Plans**: 2/2 Complete
+
+### Phase 42: Living Memory
+**Goal**: SQLite session memory actively useful — loaded at session start, queryable via CLI and skills.
+**Plans**: 4/4 Complete
+
+### Progress (v1.0)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 33. Monorepo Foundation | — | Complete | 2026-04-16 |
+| 34. SDK Integration & Core Primitives | — | Complete | 2026-04-16 |
+| 35. Tiered Vault — Tier 2 SQLite | 4/4 | Complete | 2026-04-16 |
+| 36. Auto Session Capture | — | Complete | 2026-04-16 |
+| 37. MCP Adapter | — | Complete | 2026-04-16 |
+| 38. Backfill Migration | — | Complete | 2026-04-16 |
+| 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete | 2026-04-16 |
+| 40. v1.0 Alpha Implementation Polish | 5/6 | Complete | 2026-04-17 |
+| 41. v1.0 Alpha UAT & Sandbox | 2/2 | Complete | 2026-04-17 |
+| 42. Living Memory | 4/4 | Complete | 2026-04-17 |
+
+</details>
+
+---
+
+## 🚧 v1.1 — Full-Stack Evolution (In Progress)
+
+**Milestone Goal:** Transform claude-dev-stack from alpha CLI into a production-ready, multi-platform memory system with cloud sync, intelligent memory surfacing, web dashboard, plugin SDK, and stable `@latest` release.
+
+**Phase numbering:** continues from v1.0 (last phase: 42) → v1.1 starts at **Phase 43**
 **Branching:** `phase` → `gsd/phase-{N}-{slug}`, PR-only to main
-**Test baseline:** 928/931 (3 pre-existing `detect.test.mjs` failures untouched)
-**Total requirements:** 19 v1 reqs across 9 categories (MONO×4, SDK×2, CORE×2, VAULT×3, CAPTURE×2, MCP×2, MIGRATE×2, DEMO×1, RELEASE×1)
+**Total requirements:** 26 v1.1 reqs across 4 categories (INFRA×3, HARD×8, MEM×7, DX×8)
 
 ### Phases
 
-- [ ] **Phase 33: Monorepo Foundation** — pnpm workspaces, TS project references, vitest, CI matrix
-- [ ] **Phase 34: SDK Integration & Core Primitives** — Claude Agent SDK license check + agent-dispatcher + context + cost-tracker
-- [x] **Phase 35: Tiered Vault — Tier 2 SQLite** — better-sqlite3 sessions DB + FTS5 schema + boundary enforcement (completed 2026-04-16)
-- [ ] **Phase 36: Auto Session Capture** — Stop hook → SDK Haiku → SQLite (closes v0.12 ADR-02 Known Gap retroactively)
-- [ ] **Phase 37: MCP Adapter** — sessions.search/timeline/get_observations + docs.search + planning.status tools
-- [ ] **Phase 38: Backfill Migration** — port existing markdown sessions into SQLite via Haiku entity extraction
-- [ ] **Phase 39: `/cds-quick` Demo & Alpha Release** — proof-of-pipeline + `claude-dev-stack@1.0.0-alpha.1` via `npm publish --tag alpha`
+- [ ] **Phase 43: Core Vault Primitives** — VaultBackend interface, FsBackend, graph API, cross-project search foundation
+- [ ] **Phase 44: S3 Backend** — Real S3Backend with WAL checkpoint and merge-on-download sync
+- [ ] **Phase 45: Cross-Project Search + Graph + MCP Tools** — global search, entity graph, new MCP tools
+- [ ] **Phase 46: SDK Dispatch + DEMO-01 Fix** — /cds-quick through CLI quick.ts, credential resolver
+- [ ] **Phase 47: Plugin SDK** — @cds/plugin-sdk manifest-only interface, Stop hook extension points
+- [ ] **Phase 48: Web Dashboard** — local analytics dashboard with Hono server, entity graph viz
+- [ ] **Phase 49: Release — npm @latest + MCP Marketplace** — staged rollout, migration validation, marketplace listings
 
 ### Dependency Graph
 
 ```
-        Phase 33 (Monorepo Foundation)
+        Phase 43 (Core Vault Primitives)
               │
         ┌─────┴─────┐
         ▼           ▼
-   Phase 34      Phase 35
-   (SDK+Core)   (Tier 2 SQLite)
+   Phase 44      Phase 45
+   (S3 Backend) (Search+Graph)
         │           │
         └─────┬─────┘
-              ▼
-        Phase 36 (Auto Capture)
               │
         ┌─────┴─────┐
         ▼           ▼
-   Phase 37      Phase 38
-   (MCP)        (Backfill)
+   Phase 46      Phase 47
+   (SDK Dispatch) (Plugin SDK)
         │           │
         └─────┬─────┘
               ▼
-        Phase 39 (Demo + Release)
+        Phase 48 (Dashboard)
+              │
+              ▼
+        Phase 49 (Release)
 ```
 
-**Critical path:** 33 → 34 → 36 → 39 (SDK chain). Phases 35 and 38 can parallelize with 34 and 37 respectively if capacity allows.
+**Parallelization:** Phases 44 and 45 can run in parallel after Phase 43. Phases 46 and 47 can run in parallel after Phase 45. Phase 48 must follow Phase 45 (needs final API shape). Phase 49 is always last.
 
 ### Phase Details
 
-### Phase 33: Monorepo Foundation
-**Goal**: Repository runs as a pnpm workspace with TypeScript project references, vitest, and CI on Node 18/20/22 — every existing test still passes.
-**Depends on**: Nothing (foundation)
-**Requirements**: MONO-01, MONO-02, MONO-03, MONO-04
+### Phase 43: Core Vault Primitives
+**Goal**: `@cds/core` exposes a stable VaultBackend interface, FsBackend as the no-op default, graph data API, and cross-project search primitives — unblocking every v1.1 consumer.
+**Depends on**: Phase 42 (v1.0 Living Memory — existing SQLite + MCP foundation)
+**Requirements**: INFRA-01, INFRA-02, INFRA-03, MEM-02, MEM-04
 **Success Criteria** (what must be TRUE):
-  1. Running `pnpm install` from repo root resolves all four packages (`cds-core`, `cds-cli`, `cds-migrate`, `cds-s3-backend`) and links workspace deps.
-  2. Running `pnpm tsc --build` compiles all packages in dependency order with zero TypeScript errors and ESM output.
-  3. Running `pnpm test` executes the migrated 928-test suite in parallel per package with zero behavior change.
-  4. A push to a feature branch triggers GitHub Actions matrix `[node 18, 20, 22]` running install + build + test, and fails on any TS or test error.
+  1. `VaultBackend` interface with `pull()` and `push()` methods is importable from `@cds/core` and has no runtime implementation (interface-only).
+  2. `FsBackend` implements `VaultBackend` as a no-op (returns immediately) — existing behavior is preserved with zero regression.
+  3. `getEntityGraph()` returns entity-relation data from a project's `sessions.db` (nodes, edges with types).
+  4. `searchAllProjects()` in `@cds/core` uses SQLite `ATTACH` in batches of 9 and returns ranked results across all configured project vaults.
 **Plans**: TBD
 
-### Phase 34: SDK Integration & Core Primitives
-**Goal**: `@cds/core` exposes `dispatchAgent`, `Context`, and `CostTracker` backed by `@anthropic-ai/claude-agent-sdk`, replacing the failing `claude -p` subprocess pattern.
-**Depends on**: Phase 33 (needs monorepo + TS build to host new package code)
-**Requirements**: SDK-01, SDK-02, CORE-01, CORE-02
+### Phase 44: S3 Backend
+**Goal**: Users can configure S3 as a vault backend and sync their SQLite sessions across devices with no silent data loss.
+**Depends on**: Phase 43 (VaultBackend interface must exist)
+**Requirements**: HARD-01, HARD-02, HARD-03, INFRA-03
+**ADR required first**: Merge-on-download conflict strategy (GetObject → merge by UUID → PutObject; explicit scenario enumeration required before any S3 code)
 **Success Criteria** (what must be TRUE):
-  1. `NOTICES.md` lists `@anthropic-ai/claude-agent-sdk` with verified Apache-2.0/MIT license; if license check fails, milestone blocks before any SDK code is imported (see Risks below).
-  2. A hello-world test calls `dispatchAgent({ model: 'haiku', prompt: ... })` and receives `{ output, tokens: { input, output }, cost_usd }` with non-zero token counts from the live SDK.
-  3. `Context` instance accumulates conversation history across `add()` calls and persists to `~/.claude/cds-context-{session_id}.json` when persistence is enabled.
-  4. `CostTracker` aggregates per-session token + USD totals across multiple `dispatchAgent` calls and returns them via `total()` / `dump()`.
+  1. Running `cds vault setup --backend s3` prompts for bucket, region, and credentials, and writes S3 config to vault settings.
+  2. Running `cds vault sync` on two devices results in each device's observations merged into a single consistent `sessions.db` (no row lost, no duplicate UUID).
+  3. Before any S3 upload, `PRAGMA wal_checkpoint(TRUNCATE)` executes — verified by a test that inspects DB state after checkpoint.
+  4. AWS SDK lives only in `@cds/s3-backend`; importing `@cds/core` or `@cds/cli` does not transitively pull in `@aws-sdk/*`.
 **Plans**: TBD
 
-### Phase 35: Tiered Vault — Tier 2 SQLite
-**Goal**: A per-project `~/vault/projects/{name}/sessions.db` (better-sqlite3, WAL mode, FTS5) is the single write target for session memory, with type-level boundary enforcement.
-**Depends on**: Phase 33 (needs monorepo to host `packages/cds-core/src/vault/`)
-**Requirements**: VAULT-01, VAULT-02, VAULT-03
+### Phase 45: Cross-Project Search + Graph + MCP Tools
+**Goal**: Users can search memory across all projects and visualize entity relationships — both via CLI and MCP tools consumed by Claude Code.
+**Depends on**: Phase 43 (searchAllProjects + getEntityGraph primitives)
+**Requirements**: MEM-01, MEM-03, MEM-05, MEM-06, MEM-07
 **Success Criteria** (what must be TRUE):
-  1. Calling `openSessionsDB(projectPath)` for the first time creates `sessions.db` with WAL mode + FTS5 verified, and returns a usable connection.
-  2. The opened DB contains tables `sessions`, `observations`, `entities`, `relations`, FTS5 virtual table `observations_fts`, and a `schema_version` row matching the latest migration in `vault/migrations/`.
-  3. The only public write API is `sessions.ts`; attempting to import a raw `db` handle from outside that module fails TypeScript type-check.
-  4. Existing markdown writers (`lib/notebooklm-sync.mjs`, `lib/adr-bridge-session.mjs`) cannot be modified to write to SQLite without explicit type errors — verified by a regression test that imports each writer and confirms no `db` handle is reachable.
+  1. Running `cds search --global "query"` returns ranked results from all project vaults, showing project name and session date per result.
+  2. MCP tool `sessions.searchAll` returns the same cross-project results as the CLI, callable from a Claude Code session.
+  3. MCP tool `memory.graph` returns entity-relation data for the current project — nodes with type labels and directional edges.
+  4. SessionStart hook auto-surfaces relevant past observations from the current project (fuzzy + FTS5 combined) in the session preamble.
+  5. Auto-suggestion correctly returns results for misspelled/partial queries (MiniSearch fuzzy) and exact-phrase queries (FTS5).
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 46: SDK Dispatch + DEMO-01 Fix
+**Goal**: `/cds-quick` dispatches through CLI `quick.ts` and displays cost, closing the v1.0 DEMO-01 partial; credential resolver supports three auth fallback paths.
+**Depends on**: Phase 45 (search pipeline complete; stable MCP surface consumed by quick.ts)
+**Requirements**: HARD-04, HARD-05
+**Success Criteria** (what must be TRUE):
+  1. Running `/cds-quick "<task>"` dispatches through `packages/cds-cli/src/quick.ts` (not `Agent(haiku)` directly) and prints `cost_usd` in the response.
+  2. Credential resolver tries OAuth token first, then API key, then `ANTHROPIC_API_KEY` env var — in that order — and surfaces a clear error if all three fail.
+  3. The OAuth→API key bridge works on Linux (not just macOS Keychain) — verified in the Docker UAT environment.
 **Plans**: TBD
 
-### Phase 36: Auto Session Capture
-**Goal**: When a Claude Code session ends, structured observations land in SQLite without the user typing `/end` — and a session exit is never blocked by capture failure. Closes the v0.12 ADR-02 Known Gap retroactively.
-**Depends on**: Phase 34 (needs `dispatchAgent`) + Phase 35 (needs `sessions.ts` API)
-**Requirements**: CAPTURE-05, CAPTURE-06
+### Phase 47: Plugin SDK
+**Goal**: Third-party developers can build plugins against a stable manifest-only interface, and Stop hook exposes an extension point for custom post-session actions.
+**Depends on**: Phase 45 (stable @cds/core + MCP surface for plugins to consume)
+**ADR required first**: Plugin trust model — manifest-only for v1.1, no arbitrary `import(userPath)` code execution
+**Requirements**: DX-05, DX-06
 **Success Criteria** (what must be TRUE):
-  1. Ending a Claude Code session in a configured project triggers `hooks/session-end-capture.mjs` detached, which writes one new `sessions` row + N `observations` rows to that project's `sessions.db` within 60s of session exit.
-  2. `vault/projects/{name}/context.md` (Tier 3) gains a session pointer to the just-captured session ID.
-  3. Forcing `dispatchAgent` to throw inside the hook causes the session to exit normally with no user-visible error and no partial DB writes (transaction rollback).
-  4. Re-running the install wizard on a configured project replaces `session-end-check.sh` with `session-end-capture.mjs` in `.claude/settings.json` Stop hook list and prints `auto-capture enabled, /end no longer required for routine sessions`.
+  1. `@cds/plugin-sdk` is a publishable package with TypeScript interface definitions for `PluginManifest`, `PluginHookContext`, and the Stop hook extension point — no runtime code.
+  2. A third-party plugin author can create a plugin by implementing the manifest interface without importing any `@cds/core` internals.
+  3. Stop hook reads the plugin extension point and invokes registered post-session handlers in order, without executing arbitrary module paths.
 **Plans**: TBD
 
-### Phase 37: MCP Adapter
-**Goal**: A Claude Code session can query session memory + docs + planning state through MCP tools without reading any markdown file directly.
-**Depends on**: Phase 35 (needs stable SQLite schema for sessions tools); Phase 36 strongly recommended for non-empty data
-**Requirements**: MCP-01, MCP-02
+### Phase 48: Web Dashboard
+**Goal**: Users can open a local web dashboard to explore session analytics, token costs, and the entity relationship graph — all without leaving their machine.
+**Depends on**: Phase 45 (graph + search APIs must be in final shape before dashboard consumes them)
+**Requirements**: DX-01, DX-02, DX-03, DX-04
+**Research flag**: Resolve SPA strategy contradiction (Vite+React vs plain HTML+CDN) before planning starts
 **Success Criteria** (what must be TRUE):
-  1. Running `cds mcp serve` starts an MCP server exposing 5 tools (`sessions.search`, `sessions.timeline`, `sessions.get_observations`, `docs.search`, `planning.status`) with MCP-spec-conformant JSON schemas.
-  2. From a Claude Code session, calling `sessions.search("monorepo")` returns FTS5-ranked observations from the local `sessions.db`.
-  3. Re-running the install wizard on a configured project registers the server in `.claude/settings.json` under `mcp.servers` exactly once (idempotent — second run produces no duplicate entry).
-  4. `planning.status(project)` returns ROADMAP phase counts and STATE current position parsed from the project's `.planning/` (or vault planning location) markdown.
+  1. Running `cds dashboard` starts an HTTP server and opens `localhost:{port}` in the default browser, showing a session timeline.
+  2. Dashboard displays token usage and cost breakdown per project (sourced from `sessions.db`).
+  3. Dashboard renders a clickable entity relationship graph for the active project (nodes = entities, edges = relations).
+  4. Stopping `cds dashboard` (Ctrl-C or `cds dashboard stop`) cleans up the PID file and leaves no stale process behind — verified by checking `ps` output after shutdown.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 49: Release — npm @latest + MCP Marketplace
+**Goal**: `claude-dev-stack@1.1.0` is promoted to `@latest` on npm, 0.12.x users have a working migration path, and `@cds/mcp-adapter` is listed on two MCP marketplaces.
+**Depends on**: Phase 48 (all code phases complete)
+**Requirements**: HARD-06, HARD-07, HARD-08, DX-07, DX-08
+**Success Criteria** (what must be TRUE):
+  1. `npm install claude-dev-stack` (no tag) installs `1.1.0`; `npm install claude-dev-stack@1.0.0-alpha.1` still resolves the alpha.
+  2. Running `cds-migrate` on a `0.12.x` vault completes without data loss — verified end-to-end in Docker UAT starting from a `0.12.x` snapshot.
+  3. Docker UAT validates clean upgrade from both `0.12.x` and `1.0.0-alpha.1` to `1.1.0` — all UAT assertions pass.
+  4. `@cds/mcp-adapter` has an active listing on Smithery marketplace and on the official MCP Registry (links in RELEASE.md).
 **Plans**: TBD
 
-### Phase 38: Backfill Migration
-**Goal**: Existing 30+ markdown session logs are queryable via SQLite without rewriting the markdown archive — historical context is preserved in the new memory layer.
-**Depends on**: Phase 34 (needs `dispatchAgent` for Haiku entity extraction) + Phase 35 (needs `sessions.ts` API)
-**Requirements**: MIGRATE-01, MIGRATE-02
-**Success Criteria** (what must be TRUE):
-  1. Running `claude-dev-stack migrate sessions --dry-run` walks `vault/projects/{name}/sessions/*.md` and prints per-session: file path, parsed observation count, estimated tokens, and total estimated cost (target <$0.50 for ~30 sessions).
-  2. After user confirmation, running with `--apply` populates `sessions.db` with one `sessions` row per markdown file plus extracted observations and entities.
-  3. Re-running `migrate sessions --apply` on an already-migrated vault is a no-op (zero new rows, prints "already migrated" per file).
-  4. After backfill, `sessions.search("SEED-001")` returns observations from historical session logs alongside any post-Phase-36 auto-captured sessions.
-**Plans**: TBD
+### Progress (v1.1)
 
-### Phase 39: `/cds-quick` Demo & Alpha Release
-**Goal**: A user runs `/cds-quick "<task>"` end-to-end on the new stack, sees a structured result with cost, and `claude-dev-stack@1.0.0-alpha.1` is installable via `npm install claude-dev-stack@alpha` without disturbing existing v0.12.x users on `@latest`.
-**Depends on**: Phase 36 (auto-capture) + Phase 37 (MCP query) — proof-of-pipeline requires both write path and read path. Phase 38 nice-to-have for richer demo data.
-**Requirements**: DEMO-01, RELEASE-01
-**Success Criteria** (what must be TRUE):
-  1. Running `/cds-quick "summarize current planning state"` invokes `dispatchAgent`, the resulting session is auto-captured into SQLite, and the user sees a result summary plus dollar cost in the same response.
-  2. `npm install claude-dev-stack@alpha` installs `1.0.0-alpha.1`; `npm install claude-dev-stack` (no tag) still installs the latest `0.12.x`.
-  3. `docs/migration-v0-to-v1-alpha.md` exists and documents settings.json schema changes, hook name changes, and the new SQLite dependency.
-  4. The GitHub release for `v1.0.0-alpha.1` links the migration guide and calls out alpha-status caveats (auto-capture is the only canonical session writer; manual `/end` is fallback only).
-**Plans**: 5 (complete 2026-04-16)
-
-### Phase 40: v1.0 Alpha Implementation Polish
-**Goal**: Close all implementation blockers for v1.0.0-alpha.1 release. After this phase, the codebase is ready for the formal UAT cycle in Phase 41.
-**Depends on**: Phase 39 (demo + release plumbing)
-**Requirements**: derived from Phase 39 follow-ups + 999.2 promotion + carried v0.12 known gap
-**Scope** (implementation only; testing/UAT lives in Phase 41):
-  1. **CI blocker** — fix 3 pre-existing `tests/detect.test.mjs` failures (carried since v0.12; new `publish.yml` runs `pnpm test` and they now block release).
-  2. **CC 2.1.x subagent permission hardening** (promoted from backlog 999.2):
-     - Auto-pass `mode=bypassPermissions` to `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md` (ships as a GSD workflow patch under `patches/` per Phase 27 patch infrastructure)
-     - `claude-dev-stack doctor --gsd-permissions` populates `.claude/settings.local.json` allowlist (pnpm:*, npx:*, node:*, git merge-base:*, git reset:*, git status:*, tsc:*, vitest:*)
-     - Worktree base check Read-fallback (read `.git/HEAD` directly when Bash denied)
-     - Post-worktree-merge `pnpm install` step in `execute-phase.md`
-     - Wizard CC 2.x detection + automatic permission allowlist setup at install time
-  3. **Code review gate** for Phase 39:
-     - `/gsd-code-review` for Phase 39 new code (`packages/cds-cli/src/quick.ts`, `packages/cds-cli/src/capture-standalone.ts`, `lib/install/hooks.mjs::registerCaptureHook`, `bin/install.mjs` Node check wiring)
-     - Apply remediation for any high-severity findings via `/gsd-code-review-fix`
-  4. **Documentation polish**:
-     - README update: v1.0 install instructions + cross-link to `docs/migration-v0-to-v1-alpha.md` + CHANGELOG link
-  5. **Phase 35 follow-up**: `db.pragma('busy_timeout = 5000')` in `openRawDb` (helps avoid SQLITE_BUSY under concurrent CLAUDE_SESSION_ID writes; non-blocking but ships before alpha for sturdiness).
-**Success Criteria** (what must be TRUE):
-  1. `pnpm test` is fully green at HEAD — no failing tests on macOS/Linux Node 20+.
-  2. `~/.claude/get-shit-done/workflows/execute-phase.md` (post-patch) and `claude-dev-stack doctor --gsd-permissions` together let a fresh user run `/gsd-execute-phase` without any silent Bash denial.
-  3. `/gsd-code-review` produces a clean REVIEW.md (no severity-blocking findings) for Phase 39 code.
-  4. README front-matter mentions v1.0.0-alpha.1 install instructions and links the migration guide + CHANGELOG.
-  5. `openRawDb` sets `busy_timeout = 5000` and a regression test confirms the pragma persists across reopens.
-**Plans**: 6 plans
-Plans:
-- [ ] 40-01-PLAN.md — Fix detect.test.mjs failures (HOME isolation)
-- [ ] 40-02-PLAN.md — GSD execute-phase bypassPermissions patch
-- [ ] 40-03-PLAN.md — Doctor --gsd-permissions + wizard CC 2.x auto-config
-- [ ] 40-04-PLAN.md — SQLite busy_timeout regression test
-- [ ] 40-05-PLAN.md — README v1.0.0-alpha.1 update
-- [ ] 40-06-PLAN.md — Code review Phase 39+40
-
-### Phase 41: v1.0 Alpha UAT & Sandbox
-**Goal**: Validate the v1.0.0-alpha.1 build end-to-end in a sandboxed environment so the release does NOT touch the maintainer's working Claude Code setup. This phase produces the Docker-based UAT harness, runs `/gsd-verify-work` for Phase 39 + Phase 40, and gates the release behind a green sandbox smoke.
-**Depends on**: Phase 40 (implementation polish complete)
-**Requirements**: RELEASE-01 testing tail
-**Scope**:
-  1. **Sandbox design** — Docker UAT harness:
-     - `docker/uat/Dockerfile` — Node 20 + git + minimal toolchain
-     - `docker/uat/run-smoke.sh` — installs `claude-dev-stack-1.0.0-alpha.1.tgz` inside container, runs wizard, asserts `.claude/settings.json` shape, runs every `bin/cli.mjs` subcommand, runs `migrate sessions --dry-run` against a synthetic vault, asserts MCP server entries
-     - `pnpm uat` script wired to invoke the Docker harness
-  2. **CLAUDE_CONFIG_DIR override** — verify whether Claude Code respects an env override for global config dir; if not, document workaround for safe smoke on host machine
-  3. **Verification gates**:
-     - `/gsd-verify-work` for Phase 39 (UAT)
-     - `/gsd-verify-work` for Phase 40 (UAT)
-  4. **Manual smoke procedure** — `docs/uat.md`: run Docker UAT first; only after green, optional manual smoke on host in `/tmp/cds-test-project-{uuid}/` with `CLAUDE_CONFIG_DIR=/tmp/cds-test-claude` to keep blast radius zero
-**Success Criteria**:
-  1. `pnpm uat` exits 0 on a clean machine — wizard completes, hooks registered, MCP server present, all CLI subcommands invokable, no warnings in container logs.
-  2. `/gsd-verify-work` returns PASS for both Phase 39 and Phase 40.
-  3. `docs/uat.md` documents the procedure such that a maintainer can repeat the UAT without referring to source.
-  4. Maintainer's own `~/.claude/` and `~/vault/` are provably untouched by the UAT (audit via shasum diff before/after).
-**Plans**: TBD
-
-
-### Phase 42: Living Memory
-**Goal**: Make SQLite session memory actively useful -- automatically loaded at session start, queryable via CLI and skills, with CLAUDE.md instructing Claude to use MCP tools for past decisions/work.
-**Depends on**: Phase 37 (MCP tools), Phase 35 (SQLite sessions.db)
-**Requirements**: derived from Phase 37 follow-up (memory surfacing)
-**Scope**:
-  1. Extend SessionsDB with listSessions + countObservationsByType methods
-  2. `claude-dev-stack memory` internal CLI command + SessionStart hook wiring (D-140, D-146)
-  3. `claude-dev-stack search` + `claude-dev-stack mem-stats` CLI commands (D-144, D-145)
-  4. `/cds-search` + `/cds-stats` skills with MCP tool dispatch + CLI fallback (D-142, D-143)
-  5. CLAUDE.md template Memory section instructing Claude to use MCP tools (D-141)
-**Success Criteria**:
-  1. SessionStart hook injects last 3 sessions summary from SQLite into Claude context.
-  2. `claude-dev-stack search "query"` returns FTS5 results in terminal.
-  3. `claude-dev-stack mem-stats` prints session count, observation breakdown, last activity.
-  4. `/cds-search` and `/cds-stats` skills work in Claude Code via MCP tools with CLI fallback.
-  5. Re-running wizard produces CLAUDE.md with Memory section referencing MCP tools.
-**Plans**: 4 plans
-Plans:
-- [x] 42-01-PLAN.md -- SessionsDB extensions + memory command + hook wiring
-- [x] 42-02-PLAN.md -- search + stats CLI commands
-- [x] 42-03-PLAN.md -- /cds-search + /cds-stats skills
-- [x] 42-04-PLAN.md -- CLAUDE.md template Memory section
-
-### Risks & Critical Flags
-
-- **SDK-01 license verification is a soft blocker on every downstream phase.** If `@anthropic-ai/claude-agent-sdk` license is not Apache-2.0/MIT-compatible at Phase 34 start, Phases 34/36/38/39 cannot proceed (every SDK call site is blocked). Mitigation: surface license check as the very first task of Phase 34; if it fails, escalate to user before any code import.
-- **VAULT-01 driver choice is locked.** `better-sqlite3` is decided per SEED-004 + REQUIREMENTS. Do NOT re-open `bun:sqlite` discussion during Phase 35 planning.
-- **CAPTURE-05 closes v0.12 ADR-02 Known Gap** — the failing `claude -p --model haiku --bare --output-format text` subprocess from v0.12 Phase 26 is replaced by SDK invocation. This is a feature win to call out in Phase 36 SUMMARY and v1.0 release notes.
-- **DEMO-01 is the proof-of-pipeline criterion.** Without a working `/cds-quick` round-trip, alpha release should not ship — Phase 39 success criterion 1 gates RELEASE-01.
-- **Test baseline preservation.** All 928 currently-passing tests must continue to pass after MONO-03 vitest migration; the 3 pre-existing `detect.test.mjs` failures stay untouched (route to dedicated quick task per v0.12 Known Gaps).
-
-### Progress
-
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 33. Monorepo Foundation | 0/? | Not started | — |
-| 34. SDK Integration & Core Primitives | 0/? | Not started | — |
-| 35. Tiered Vault — Tier 2 SQLite | 4/4 | Complete    | 2026-04-16 |
-| 36. Auto Session Capture | 0/? | Not started | — |
-| 37. MCP Adapter | 0/? | Not started | — |
-| 38. Backfill Migration | 0/? | Not started | — |
-| 39. `/cds-quick` Demo & Alpha Release | 5/5 | Complete   | 2026-04-16 |
-| 40. v1.0 Alpha Implementation Polish | 5/6 | Complete    | 2026-04-17 |
-| 41. v1.0 Alpha UAT & Sandbox | 2/2 | Complete    | 2026-04-17 |
-| 42. Living Memory | 4/4 | Complete    | 2026-04-17 |
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 43. Core Vault Primitives | v1.1 | 0/? | Not started | — |
+| 44. S3 Backend | v1.1 | 0/? | Not started | — |
+| 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 0/? | Not started | — |
+| 46. SDK Dispatch + DEMO-01 Fix | v1.1 | 0/? | Not started | — |
+| 47. Plugin SDK | v1.1 | 0/? | Not started | — |
+| 48. Web Dashboard | v1.1 | 0/? | Not started | — |
+| 49. Release — npm @latest + MCP Marketplace | v1.1 | 0/? | Not started | — |
 
 ---
 
@@ -272,20 +263,7 @@ Archive: `.planning/milestones/v0.11-ROADMAP.md`
 
 13 phases, 32 plans, 912 tests. Published as `claude-dev-stack@0.12.0` (PR #37) + hotfix `@0.12.1` (PR #41).
 
-What shipped:
-
-- Project-level hooks architecture with per-project `.claude/settings.json` + `allowedTools` (Phase 19)
-- OAuth budget detection with SessionStart display + statusline footer (Phases 20 + 25)
-- 4-option continuation prompt, `loop.md` template, post-reset handoff (Phases 21 + 22)
-- Smart re-install wizard with pre-fill for language/projects/use-case + bulk prompts (Phases 23 + 24)
-- Skills→Hooks migration: dev-router, project-switcher, session-manager start-path, git-conventions (Phase 31)
-- GSD workflow customization via SHA-diff patches surviving `/gsd-update` (Phase 27)
-- GSD workflow enforcer hook preventing per-phase execute when 2+ phases pending (Phase 29)
-- CLAUDE.md idempotent merge via `updateProjectClaudeMd()` + markers (Phase 30)
-- Capture-automation hotfix v0.12.1: idea-trigger UserPromptSubmit hook (Phase 32)
-- Auto-ADR capture code (Phase 26, UAT deferred — closed retroactively by v1.0 Phase 36)
-
-**Known Gaps carried to v0.13 / v1.0**: ADR-02 UAT (closed by Phase 36), SSR-01 UAT, Phase 21/25 SUMMARY.md backfill, Phase 32 pre-existing `detect.test.mjs` failures. See `.planning/MILESTONES.md` for details.
+What shipped: Project-level hooks, OAuth budget detection, 4-option continuation prompt, smart re-install wizard, Skills→Hooks migration, GSD workflow customization, CLAUDE.md idempotent merge, capture-automation hotfix, auto-ADR capture code.
 
 Archive: `.planning/milestones/v0.12-ROADMAP.md`
 
@@ -297,25 +275,7 @@ Archive: `.planning/milestones/v0.12-ROADMAP.md`
 
 Unsequenced items captured from session work — promote to active milestone via `/gsd-review-backlog`.
 
-### Phase 999.2: CC 2.1.x Subagent Permission Hardening (PROMOTED → Phase 40)
-
-**Goal:** Eliminate the silent Bash-permission failure that breaks `gsd-executor` spawns under Claude Code 2.1.x.
-
-**Source:** 2026-04-16 Phase 39 Wave 2 — both Plan 02 + Plan 03 executors blocked despite using dedicated `gsd-executor` subagent_type. Confirmed `mode=bypassPermissions` on `Task()` does NOT escalate above parent's permission mode (security model).
-
-**Symptoms:**
-- Subagent spawned in worktree returns within seconds with "Bash denied" message
-- Worktree branch_check block requires Bash, so even base verification fails silently
-- After worktree merge, deps installed inside the worktree's `node_modules` are gone — root must `pnpm install` again
-
-**Sub-items (5):**
-1. **GSD workflow auto-pass `mode=bypassPermissions`** to all `gsd-executor` Task() calls in `~/.claude/get-shit-done/workflows/execute-phase.md` (necessary even if not sufficient — sets the right intent).
-2. **Auto-populate `.claude/settings.local.json` allowlist** for executor operations: `Bash(pnpm:*)`, `Bash(npx:*)`, `Bash(node:*)`, `Bash(git merge-base:*)`, `Bash(git reset:*)`, `Bash(git status:*)`, `Bash(tsc:*)`, `Bash(vitest:*)`. Could be a `claude-dev-stack doctor --gsd-permissions` command.
-3. **Worktree base check Read-fallback**: if Bash denied, executor reads `.git/HEAD` + `.git/refs/heads/<branch>` directly to verify base — no shell required.
-4. **Post-worktree-merge `pnpm install` step** in `execute-phase.md` (after `git worktree remove`) to recover deps installed inside the worktree's isolated `node_modules`.
-5. **Wizard / setup detection**: detect CC 2.x at install time, configure GSD-required permission allowlist, document the model change in `docs/migration-v0-to-v1-alpha.md`.
-
-**Plans:** 2/2 plans complete
+*(No new backlog items at v1.1 start)*
 
 ---
 
@@ -329,7 +289,8 @@ Unsequenced items captured from session work — promote to active milestone via
 | 14–18.1 | v0.11 | ✅ Complete | 2026-04-13 |
 | 19–32 | v0.12 | ✅ Complete | 2026-04-16 |
 | 33–42 | v1.0 (Phase A) | ✅ Complete | 2026-04-17 |
+| 43–49 | v1.1 Full-Stack Evolution | 🚧 In progress | — |
 
 ---
 
-*Roadmap reorganized: 2026-04-16 — v1.0 CDS-Core Independence (Phase A) added with 7 phases (33–39) covering 19 v1 requirements at 100%. v0.12 archived in `<details>`. Full per-phase v0.12 history preserved in `.planning/milestones/v0.12-ROADMAP.md`.*
+*Roadmap updated: 2026-04-17 — v1.1 Full-Stack Evolution added with 7 phases (43–49) covering 26 v1.1 requirements at 100%. v1.0 archived in `<details>`. Phase 44 and Phase 47 each require an ADR as their first deliverable. Phases 44+45 can parallelize; Phases 46+47 can parallelize.*

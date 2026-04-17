@@ -86,38 +86,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INFRA-01 | — | Pending |
-| INFRA-02 | — | Pending |
-| INFRA-03 | — | Pending |
-| HARD-01 | — | Pending |
-| HARD-02 | — | Pending |
-| HARD-03 | — | Pending |
-| HARD-04 | — | Pending |
-| HARD-05 | — | Pending |
-| HARD-06 | — | Pending |
-| HARD-07 | — | Pending |
-| HARD-08 | — | Pending |
-| MEM-01 | — | Pending |
-| MEM-02 | — | Pending |
-| MEM-03 | — | Pending |
-| MEM-04 | — | Pending |
-| MEM-05 | — | Pending |
-| MEM-06 | — | Pending |
-| MEM-07 | — | Pending |
-| DX-01 | — | Pending |
-| DX-02 | — | Pending |
-| DX-03 | — | Pending |
-| DX-04 | — | Pending |
-| DX-05 | — | Pending |
-| DX-06 | — | Pending |
-| DX-07 | — | Pending |
-| DX-08 | — | Pending |
+| INFRA-01 | Phase 43 | Pending |
+| INFRA-02 | Phase 43 | Pending |
+| INFRA-03 | Phase 44 | Pending |
+| HARD-01 | Phase 44 | Pending |
+| HARD-02 | Phase 44 | Pending |
+| HARD-03 | Phase 44 | Pending |
+| HARD-04 | Phase 46 | Pending |
+| HARD-05 | Phase 46 | Pending |
+| HARD-06 | Phase 49 | Pending |
+| HARD-07 | Phase 49 | Pending |
+| HARD-08 | Phase 49 | Pending |
+| MEM-01 | Phase 45 | Pending |
+| MEM-02 | Phase 43 | Pending |
+| MEM-03 | Phase 45 | Pending |
+| MEM-04 | Phase 43 | Pending |
+| MEM-05 | Phase 45 | Pending |
+| MEM-06 | Phase 45 | Pending |
+| MEM-07 | Phase 45 | Pending |
+| DX-01 | Phase 48 | Pending |
+| DX-02 | Phase 48 | Pending |
+| DX-03 | Phase 48 | Pending |
+| DX-04 | Phase 48 | Pending |
+| DX-05 | Phase 47 | Pending |
+| DX-06 | Phase 47 | Pending |
+| DX-07 | Phase 49 | Pending |
+| DX-08 | Phase 49 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 26 total
-- Mapped to phases: 0
-- Unmapped: 26 ⚠️
+- Mapped to phases: 26
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-17*
-*Last updated: 2026-04-17 after initial definition*
+*Last updated: 2026-04-17 — traceability section completed after roadmap creation*
