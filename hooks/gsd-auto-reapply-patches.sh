@@ -67,7 +67,7 @@ APPLIED=0
 # Portable SHA-256: prefer sha256sum (Linux), fall back to shasum (macOS)
 _sha256() { sha256sum "$1" 2>/dev/null | awk '{print $1}' || shasum -a 256 "$1" 2>/dev/null | awk '{print $1}'; }
 
-# Apply patches — iterate over all .md files in patches dir, map to GSD workflows/
+# Apply SHA-diff patches — iterate over all .md files in patches dir, map to GSD workflows/
 for PATCH_FILE in "$PATCHES_DIR"/*.md; do
   [ -f "$PATCH_FILE" ] || continue
   PATCH_NAME="$(basename "$PATCH_FILE")"
@@ -82,6 +82,34 @@ for PATCH_FILE in "$PATCHES_DIR"/*.md; do
     cp "$PATCH_FILE" "$TARGET_FILE"
     APPLIED=$((APPLIED + 1))
   fi
+done
+
+# Phase 40 Plan 02: Apply unified-diff patches (*.patch files) via `patch -p1`.
+# Idempotent: already-applied patches are detected via dry-run "Reversed" message
+# and skipped silently. Hunk failures print a warning but do NOT abort the session.
+for UNIFIED_PATCH in "$PATCHES_DIR"/*.patch; do
+  [ -f "$UNIFIED_PATCH" ] || continue
+  PATCH_NAME="$(basename "$UNIFIED_PATCH")"
+
+  # Dry-run to detect state
+  DRY_OUTPUT=$(patch --dry-run -p1 -d "$GSD_DIR" -i "$UNIFIED_PATCH" 2>&1)
+  DRY_STATUS=$?
+  DRY_LOWER=$(echo "$DRY_OUTPUT" | tr '[:upper:]' '[:lower:]')
+
+  # Already applied — skip silently
+  if echo "$DRY_LOWER" | grep -q "reversed\|previously applied"; then
+    continue
+  fi
+
+  # Clean dry-run — apply for real
+  if [ "$DRY_STATUS" -eq 0 ]; then
+    patch -p1 -d "$GSD_DIR" -i "$UNIFIED_PATCH" > /dev/null 2>&1 && APPLIED=$((APPLIED + 1)) || \
+      echo "GSD patch warning: $PATCH_NAME dry-run passed but real apply failed"
+    continue
+  fi
+
+  # Hunk mismatch — warn and skip (fail-soft per Phase 27 philosophy)
+  echo "GSD patch warning: $PATCH_NAME no longer applies cleanly — skipping (will retry after next /gsd-update)"
 done
 
 if [ "$APPLIED" -gt 0 ]; then

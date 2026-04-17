@@ -17,14 +17,24 @@ Claude Code is powerful — but it forgets everything between sessions. Claude D
 
 ## v1.0.0-alpha.1 (Pre-release)
 
-> **Alpha channel** — install via `npm install -g claude-dev-stack@alpha`.
-> The stable `@latest` tag still points to v0.12.x.
+> **Alpha channel** — install via `npm install -g claude-dev-stack@alpha`. The stable `@latest` tag (v0.12.x) is unchanged.
 
-v1.0 adds a pnpm monorepo on Claude Agent SDK, SQLite-backed session memory with FTS5 search, auto session capture (no more `/end`), MCP tools for querying sessions/docs/planning from inside Claude Code, and a one-shot `/cds-quick` agent dispatch skill with cost reporting.
+v1.0 introduces the **CDS-Core** architecture: a pnpm monorepo with Claude Agent SDK integration, SQLite session memory, and automatic session capture.
 
-- [Migration guide (v0.12 → v1.0-alpha)](./docs/migration-v0-to-v1-alpha.md) — breaking changes + rollback instructions
-- [CHANGELOG](./CHANGELOG.md) — full list of Added / Changed / Security changes
-- **Requirements:** Node 20+ (Node 18 no longer supported)
+**What's new in alpha:**
+
+- **Auto session capture** — sessions are automatically saved to a per-project SQLite database. No more `/end` required.
+- **SQLite memory layer** — FTS5 full-text search over session observations, entities, and relations.
+- **MCP adapter** — `sessions.search`, `docs.search`, `planning.status` tools available directly inside Claude Code.
+- **`/cds-quick`** — one-shot agent dispatch with cost reporting.
+- **Backfill migration** — `claude-dev-stack migrate sessions` ports historical markdown sessions into SQLite.
+- **CC 2.x permission hardening** — `claude-dev-stack doctor --gsd-permissions` configures the GSD executor allowlist.
+
+**Links:**
+- [Migration guide](./docs/migration-v0-to-v1-alpha.md) — breaking changes + rollback instructions
+- [Changelog](./CHANGELOG.md) — full list of additions, changes, deprecations
+
+**Requirements:** Node 20+ (Node 18 no longer supported). See the [migration guide](./docs/migration-v0-to-v1-alpha.md#node-18--node-20) for details.
 
 ---
 

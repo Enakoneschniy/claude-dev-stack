@@ -1,12 +1,35 @@
 // tests/detect.test.mjs — Unit tests for lib/install/detect.mjs (D-23)
 
-import { describe, it, beforeAll, afterAll } from 'vitest';
+import { describe, it, beforeAll, afterAll, vi } from 'vitest';
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+
+// ── D-127: Isolate HOME before detect.mjs is imported ─────────────────
+// detect.mjs computes VAULT_CANDIDATES at module import time via homedir().
+// If HOME points at the maintainer's real ~/vault, in-process tests that
+// assert `profile === null` fail because readInstallProfile() finds the real
+// profile.json (carried 3-test gap from v0.12). Per Phase 40 CONTEXT.md D-127
+// we override HOME at hoist time so VAULT_CANDIDATES resolves to a sandbox
+// with no vault. Production code is NOT changed — readInstallProfile remains
+// the deliberate exported function for v1.x consumers.
+const _TEST_HOME = vi.hoisted(() => {
+  const { mkdtempSync } = require('node:fs');
+  const { tmpdir } = require('node:os');
+  const { join } = require('node:path');
+  const dir = mkdtempSync(join(tmpdir(), 'detect-isolated-home-'));
+  // Override before any ES module import is evaluated so VAULT_CANDIDATES
+  // (computed from homedir() at detect.mjs import time) resolves to the sandbox.
+  const _origHome = process.env.HOME;
+  process.env.HOME = dir;
+  // Expose original for afterAll restore (vitest forks isolate per-file, but
+  // being explicit avoids surprises in single-worker modes).
+  globalThis.__detectTestOrigHome = _origHome;
+  return dir;
+});
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const projectRoot = join(__dirname, '..');
@@ -329,4 +352,18 @@ describe('detectInstallState() — functional: projects parsing (isolated HOME)'
     assert.strictEqual(state.projects.length, 2, 'must parse 2 projects');
     assert.strictEqual(state.projects[1].name, 'backend');
   });
+});
+
+// Clean up the D-127 isolated HOME after all suites finish.
+afterAll(() => {
+  try {
+    // Restore original HOME before cleaning up the temp dir.
+    if (globalThis.__detectTestOrigHome !== undefined) {
+      process.env.HOME = globalThis.__detectTestOrigHome;
+    }
+    const { rmSync } = require('node:fs');
+    rmSync(_TEST_HOME, { recursive: true, force: true });
+  } catch {
+    // Cleanup best-effort — temp dir will be reaped by the OS otherwise.
+  }
 });

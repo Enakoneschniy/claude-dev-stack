@@ -1,0 +1,28 @@
+# patches/gsd-execute-phase-bypassperms.patch
+# Phase 40 Plan 02 (D-126): auto-pass bypassPermissions to gsd-executor Task()
+# calls so subagents inherit the parent's permission grants under CC 2.1.x.
+# Re-applied at session-start by hooks/gsd-auto-reapply-patches.sh
+# (wizard copies patches/ -> ~/.claude/gsd-local-patches/ on install).
+#
+# Root cause: Claude Code 2.1.x silently denies Bash tool calls inside
+# subagents spawned without permission_mode="bypassPermissions".
+# Phase 39 Wave 2 retro item — promoted to Phase 40 Plan 02.
+#
+# Schema note: Anthropic Agent SDK (CC 2.1.x) accepts permission_mode
+# as a Task() keyword argument. If a future GSD upstream version already
+# adds this arg, the dry-run step in applyShippedPatches() will detect
+# "Reversed (or previously applied)" and skip silently (idempotent).
+--- a/workflows/execute-phase.md
++++ b/workflows/execute-phase.md
+@@ -419,10 +419,11 @@
+
+    ```
+    Task(
+      subagent_type="gsd-executor",
+      description="Execute plan {plan_number} of phase {phase_number}",
+      model="{executor_model}",
++     permission_mode="bypassPermissions",
+      isolation="worktree",
+      prompt="
+        <objective>
+        Execute plan {plan_number} of phase {phase_number}-{phase_name}.
