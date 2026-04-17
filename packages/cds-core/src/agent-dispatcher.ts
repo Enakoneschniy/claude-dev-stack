@@ -19,6 +19,7 @@
  */
 
 import { query, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import { execFileSync } from 'node:child_process';
 import { resolveModel } from './models.js';
 import { DispatchError, LicenseKeyError } from './errors.js';
 
@@ -100,6 +101,11 @@ function signalToAbortController(signal?: AbortSignal): AbortController | undefi
  */
 export async function dispatchAgent(opts: DispatchOptions): Promise<DispatchResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
+    // Fallback: when running inside Claude Code (OAuth session), use `claude -p`
+    // subprocess which inherits the session auth. No API key needed.
+    if (isInsideClaudeCode()) {
+      return dispatchViaClaude(opts);
+    }
     throw new LicenseKeyError();
   }
 
@@ -176,4 +182,47 @@ export async function dispatchAgent(opts: DispatchOptions): Promise<DispatchResu
   }
 
   return { output: textParts.join(''), tokens, cost_usd, toolUses };
+}
+
+/**
+ * Detect if we're running inside a Claude Code session.
+ * Claude Code sets CLAUDE_SESSION_ID for child processes spawned by tools.
+ */
+function isInsideClaudeCode(): boolean {
+  return !!(process.env.CLAUDE_SESSION_ID || process.env.CLAUDE_PROJECT_DIR);
+}
+
+/**
+ * Fallback dispatcher using `claude -p` subprocess — inherits Claude Code's
+ * session auth (OAuth). Used when ANTHROPIC_API_KEY is absent but we're inside
+ * a Claude Code session.
+ *
+ * Output is plain text (no structured tokens/cost — those aren't available
+ * from `claude -p`). cost_usd defaults to 0.
+ */
+async function dispatchViaClaude(opts: DispatchOptions): Promise<DispatchResult> {
+  const model = resolveModel(opts.model);
+  const args = ['-p', '--model', model, '--output-format', 'text'];
+  if (opts.system) {
+    args.push('--system-prompt', opts.system);
+  }
+
+  try {
+    const output = execFileSync('claude', args, {
+      input: opts.prompt,
+      encoding: 'utf8',
+      timeout: 120_000,
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    return {
+      output: output.trim(),
+      tokens: { input: 0, output: 0 },
+      cost_usd: 0,
+      toolUses: [],
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new DispatchError(`claude -p subprocess failed: ${msg}`, err);
+  }
 }
