@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CDS Dashboard</title>
+  <link rel="stylesheet" href="/style.css">
+  <!-- Chart.js v4 from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <!-- Cytoscape.js v3 from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.30.4/dist/cytoscape.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>CDS Dashboard</h1>
+    <nav>
+      <button class="nav-btn active" data-view="timeline">Timeline</button>
+      <button class="nav-btn" data-view="costs">Costs</button>
+      <button class="nav-btn" data-view="graph">Graph</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Stats summary bar -->
+    <section id="stats-bar" class="stats-bar">
+      <div class="stat-card">
+        <span class="stat-value" id="stat-sessions">-</span>
+        <span class="stat-label">Sessions</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-observations">-</span>
+        <span class="stat-label">Observations</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-entities">-</span>
+        <span class="stat-label">Entities</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-value" id="stat-cost">-</span>
+        <span class="stat-label">Total Cost</span>
+      </div>
+    </section>
+
+    <!-- Timeline view -->
+    <section id="view-timeline" class="view active">
+      <h2>Session Timeline</h2>
+      <div id="timeline-list" class="timeline-list"></div>
+    </section>
+
+    <!-- Costs view -->
+    <section id="view-costs" class="view">
+      <h2>Token Usage &amp; Costs</h2>
+      <div class="chart-grid">
+        <div class="chart-container">
+          <h3>Tokens per Session</h3>
+          <canvas id="chart-tokens"></canvas>
+        </div>
+        <div class="chart-container">
+          <h3>Cost Breakdown</h3>
+          <canvas id="chart-costs"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Graph view -->
+    <section id="view-graph" class="view">
+      <h2>Entity Relationship Graph</h2>
+      <div id="graph-container" class="graph-container"></div>
+      <div id="node-details" class="node-details hidden">
+        <h3 id="node-name">-</h3>
+        <p id="node-type">-</p>
+        <p id="node-connections">-</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
