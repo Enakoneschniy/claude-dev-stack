@@ -92,6 +92,8 @@ function printHelp() {
   console.log('');
   console.log(`  ${c.cyan}${c.bold}Analytics${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack stats${c.reset}                 ${c.dim}Dashboard: sessions, context quality, recommendations${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack search <query>${c.reset}         ${c.dim}Search session observations (FTS5)${c.reset}`);
+  console.log(`    ${c.white}claude-dev-stack mem-stats${c.reset}              ${c.dim}Session memory dashboard (SQLite)${c.reset}`);
   console.log('');
   console.log(`  ${c.cyan}${c.bold}NotebookLM Sync${c.reset}`);
   console.log(`    ${c.white}claude-dev-stack notebooklm sync${c.reset}     ${c.dim}Sync vault to NotebookLM notebook${c.reset}`);
@@ -201,6 +203,20 @@ async function run() {
     // ── Memory (internal: called by SessionStart hook, D-146) ──
     case 'memory': {
       const mod = await import(resolveDistPath('cli/memory.js'));
+      await mod.main(args.slice(1));
+      break;
+    }
+
+    // -- Search (D-144) --
+    case 'search': {
+      const mod = await import(resolveDistPath('cli/search.js'));
+      await mod.main(args.slice(1));
+      break;
+    }
+
+    // -- SQLite Stats dashboard (D-145) --
+    case 'mem-stats': {
+      const mod = await import(resolveDistPath('cli/stats.js'));
       await mod.main(args.slice(1));
       break;
     }

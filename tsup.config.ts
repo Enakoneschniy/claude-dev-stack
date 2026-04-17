@@ -18,6 +18,8 @@ export default defineConfig({
     'cli/index': 'packages/cds-cli/src/index.ts',
     'cli/quick': 'packages/cds-cli/src/quick.ts',
     'cli/memory': 'packages/cds-cli/src/memory.ts',
+    'cli/search': 'packages/cds-cli/src/search.ts',
+    'cli/stats':  'packages/cds-cli/src/stats.ts',
     'cli/mcp-server': 'packages/cds-cli/src/mcp-server.ts',
     'migrate/index': 'packages/cds-migrate/src/index.ts',
     'migrate/cli': 'packages/cds-migrate/src/cli.ts',
