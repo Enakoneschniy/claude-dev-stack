@@ -12,33 +12,43 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v1.0 — CDS-Core Independence (Phase A)
+## Current Milestone: v1.1 — Full-Stack Evolution
 
-**Goal:** Carve `claude-dev-stack` into a pnpm monorepo on Claude Agent SDK with tiered vault architecture (markdown for cold docs, SQLite for warm session memory, markdown for hot context) and auto session capture replacing the manual `/end` flow. Ship as `claude-dev-stack@1.0.0-alpha.1` via `npm publish --tag alpha`.
+**Goal:** Transform claude-dev-stack from alpha CLI tool into a production-ready, multi-platform memory system with intelligent surfacing, cloud sync, and developer dashboard.
 
-**Target features (Phase A scope from SEED-004 + plan doc D-28):**
-- **Monorepo scaffolding** — pnpm workspaces with `@cds/core`, `@cds/cli`, `@cds/migrate`, `@cds/s3-backend` packages, TS project references, vitest, CI matrix
-- **Pi SDK integration** — `@anthropic-ai/claude-agent-sdk` hello-world agent dispatch (replaces fragile `claude -p` subprocess pattern)
-- **Core primitives** — `agent-dispatcher`, `context`, `cost-tracker` modules under `@cds/core`
-- **Tiered vault Tier 2** — SQLite session DB with FTS5 schema (sessions, observations, entities, relations) per-project at `~/vault/projects/{name}/sessions.db`
-- **Auto session capture** — Stop hook → SDK Haiku call → structured observations → SQLite write (replaces manual `/end`, fail-silent)
-- **MCP adapter** — `sessions.search/timeline/get_observations`, `docs.search`, `planning.status` tools registered in `.claude/settings.json` via wizard
-- **Backfill migration** — `@cds/migrate` ports existing 30+ markdown sessions into SQLite via Haiku entity extraction
-- **`/cds-quick` end-to-end demo** — first user-facing flow on the new stack proving the full pipeline
-- **Alpha release** — `claude-dev-stack@1.0.0-alpha.1` via `npm publish --tag alpha` (does NOT replace `@latest` users)
+**Target features:**
 
-**Phase numbering:** continues from v0.12 (last phase: 32) → v1.0 starts at **Phase 33**
+**Production Hardening:**
+- S3 vault backend (cross-device sync, SEED-003)
+- Real SDK dispatch for /cds-quick (close DEMO-01 partial from v1.0)
+- npm publish @latest (replace v0.12.x, promote alpha to stable)
+
+**Memory Intelligence:**
+- Entity relationship graph visualization
+- Cross-project memory search
+- Auto-suggestion of relevant past observations during coding
+
+**Developer Experience:**
+- Web dashboard for session analytics
+- Onboarding wizard improvements
+- Plugin system for third-party integrations
+
+**Platform Expansion:**
+- Gemini CLI / Copilot / Codex runtime support
+- MCP server marketplace listing
+
+**Phase numbering:** continues from v1.0 (last phase: 42) → v1.1 starts at **Phase 43**
 **Branching:** `phase` → `gsd/phase-{N}-{slug}`, PR-only to main
-**Test baseline:** 928/931 (3 pre-existing `detect.test.mjs` failures untouched, will be addressed in dedicated quick task)
 
-**Open questions for Phase 33 planning:**
-- `@anthropic-ai/claude-agent-sdk` license verification (claimed Apache-2.0 / MIT — confirm before code import)
-- SQLite driver choice: `better-sqlite3` (battle-tested, native compile) vs `bun:sqlite` (only if Pi SDK / bundled infra runs on Bun)
+<details>
+<summary>v1.0 — CDS-Core Independence (Phase A) — SHIPPED ✅ (2026-04-17)</summary>
 
-**Out of scope for v1.0 (deferred to v1.1+):**
-- 8 of 9 plan-doc target refactors: `.planning/` location migration, branching auto-detect, teams/parallel execute v2, skills/hooks boundary v2, config system overhaul, statusline replacement, update notification, GSD update mechanism dissolution
-- SEED-003 S3 vault backend (depends on `.planning/` location migration first — Refactor #1 in plan)
-- SEED-001 cloud agent integration (mostly shipped in v0.12 already; Cloud agent piece deferred)
+10 phases (33-42), 40 plans, 347 files changed, 55K+ LOC. Published as `claude-dev-stack@1.0.0-alpha.1`. Docker UAT: 14/14 PASS. Audit: 18/19 requirements (DEMO-01 partial — accepted).
+
+What shipped: pnpm monorepo + Agent SDK + SQLite vault + auto-capture + MCP adapter + backfill migration + /cds-quick demo + alpha release + doctor GSD permissions + Docker UAT harness + Living Memory (search/stats/skills/SessionStart hook).
+
+Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
+</details>
 
 <details>
 <summary>v0.12 — Hooks & Limits — SHIPPED ✅ (2026-04-16)</summary>
@@ -110,29 +120,17 @@ What shipped: NotebookLM Query API (ask + generate), session-end sync automation
 
 ### Current State
 
-**Last shipped:** v0.12 Hooks & Limits (2026-04-16) — SHIPPED ✅
+**Last shipped:** v1.0 CDS-Core Independence (2026-04-17) — SHIPPED ✅
 
-v0.12: 13 phases (19–32), 32 plans, 912 tests (+354 from v0.11 baseline 558). Published as `claude-dev-stack@0.12.0` (PR #37, commit `b12d89e`) + hotfix `@0.12.1` (PR #41, commit `9d34682`). Milestone archive: [`.planning/milestones/v0.12-ROADMAP.md`](milestones/v0.12-ROADMAP.md).
+v1.0: 10 phases (33-42), 40 plans, 110+ tests in monorepo. Published as `claude-dev-stack@1.0.0-alpha.1` (PRs #46-#57). Docker UAT: 14/14 PASS. Tag: `v1.0`. Milestone archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md).
 
-Known Gaps carried to v0.13 / v1.0 planning:
-- ADR-02 UAT deferred — code shipped on `gsd/phase-26-auto-adr-capture`, but `/end → Haiku → ADR write` round-trip failed with `claude -p --model haiku --bare --output-format text` subprocess error; needs debugging.
-- SSR-01 UAT deferred — SessionStart marker mtime + 60-min skip-reload logic shipped, real-session verification pending.
-- Phase 21 / Phase 25 SUMMARY.md — shipped inline, no retrospective written; accepted as tech debt.
-- `detect.test.mjs` 3 pre-existing subtest failures (`profile must be null in v1`) — route to bugfix quick task.
+Known tech debt carried to v1.1:
+- DEMO-01 partial: /cds-quick skill uses Agent(haiku) directly, bypasses CLI quick.ts (no cost_usd display). Needs OAuth→API key bridge.
+- Code review Phase 40: 2 medium + 2 low findings deferred to GA.
 
 ### Active
 
-**Milestone v1.0 in planning.** Next step: `/gsd-new-milestone v1.0 "CDS-Core Independence"` to generate roadmap from `docs/cds-core-independence-plan.md` + SEED-004 (tiered vault + auto session capture). Phase numbering will continue from Phase 33+. Branching strategy remains `phase` — `gsd/phase-{N}-{slug}` branches.
-
-**Target capabilities for v1.0:**
-- pnpm workspaces monorepo (`@cds/core`, `@cds/cli`, `@cds/migrate`, `@cds/s3-backend`)
-- TypeScript project references + vitest + CI
-- Claude Agent SDK (Pi SDK) port — first agent dispatch
-- Core primitives: agent-dispatcher, context, cost-tracker
-- Tiered vault (hot/warm/cold) with SQLite session capture
-- Haiku entity extraction for backfill of existing markdown sessions
-- `/cds-quick` end-to-end demo
-- Alpha release via `npm publish --tag alpha`
+**Milestone v1.1 in planning.** Next step: define requirements and create roadmap. Phase numbering continues from Phase 43+.
 
 ### Out of Scope
 
@@ -227,4 +225,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after v0.12 milestone — full evolution review. v0.12 collapsed to `<details>`, v1.0 CDS-Core Independence added as current planning milestone. 9 v0.12 capabilities moved to Validated. 6 new decisions logged. Known Gaps (ADR-02 UAT, SSR-01 UAT, Phase 21/25 SUMMARY gaps, `detect.test.mjs` failures) carried to v0.13 planning.*
+*Last updated: 2026-04-17 after v1.0 milestone completion. v1.0 collapsed to `<details>`, v1.1 Full-Stack Evolution added as current milestone. v1.0 shipped: monorepo + Agent SDK + SQLite vault + auto-capture + MCP + Living Memory. Known tech debt: DEMO-01 partial (/cds-quick cost), 4 medium/low review findings.*
