@@ -27,6 +27,7 @@ The smoke test validates the **shipped tarball** (not the dev tree):
 - `doctor --gsd-permissions` creates `.claude/settings.local.json`
 - Tarball includes required files: `dist/core/index.js`, `skills/cds-quick/SKILL.md`, `CHANGELOG.md`, `hooks/session-end-capture.sh`, SQL migrations
 - Tarball excludes dev artifacts: `packages/`, `tests/`, `.planning/`
+- `dist/core/index.js` is importable as ESM without crash
 
 ## What it does NOT check
 
