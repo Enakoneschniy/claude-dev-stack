@@ -105,7 +105,7 @@ Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
 - [x] **Phase 46: SDK Dispatch + DEMO-01 Fix** — /cds-quick through CLI quick.ts, credential resolver
 - [x] **Phase 47: Plugin SDK** — @cds/plugin-sdk manifest-only interface, Stop hook extension points
 - [x] **Phase 48: Web Dashboard** — local analytics dashboard with Hono server, entity graph viz
-- [ ] **Phase 50: GSD Fork + Vendor** — fork GSD into CDS codebase, remove upstream npm dep, NOTICES.md
+- [x] **Phase 50: GSD Fork + Vendor** — fork GSD into CDS codebase, remove upstream npm dep, NOTICES.md (completed 2026-04-18)
 - [ ] **Phase 51: Planning Relocation** — move `.planning/` to vault, `cds.config.json` pointer
 - [ ] **Phase 52: CDS CLI Commands** — `/cds-*` commands replace `/gsd-*`, mapping layer, deprecation notices
 - [ ] **Phase 53: Config System** — `cds.config.json` with per-project override layers
@@ -289,7 +289,7 @@ Plans:
 | 46. SDK Dispatch + DEMO-01 Fix | v1.0 | 2/2 | Complete | 2026-04-17 |
 | 47. Plugin SDK | v1.0 | 2/2 | Complete | 2026-04-17 |
 | 48. Web Dashboard | v1.0 | 2/2 | Complete | 2026-04-17 |
-| 50. GSD Fork + Vendor | v1.0 | 2/2 | Complete   | 2026-04-18 |
+| 50. GSD Fork + Vendor | v1.0 | 2/2 | Complete    | 2026-04-18 |
 | 51. Planning Relocation | v1.0 | 0/? | Not started | — |
 | 52. CDS CLI Commands | v1.0 | 0/? | Not started | — |
 | 53. Config System | v1.0 | 0/? | Not started | — |
