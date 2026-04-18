@@ -40,5 +40,11 @@
   },
   "agent_skills": {},
   "_migrated_from_gsd": true,
-  "_migration_date": "2026-04-18T13:53:47.150Z"
+  "_migration_date": "2026-04-18T13:53:47.150Z",
+  "vault": {
+    "backend": "fs"
+  },
+  "models": {
+    "profile": "balanced"
+  }
 }
