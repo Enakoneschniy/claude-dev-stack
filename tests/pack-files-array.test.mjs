@@ -20,6 +20,10 @@ describe('package.json "files" array', () => {
     }
   });
 
+  it('includes vendor/ (vendored workflow engine)', () => {
+    expect(pkg.files).toContain('vendor/');
+  });
+
   it('keeps README.md, LICENSE, NOTICES.md', () => {
     for (const f of ['README.md', 'LICENSE', 'NOTICES.md']) {
       expect(pkg.files).toContain(f);
