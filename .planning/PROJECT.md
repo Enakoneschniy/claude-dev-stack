@@ -12,32 +12,39 @@ Target user: individual developers using Claude Code seriously across multiple p
 
 Everything else — plugins, templates, MCP catalog, stack detection — is supporting infrastructure for this one thing. If memory/context restoration breaks, the product fails even if all other features work.
 
-## Current Milestone: v1.1 — Full-Stack Evolution
+## Current Milestone: v1.0 — Full-Stack Evolution + GSD Independence
 
-**Goal:** Transform claude-dev-stack from alpha CLI tool into a production-ready, multi-platform memory system with intelligent surfacing, cloud sync, and developer dashboard.
+**Goal:** Transform claude-dev-stack from alpha CLI into a production-ready memory system with cloud sync, intelligent surfacing, web dashboard, plugin SDK — AND fork GSD to eliminate upstream dependency. Ship as `claude-dev-stack@1.0.0` stable.
 
 **Target features:**
 
-**Production Hardening:**
-- S3 vault backend (cross-device sync, SEED-003)
-- Real SDK dispatch for /cds-quick (close DEMO-01 partial from v1.0)
-- npm publish @latest (replace v0.12.x, promote alpha to stable)
+**Production Hardening (Phases 43-46, DONE):**
+- ✅ S3 vault backend (cross-device sync, SEED-003)
+- ✅ Real SDK dispatch for /cds-quick (close DEMO-01 partial)
+- ○ npm publish @latest (after GSD independence)
 
-**Memory Intelligence:**
-- Entity relationship graph visualization
-- Cross-project memory search
-- Auto-suggestion of relevant past observations during coding
+**Memory Intelligence (Phases 43, 45, DONE):**
+- ✅ Entity relationship graph visualization
+- ✅ Cross-project memory search
+- ✅ Auto-suggestion of relevant past observations during coding
 
-**Developer Experience:**
-- Web dashboard for session analytics
-- Onboarding wizard improvements
-- Plugin system for third-party integrations
+**Developer Experience (Phases 47-48, DONE):**
+- ✅ Web dashboard for session analytics
+- ✅ Plugin system for third-party integrations
 
-**Platform Expansion:**
+**GSD Independence (Phases 50-54, PENDING — release blocker):**
+- GSD fork/vendor into CDS codebase
+- `.planning/` relocation out of project git
+- CDS CLI commands replacing `/gsd-*`
+- Unified config system (`cds.config.json`)
+- Update notification + statusline parity
+
+**Deferred to v1.1:**
 - Gemini CLI / Copilot / Codex runtime support
 - MCP server marketplace listing
+- Onboarding wizard improvements
 
-**Phase numbering:** continues from v1.0 (last phase: 42) → v1.1 starts at **Phase 43**
+**Phase numbering:** continues from v1.0-alpha (last phase: 42) → starts at **Phase 43**
 **Branching:** `phase` → `gsd/phase-{N}-{slug}`, PR-only to main
 
 <details>

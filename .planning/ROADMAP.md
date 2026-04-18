@@ -7,12 +7,12 @@
 - ✅ **v0.10 Query, Sync Automation & Quality** — Phases 10–13 (shipped 2026-04-13)
 - ✅ **v0.11 DX Polish & Ecosystem** — Phases 14–18.1 (shipped 2026-04-13)
 - ✅ **v0.12 Hooks & Limits** — Phases 19–32 (shipped 2026-04-16)
-- ✅ **v1.0 CDS-Core Independence (Phase A)** — Phases 33–42 (shipped 2026-04-17)
-- 🚧 **v1.1 Full-Stack Evolution** — Phases 43–49 (in progress)
+- ✅ **v1.0-alpha CDS-Core Independence** — Phases 33–42 (shipped 2026-04-17)
+- 🚧 **v1.0 Full-Stack Evolution + GSD Independence** — Phases 43–55 (in progress)
 
 ---
 
-## ✅ v1.0 — CDS-Core Independence (Phase A) — Shipped 2026-04-17
+## ✅ v1.0-alpha — CDS-Core Independence — Shipped 2026-04-17
 
 <details>
 <summary>Phases 33–42 — 10 phases, 40 plans, 347 files changed, 55K+ LOC</summary>
@@ -89,50 +89,54 @@ Archive: [`.planning/milestones/v1.0-ROADMAP.md`](milestones/v1.0-ROADMAP.md)
 
 ---
 
-## 🚧 v1.1 — Full-Stack Evolution (In Progress)
+## 🚧 v1.0 — Full-Stack Evolution + GSD Independence (In Progress)
 
-**Milestone Goal:** Transform claude-dev-stack from alpha CLI into a production-ready, multi-platform memory system with cloud sync, intelligent memory surfacing, web dashboard, plugin SDK, and stable `@latest` release.
+**Milestone Goal:** Transform claude-dev-stack from alpha CLI into a production-ready memory system with cloud sync, intelligent surfacing, web dashboard, plugin SDK — AND fork GSD to eliminate upstream dependency. Ship as `claude-dev-stack@1.0.0` stable.
 
-**Phase numbering:** continues from v1.0 (last phase: 42) → v1.1 starts at **Phase 43**
+**Phase numbering:** continues from v1.0-alpha (last phase: 42) → starts at **Phase 43**
 **Branching:** `phase` → `gsd/phase-{N}-{slug}`, PR-only to main
-**Total requirements:** 26 v1.1 reqs across 4 categories (INFRA×3, HARD×8, MEM×7, DX×8)
+**Total requirements:** 34 reqs across 5 categories (INFRA×3, HARD×8, MEM×7, DX×8, GSD×8)
 
 ### Phases
 
-- [ ] **Phase 43: Core Vault Primitives** — VaultBackend interface, FsBackend, graph API, cross-project search foundation
-- [ ] **Phase 44: S3 Backend** — Real S3Backend with WAL checkpoint and merge-on-download sync
-- [ ] **Phase 45: Cross-Project Search + Graph + MCP Tools** — global search, entity graph, new MCP tools
-- [ ] **Phase 46: SDK Dispatch + DEMO-01 Fix** — /cds-quick through CLI quick.ts, credential resolver
-- [ ] **Phase 47: Plugin SDK** — @cds/plugin-sdk manifest-only interface, Stop hook extension points
-- [ ] **Phase 48: Web Dashboard** — local analytics dashboard with Hono server, entity graph viz
-- [ ] **Phase 49: Release — npm @latest + MCP Marketplace** — staged rollout, migration validation, marketplace listings
+- [x] **Phase 43: Core Vault Primitives** — VaultBackend interface, FsBackend, graph API, cross-project search foundation
+- [x] **Phase 44: S3 Backend** — Real S3Backend with WAL checkpoint and merge-on-download sync
+- [x] **Phase 45: Cross-Project Search + Graph + MCP Tools** — global search, entity graph, new MCP tools
+- [x] **Phase 46: SDK Dispatch + DEMO-01 Fix** — /cds-quick through CLI quick.ts, credential resolver
+- [x] **Phase 47: Plugin SDK** — @cds/plugin-sdk manifest-only interface, Stop hook extension points
+- [x] **Phase 48: Web Dashboard** — local analytics dashboard with Hono server, entity graph viz
+- [ ] **Phase 50: GSD Fork + Vendor** — fork GSD into CDS codebase, remove upstream npm dep, NOTICES.md
+- [ ] **Phase 51: Planning Relocation** — move `.planning/` to vault, `cds.config.json` pointer
+- [ ] **Phase 52: CDS CLI Commands** — `/cds-*` commands replace `/gsd-*`, mapping layer, deprecation notices
+- [ ] **Phase 53: Config System** — `cds.config.json` with per-project override layers
+- [ ] **Phase 54: Update + Statusline** — CDS update notification, statusline parity
+- [ ] **Phase 55: Release — npm @latest + MCP Marketplace** — staged rollout, migration, marketplace listings
 
 ### Dependency Graph
 
 ```
-        Phase 43 (Core Vault Primitives)
-              │
-        ┌─────┴─────┐
-        ▼           ▼
-   Phase 44      Phase 45
-   (S3 Backend) (Search+Graph)
-        │           │
-        └─────┬─────┘
-              │
-        ┌─────┴─────┐
-        ▼           ▼
-   Phase 46      Phase 47
-   (SDK Dispatch) (Plugin SDK)
-        │           │
-        └─────┬─────┘
-              ▼
-        Phase 48 (Dashboard)
-              │
-              ▼
-        Phase 49 (Release)
+  Phases 43-48 (DONE)
+        │
+        ▼
+  Phase 50 (GSD Fork)
+        │
+        ▼
+  Phase 51 (.planning/ relocation)
+        │
+  ┌─────┴─────┐
+  ▼           ▼
+Phase 52    Phase 53
+(CDS CLI)  (Config)
+  │           │
+  └─────┬─────┘
+        ▼
+  Phase 54 (Update+Statusline)
+        │
+        ▼
+  Phase 55 (Release)
 ```
 
-**Parallelization:** Phases 44 and 45 can run in parallel after Phase 43. Phases 46 and 47 can run in parallel after Phase 45. Phase 48 must follow Phase 45 (needs final API shape). Phase 49 is always last.
+**Parallelization:** Phases 52 and 53 can run in parallel after Phase 51. Phase 54 depends on both. Phase 55 is always last.
 
 ### Phase Details
 
@@ -209,28 +213,85 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 49: Release — npm @latest + MCP Marketplace
-**Goal**: `claude-dev-stack@1.1.0` is promoted to `@latest` on npm, 0.12.x users have a working migration path, and `@cds/mcp-adapter` is listed on two MCP marketplaces.
-**Depends on**: Phase 48 (all code phases complete)
-**Requirements**: HARD-06, HARD-07, HARD-08, DX-07, DX-08
+### Phase 50: GSD Fork + Vendor
+**Goal**: Fork GSD workflow engine into CDS codebase, remove upstream `get-shit-done-cc` npm dependency, add license attribution.
+**Depends on**: Phase 48 (all feature phases complete)
+**Requirements**: GSD-01
 **Success Criteria** (what must be TRUE):
-  1. `npm install claude-dev-stack` (no tag) installs `1.1.0`; `npm install claude-dev-stack@1.0.0-alpha.1` still resolves the alpha.
-  2. Running `cds-migrate` on a `0.12.x` vault completes without data loss — verified end-to-end in Docker UAT starting from a `0.12.x` snapshot.
-  3. Docker UAT validates clean upgrade from both `0.12.x` and `1.0.0-alpha.1` to `1.1.0` — all UAT assertions pass.
-  4. `@cds/mcp-adapter` has an active listing on Smithery marketplace and on the official MCP Registry (links in RELEASE.md).
+  1. GSD workflow files live inside CDS repo (e.g., `vendor/cds-workflow/` or `src/workflow/`).
+  2. `get-shit-done-cc` is removed from npm dependencies — CDS uses vendored copy.
+  3. `NOTICES.md` contains MIT license attribution for original GSD.
+  4. All existing GSD commands still work identically after vendor.
 **Plans**: TBD
 
-### Progress (v1.1)
+### Phase 51: Planning Relocation
+**Goal**: Move `.planning/` directory out of project git into vault, with a pointer file in the project repo.
+**Depends on**: Phase 50 (GSD vendored — can modify planning paths)
+**Requirements**: GSD-02, GSD-03
+**Success Criteria** (what must be TRUE):
+  1. Planning artifacts live at `vault/projects/{name}/planning/` instead of `{project}/.planning/`.
+  2. `cds.config.json` in project repo points to planning location: `{ "planning": "vault://planning" }`.
+  3. Project git history no longer receives planning commits (STATE.md, ROADMAP.md changes go to vault).
+  4. Existing `.planning/` content migrated to vault automatically on first run.
+**Plans**: TBD
+
+### Phase 52: CDS CLI Commands
+**Goal**: CDS CLI commands (`/cds-*`) replace all `/gsd-*` commands with a mapping layer and deprecation notices.
+**Depends on**: Phase 51 (planning paths updated)
+**Requirements**: GSD-04, GSD-05
+**Success Criteria** (what must be TRUE):
+  1. Every `/gsd-*` command has a `/cds-*` equivalent that works identically.
+  2. Running `/gsd-*` shows a deprecation notice: "Use /cds-* instead" and still executes.
+  3. Skills and hooks reference `/cds-*` commands, not `/gsd-*`.
+**Plans**: TBD
+
+### Phase 53: Config System
+**Goal**: Unified config via `cds.config.json` with per-project override layers, replacing GSD's narrow toggle set.
+**Depends on**: Phase 51 (planning location configurable)
+**Requirements**: GSD-06
+**Success Criteria** (what must be TRUE):
+  1. `cds.config.json` schema supports: planning location, branching strategy, model profile, workflow toggles, vault backend, plugin list.
+  2. Per-project overrides: project `cds.config.json` extends global `~/.config/cds/config.json`.
+  3. Existing GSD `config.json` settings migrated automatically.
+**Plans**: TBD
+
+### Phase 54: Update + Statusline
+**Goal**: CDS update notification and statusline fully replace GSD equivalents.
+**Depends on**: Phase 52, Phase 53 (CDS CLI and config in place)
+**Requirements**: GSD-07, GSD-08
+**Success Criteria** (what must be TRUE):
+  1. `npm view claude-dev-stack` check runs detached on session start, result cached.
+  2. Statusline shows CDS version + update available indicator (no GSD statusline).
+  3. `cds update` command updates CDS itself + vendored workflow.
+**Plans**: TBD
+
+### Phase 55: Release — npm @latest + MCP Marketplace
+**Goal**: `claude-dev-stack@1.0.0` is promoted to `@latest` on npm, alpha users have a working migration path, and `@cds/mcp-adapter` is listed on two MCP marketplaces.
+**Depends on**: Phase 54 (all GSD independence phases complete)
+**Requirements**: HARD-06, HARD-07, HARD-08, DX-07, DX-08
+**Success Criteria** (what must be TRUE):
+  1. `npm install claude-dev-stack` (no tag) installs `1.0.0`; `npm install claude-dev-stack@1.0.0-alpha.1` still resolves the alpha.
+  2. Running `cds-migrate` on a `1.0.0-alpha.1` vault completes without data loss — verified in Docker UAT.
+  3. Docker UAT validates clean upgrade from `1.0.0-alpha.1` to `1.0.0` — all assertions pass.
+  4. `@cds/mcp-adapter` has an active listing on Smithery marketplace and on the official MCP Registry.
+**Plans**: TBD
+
+### Progress (v1.0)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 43. Core Vault Primitives | v1.1 | 2/2 | Complete   | 2026-04-17 |
-| 44. S3 Backend | v1.1 | 0/? | Not started | — |
-| 45. Cross-Project Search + Graph + MCP Tools | v1.1 | 0/? | Not started | — |
-| 46. SDK Dispatch + DEMO-01 Fix | v1.1 | 0/? | Not started | — |
-| 47. Plugin SDK | v1.1 | 0/? | Not started | — |
-| 48. Web Dashboard | v1.1 | 0/? | Not started | — |
-| 49. Release — npm @latest + MCP Marketplace | v1.1 | 0/? | Not started | — |
+| 43. Core Vault Primitives | v1.0 | 2/2 | Complete | 2026-04-17 |
+| 44. S3 Backend | v1.0 | 4/4 | Complete | 2026-04-17 |
+| 45. Cross-Project Search + Graph + MCP Tools | v1.0 | 3/3 | Complete | 2026-04-17 |
+| 46. SDK Dispatch + DEMO-01 Fix | v1.0 | 2/2 | Complete | 2026-04-17 |
+| 47. Plugin SDK | v1.0 | 2/2 | Complete | 2026-04-17 |
+| 48. Web Dashboard | v1.0 | 2/2 | Complete | 2026-04-17 |
+| 50. GSD Fork + Vendor | v1.0 | 0/? | Not started | — |
+| 51. Planning Relocation | v1.0 | 0/? | Not started | — |
+| 52. CDS CLI Commands | v1.0 | 0/? | Not started | — |
+| 53. Config System | v1.0 | 0/? | Not started | — |
+| 54. Update + Statusline | v1.0 | 0/? | Not started | — |
+| 55. Release | v1.0 | 0/? | Not started | — |
 
 ---
 
@@ -291,9 +352,9 @@ Unsequenced items captured from session work — promote to active milestone via
 | 10–13 | v0.10 | ✅ Complete | 2026-04-13 |
 | 14–18.1 | v0.11 | ✅ Complete | 2026-04-13 |
 | 19–32 | v0.12 | ✅ Complete | 2026-04-16 |
-| 33–42 | v1.0 (Phase A) | ✅ Complete | 2026-04-17 |
-| 43–49 | v1.1 Full-Stack Evolution | 🚧 In progress | — |
+| 33–42 | v1.0-alpha | ✅ Complete | 2026-04-17 |
+| 43–55 | v1.0 Full-Stack + GSD Independence | 🚧 In progress | — |
 
 ---
 
-*Roadmap updated: 2026-04-17 — v1.1 Full-Stack Evolution added with 7 phases (43–49) covering 26 v1.1 requirements at 100%. v1.0 archived in `<details>`. Phase 44 and Phase 47 each require an ADR as their first deliverable. Phases 44+45 can parallelize; Phases 46+47 can parallelize.*
+*Roadmap updated: 2026-04-18 — renamed v1.1→v1.0 (alpha was not a real release). Added GSD Independence phases 50-54 (release blocker). Release renumbered to Phase 55. Phases 43-48 complete (2026-04-17). 34 requirements total, 22 complete, 12 pending.*
