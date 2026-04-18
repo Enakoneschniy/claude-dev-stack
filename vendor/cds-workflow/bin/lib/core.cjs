@@ -244,6 +244,80 @@ function safeReadFile(filePath) {
 }
 
 /**
+ * Deep-merge two config objects. Nested objects (git, workflow, hooks, etc.) are
+ * merged recursively; arrays and primitives are overwritten by the override layer.
+ */
+function deepMerge(base, override) {
+  const result = { ...base };
+  for (const key of Object.keys(override)) {
+    if (
+      result[key] && typeof result[key] === 'object' && !Array.isArray(result[key]) &&
+      override[key] && typeof override[key] === 'object' && !Array.isArray(override[key])
+    ) {
+      result[key] = deepMerge(result[key], override[key]);
+    } else {
+      result[key] = override[key];
+    }
+  }
+  return result;
+}
+
+/**
+ * Load global CDS config from ~/.cds/config.json.
+ * Returns parsed JSON object, or empty object if file doesn't exist or is invalid.
+ */
+function loadGlobalConfig() {
+  const globalConfigPath = path.join(os.homedir(), '.cds', 'config.json');
+  try {
+    if (fs.existsSync(globalConfigPath)) {
+      return JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+    }
+  } catch {
+    process.stderr.write('[cds] Warning: failed to parse global config at ' + globalConfigPath + '\n');
+  }
+  return {};
+}
+
+/**
+ * CDS Config Schema (cds.config.json / .cds/config.json)
+ *
+ * Resolution order: built-in defaults < ~/.cds/config.json < .cds/config.json < .planning/config.json
+ *
+ * Top-level fields:
+ *   planning        - Vault path (vault://planning or absolute path)
+ *   model_profile   - Agent model profile: quality|balanced|budget|inherit
+ *   commit_docs     - Auto-commit planning docs (boolean)
+ *   parallelization - Enable parallel plan execution (boolean)
+ *   phase_naming    - Phase naming: sequential|custom
+ *   project_code    - Short prefix for phase dirs (string|null)
+ *   mode            - interactive|autonomous
+ *   granularity     - coarse|standard|fine
+ *   plugins         - Enabled plugin names (string[])
+ *
+ * Sections:
+ *   git.branching_strategy    - phase|none|milestone
+ *   git.phase_branch_template - Branch template for phases
+ *   git.base_branch           - Base branch for PRs
+ *   workflow.research         - Enable research step (boolean)
+ *   workflow.plan_check       - Enable plan checker (boolean)
+ *   workflow.tdd_mode         - Enable TDD mode (boolean)
+ *   workflow.code_review      - Enable code review (boolean)
+ *   workflow.auto_advance     - Auto-execute after planning (boolean)
+ *   vault.backend             - fs|s3
+ *   vault.s3_bucket           - S3 bucket name
+ *   vault.s3_region           - AWS region
+ *   vault.s3_prefix           - S3 key prefix
+ *   models.profile            - Alias for model_profile
+ *   models.planner            - Model override for planner
+ *   models.executor           - Model override for executor
+ *   models.researcher         - Model override for researcher
+ *   models.checker            - Model override for checker
+ *   branching.strategy        - Alias for git.branching_strategy
+ *   hooks.context_warnings    - Show context warnings (boolean)
+ *   features.*                - Feature flags namespace
+ */
+
+/**
  * Canonical config defaults. Single source of truth — imported by config.cjs and verify.cjs.
  */
 const CONFIG_DEFAULTS = {
@@ -275,6 +349,23 @@ const CONFIG_DEFAULTS = {
 function loadConfig(cwd) {
   const configPath = path.join(planningDir(cwd), 'config.json');
   const defaults = CONFIG_DEFAULTS;
+
+  // Layer 1: global config (~/.cds/config.json)
+  const globalConfig = loadGlobalConfig();
+
+  // Layer 2: project CDS config (.cds/config.json, excluding 'planning' field)
+  let cdsProjectConfig = {};
+  const cdsProjectConfigPath = path.join(cwd, '.cds', 'config.json');
+  try {
+    if (fs.existsSync(cdsProjectConfigPath)) {
+      const cdsRaw = JSON.parse(fs.readFileSync(cdsProjectConfigPath, 'utf-8'));
+      // Exclude 'planning' key — handled by resolveVaultPlanning
+      const { planning, ...cdsConfigFields } = cdsRaw;
+      cdsProjectConfig = cdsConfigFields;
+    }
+  } catch {
+    // Fall through to .planning/config.json
+  }
 
   try {
     const raw = fs.readFileSync(configPath, 'utf-8');
@@ -331,10 +422,14 @@ function loadConfig(cwd) {
       ...[...VALID_CONFIG_KEYS].map(k => k.split('.')[0]),
       // Section containers that hold nested sub-keys
       'git', 'workflow', 'planning', 'hooks', 'features',
+      // CDS config sections (Phase 53)
+      'vault', 'models', 'branching', 'plugins',
       // Internal keys loadConfig reads but config-set doesn't expose
       'model_overrides', 'agent_skills', 'context_window', 'resolve_model_ids', 'claude_md_path',
       // Deprecated keys (still accepted for migration, not in config-set)
       'depth', 'multiRepo',
+      // Migration metadata (Phase 53)
+      '_migrated_from_gsd', '_migration_date',
     ]);
     const unknownKeys = Object.keys(parsed).filter(k => !KNOWN_TOP_LEVEL.has(k));
     if (unknownKeys.length > 0) {
@@ -343,10 +438,34 @@ function loadConfig(cwd) {
       );
     }
 
+    // Merge config layers: defaults < global < .cds/config.json < .planning/config.json
+    // .planning/config.json (parsed) takes highest priority for backward compatibility
+    const merged = deepMerge(deepMerge(deepMerge(defaults, globalConfig), cdsProjectConfig), parsed);
+
+    // CDS alias resolution: map CDS-style keys to GSD internal names
+    if (merged.branching?.strategy && !parsed.branching_strategy && !parsed.git?.branching_strategy) {
+      merged.branching_strategy = merged.branching.strategy;
+      if (!merged.git) merged.git = {};
+      merged.git.branching_strategy = merged.branching.strategy;
+    }
+    if (merged.models?.profile && !parsed.model_profile) {
+      merged.model_profile = merged.models.profile;
+    }
+    if (merged.models && !parsed.model_overrides) {
+      const overrides = {};
+      if (merged.models.planner) overrides['gsd-planner'] = merged.models.planner;
+      if (merged.models.executor) overrides['gsd-executor'] = merged.models.executor;
+      if (merged.models.researcher) overrides['gsd-phase-researcher'] = merged.models.researcher;
+      if (merged.models.checker) overrides['gsd-plan-checker'] = merged.models.checker;
+      if (Object.keys(overrides).length > 0) {
+        merged.model_overrides = overrides;
+      }
+    }
+
     const get = (key, nested) => {
-      if (parsed[key] !== undefined) return parsed[key];
-      if (nested && parsed[nested.section] && parsed[nested.section][nested.field] !== undefined) {
-        return parsed[nested.section][nested.field];
+      if (merged[key] !== undefined) return merged[key];
+      if (nested && merged[nested.section] && merged[nested.section][nested.field] !== undefined) {
+        return merged[nested.section][nested.field];
       }
       return undefined;
     };
@@ -390,9 +509,9 @@ function loadConfig(cwd) {
       phase_naming: get('phase_naming') ?? defaults.phase_naming,
       project_code: get('project_code') ?? defaults.project_code,
       subagent_timeout: get('subagent_timeout', { section: 'workflow', field: 'subagent_timeout' }) ?? defaults.subagent_timeout,
-      model_overrides: parsed.model_overrides || null,
-      agent_skills: parsed.agent_skills || {},
-      manager: parsed.manager || {},
+      model_overrides: merged.model_overrides || null,
+      agent_skills: merged.agent_skills || {},
+      manager: merged.manager || {},
       response_language: get('response_language') || null,
       claude_md_path: get('claude_md_path') || null,
     };
@@ -1828,4 +1947,6 @@ module.exports = {
   checkAgentsInstalled,
   atomicWriteFileSync,
   timeAgo,
+  deepMerge,
+  loadGlobalConfig,
 };

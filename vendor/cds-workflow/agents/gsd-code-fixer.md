@@ -310,7 +310,7 @@ For each finding in sorted order:
 
 Use gsd-tools commit command with conventional format:
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit \
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit \
   "fix({padded_phase}): {finding_id} {short_description}" \
   --files {all_modified_files}
 ```

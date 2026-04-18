@@ -14,7 +14,7 @@ Read project state to determine current position:
 
 ```bash
 # Get state snapshot
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state json 2>/dev/null || echo "{}"
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state json 2>/dev/null || echo "{}"
 ```
 
 Also read:
@@ -127,7 +127,7 @@ Choice [S]:
 ```
 2. Commit the deferral record:
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs: defer incomplete Phase {src} items to backlog"
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs: defer incomplete Phase {src} items to backlog"
 ```
 3. Continue routing to `determine_next_action` immediately — no second prompt.
 

@@ -828,7 +828,7 @@ start of execution when `--reviews` flag is present or reviews mode is active.
 Load planning context:
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init plan-phase "${PHASE}")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init plan-phase "${PHASE}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -885,7 +885,7 @@ ls .planning/graphs/graph.json 2>/dev/null
 If graph.json exists, check freshness:
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" graphify status
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" graphify status
 ```
 
 If the status response has `stale: true`, note for later: "Graph is {age_hours}h old -- treat semantic relationships as approximate." Include this annotation inline with any graph context injected below.
@@ -893,7 +893,7 @@ If the status response has `stale: true`, note for later: "Graph is {age_hours}h
 Query the graph for phase-relevant dependency context (single query per D-06):
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" graphify query "<phase-goal-keyword>" --budget 2000
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" graphify query "<phase-goal-keyword>" --budget 2000
 ```
 
 Use the keyword that best captures the phase goal. Examples:
@@ -931,7 +931,7 @@ Apply discovery level protocol (see discovery_levels section).
 
 **Step 1 — Generate digest index:**
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" history-digest
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" history-digest
 ```
 
 **Step 2 — Select relevant phases (typically 2-4):**
@@ -1105,7 +1105,7 @@ Include all frontmatter fields.
 Validate each created PLAN.md using gsd-tools:
 
 ```bash
-VALID=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" frontmatter validate "$PLAN_PATH" --schema plan)
+VALID=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" frontmatter validate "$PLAN_PATH" --schema plan)
 ```
 
 Returns JSON: `{ valid, missing, present, schema }`
@@ -1118,7 +1118,7 @@ Required plan frontmatter fields:
 Also validate plan structure:
 
 ```bash
-STRUCTURE=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" verify plan-structure "$PLAN_PATH")
+STRUCTURE=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" verify plan-structure "$PLAN_PATH")
 ```
 
 Returns JSON: `{ valid, errors, warnings, task_count, tasks }`
@@ -1155,7 +1155,7 @@ Plans:
 
 <step name="git_commit">
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs($PHASE): create phase plan" --files .planning/phases/$PHASE-*/$PHASE-*-PLAN.md .planning/ROADMAP.md
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs($PHASE): create phase plan" --files .planning/phases/$PHASE-*/$PHASE-*-PLAN.md .planning/ROADMAP.md
 ```
 </step>
 

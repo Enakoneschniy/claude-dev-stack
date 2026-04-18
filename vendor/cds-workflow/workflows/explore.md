@@ -111,7 +111,7 @@ For each selected output, write the file:
 
 Commit if `commit_docs` is enabled:
 ```bash
-node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs: capture exploration — {topic_slug}" --files {file_list}
+node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs: capture exploration — {topic_slug}" --files {file_list}
 ```
 
 ## Step 6: Close

@@ -26,7 +26,7 @@ Wait for response before continuing.
 **Check if project exists.**
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state load 2>/dev/null)
+INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state load 2>/dev/null)
 ```
 
 Track whether `.planning/` exists — some routes require it, others don't.

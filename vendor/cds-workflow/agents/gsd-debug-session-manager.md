@@ -93,7 +93,7 @@ Task(
 
 Resolve the debugger model before spawning:
 ```bash
-debugger_model=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" resolve-model gsd-debugger --raw)
+debugger_model=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" resolve-model gsd-debugger --raw)
 ```
 
 ## Step 3: Handle Agent Return

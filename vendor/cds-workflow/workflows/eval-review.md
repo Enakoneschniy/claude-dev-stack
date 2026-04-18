@@ -13,14 +13,14 @@ Use after /cds-execute-phase to verify that the evaluation strategy from AI-SPEC
 ## 0. Initialize
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Parse: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `commit_docs`.
 
 ```bash
-AUDITOR_MODEL=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" resolve-model gsd-eval-auditor --raw)
+AUDITOR_MODEL=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" resolve-model gsd-eval-auditor --raw)
 ```
 
 Display banner:

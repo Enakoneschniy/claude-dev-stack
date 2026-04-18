@@ -8,7 +8,7 @@ Cross-phase audit of all UAT and verification files. Finds every outstanding ite
 Run the CLI audit:
 
 ```bash
-AUDIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" audit-uat --raw)
+AUDIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" audit-uat --raw)
 ```
 
 Parse JSON for `results` array and `summary` object.
