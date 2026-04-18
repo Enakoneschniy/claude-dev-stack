@@ -279,6 +279,108 @@ function loadGlobalConfig() {
 }
 
 /**
+ * Auto-migrate .planning/config.json settings into .cds/config.json.
+ * Runs once on first loadConfig() call. Idempotent via _migrated_from_gsd flag.
+ *
+ * @param {string} cwd - project root
+ * @param {object} [options] - { force: true } to re-run even if already migrated
+ * @returns {{ migrated: boolean, fields?: number, reason?: string }}
+ */
+function migrateGsdConfigToCds(cwd, options = {}) {
+  const cdsConfigPath = path.join(cwd, '.cds', 'config.json');
+  const planningConfigPath = path.join(planningDir(cwd), 'config.json');
+
+  // Prerequisite: .cds/config.json must exist (created by Phase 51)
+  if (!fs.existsSync(cdsConfigPath)) {
+    return { migrated: false, reason: 'no .cds/config.json found' };
+  }
+
+  // Prerequisite: .planning/config.json must exist with content
+  if (!fs.existsSync(planningConfigPath)) {
+    return { migrated: false, reason: 'no .planning/config.json found' };
+  }
+
+  let cdsConfig;
+  try {
+    cdsConfig = JSON.parse(fs.readFileSync(cdsConfigPath, 'utf-8'));
+  } catch {
+    return { migrated: false, reason: 'failed to parse .cds/config.json' };
+  }
+
+  // Idempotency check
+  if (cdsConfig._migrated_from_gsd && !options.force) {
+    return { migrated: false, reason: 'already migrated' };
+  }
+
+  let gsdConfig;
+  try {
+    gsdConfig = JSON.parse(fs.readFileSync(planningConfigPath, 'utf-8'));
+  } catch {
+    return { migrated: false, reason: 'failed to parse .planning/config.json' };
+  }
+
+  // Field mapping: GSD fields that should be copied to CDS config
+  const DIRECT_FIELDS = [
+    'model_profile', 'commit_docs', 'parallelization', 'search_gitignored',
+    'brave_search', 'firecrawl', 'exa_search', 'phase_naming', 'project_code',
+    'mode', 'granularity', 'context_window', 'resolve_model_ids', 'subagent_timeout',
+    'response_language',
+  ];
+  const SECTION_FIELDS = ['git', 'workflow', 'hooks', 'features'];
+
+  let fieldCount = 0;
+
+  // Copy direct fields (only if not already in .cds/config.json)
+  for (const field of DIRECT_FIELDS) {
+    if (gsdConfig[field] !== undefined && cdsConfig[field] === undefined) {
+      cdsConfig[field] = gsdConfig[field];
+      fieldCount++;
+    }
+  }
+
+  // Copy section fields with deep merge (only missing sub-keys)
+  for (const section of SECTION_FIELDS) {
+    if (gsdConfig[section] && typeof gsdConfig[section] === 'object') {
+      if (!cdsConfig[section]) {
+        cdsConfig[section] = gsdConfig[section];
+        fieldCount++;
+      } else {
+        // Merge: only add keys that don't exist in CDS config
+        for (const [key, val] of Object.entries(gsdConfig[section])) {
+          if (cdsConfig[section][key] === undefined) {
+            cdsConfig[section][key] = val;
+            fieldCount++;
+          }
+        }
+      }
+    }
+  }
+
+  // Copy model_overrides and agent_skills if present
+  if (gsdConfig.model_overrides && !cdsConfig.model_overrides) {
+    cdsConfig.model_overrides = gsdConfig.model_overrides;
+    fieldCount++;
+  }
+  if (gsdConfig.agent_skills && !cdsConfig.agent_skills) {
+    cdsConfig.agent_skills = gsdConfig.agent_skills;
+    fieldCount++;
+  }
+
+  // Mark migration complete
+  cdsConfig._migrated_from_gsd = true;
+  cdsConfig._migration_date = new Date().toISOString();
+
+  // Write updated .cds/config.json
+  try {
+    atomicWriteFileSync(cdsConfigPath, JSON.stringify(cdsConfig, null, 2), 'utf-8');
+    process.stderr.write(`[cds] Migrated ${fieldCount} config fields from .planning/config.json to .cds/config.json\n`);
+    return { migrated: true, fields: fieldCount };
+  } catch (err) {
+    return { migrated: false, reason: 'failed to write .cds/config.json: ' + err.message };
+  }
+}
+
+/**
  * CDS Config Schema (cds.config.json / .cds/config.json)
  *
  * Resolution order: built-in defaults < ~/.cds/config.json < .cds/config.json < .planning/config.json
@@ -347,6 +449,9 @@ const CONFIG_DEFAULTS = {
 };
 
 function loadConfig(cwd) {
+  // Auto-migrate GSD config to CDS config on first run (Phase 53)
+  migrateGsdConfigToCds(cwd);
+
   const configPath = path.join(planningDir(cwd), 'config.json');
   const defaults = CONFIG_DEFAULTS;
 
@@ -1949,4 +2054,5 @@ module.exports = {
   timeAgo,
   deepMerge,
   loadGlobalConfig,
+  migrateGsdConfigToCds,
 };

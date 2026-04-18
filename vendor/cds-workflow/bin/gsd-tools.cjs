@@ -641,6 +641,11 @@ async function runCommand(command, args, cwd, raw, defaultValue) {
       break;
     }
 
+    case 'config-migrate': {
+      config.cmdConfigMigrate(cwd, raw);
+      break;
+    }
+
     case 'config-new-project': {
       config.cmdConfigNewProject(cwd, args[1], raw);
       break;

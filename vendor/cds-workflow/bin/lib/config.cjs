@@ -519,6 +519,22 @@ function getCmdConfigSetModelProfileResultMessage(
   return paragraphs.join('\n\n');
 }
 
+/**
+ * Command to manually trigger GSD → CDS config migration.
+ * Use `--force` (via options.force) to re-run even if already migrated.
+ */
+function cmdConfigMigrate(cwd, raw) {
+  const { migrateGsdConfigToCds } = require('./core.cjs');
+  const result = migrateGsdConfigToCds(cwd, { force: true });
+  if (result.migrated) {
+    output(result, raw,
+      `Migrated ${result.fields} fields from .planning/config.json to .cds/config.json`);
+  } else {
+    output(result, raw,
+      `No migration needed: ${result.reason}`);
+  }
+}
+
 module.exports = {
   VALID_CONFIG_KEYS,
   cmdConfigEnsureSection,
@@ -526,4 +542,5 @@ module.exports = {
   cmdConfigGet,
   cmdConfigSetModelProfile,
   cmdConfigNewProject,
+  cmdConfigMigrate,
 };
