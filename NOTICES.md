@@ -4,6 +4,17 @@ This project redistributes the following third-party software. Each dependency
 listed below retains its original license. Claude Dev Stack itself is MIT-licensed
 (see `LICENSE`).
 
+## Workflow Engine
+
+### get-shit-done (vendored as cds-workflow)
+- **Version:** 1.36.0 (forked at this version, April 2026)
+- **License:** MIT
+- **Copyright:** Lex Christopherson (TÂCHES)
+- **Source:** https://github.com/gsd-build/get-shit-done
+- **Vendored at:** `vendor/cds-workflow/`
+- **Modifications:** Path references updated from `~/.claude/get-shit-done/` to `~/.claude/cds-workflow/`. No functional changes.
+- **Redistribution basis:** MIT license permits copying, modification, and redistribution with attribution. Original LICENSE file preserved at `vendor/cds-workflow/LICENSE`.
+
 ## Runtime Dependencies
 
 ### @anthropic-ai/claude-agent-sdk
