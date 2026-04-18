@@ -95,6 +95,13 @@ function findProjectRoot(startDir) {
     return startDir;
   }
 
+  // If startDir contains .cds/config.json with a planning pointer, it IS the project root.
+  // This handles vault-based planning where .planning/ does not exist locally (#phase51).
+  const ownCdsConfig = path.join(resolved, '.cds', 'config.json');
+  if (fs.existsSync(ownCdsConfig)) {
+    return startDir;
+  }
+
   // Check if startDir or any of its ancestors (up to AND including the
   // candidate project root) contains a .git directory. This handles both
   // `backend/` (direct sub-repo) and `backend/src/modules/` (nested inside),
@@ -681,6 +688,128 @@ function withPlanningLock(cwd, fn) {
  * @param {string} [ws] - explicit workstream name; if omitted, checks GSD_WORKSTREAM env var
  * @param {string} [project] - explicit project name; if omitted, checks GSD_PROJECT env var
  */
+
+// ─── Vault-aware planning path resolution ────────────────────────────────────
+
+/** Cache resolved vault planning paths per cwd to avoid redundant fs reads. */
+const _vaultPlanningCache = new Map();
+
+/**
+ * Resolve the planning directory from `.cds/config.json` if present.
+ *
+ * Returns the absolute path to the planning directory when vault-based planning
+ * is configured, or `null` when no `.cds/config.json` exists (triggers fallback
+ * to `$PWD/.planning/`).
+ *
+ * Security: the `planning` field is validated — only `vault://planning` prefix
+ * or absolute paths are accepted; relative paths and path traversal are rejected
+ * (T-51-01). The project name read from `project-map.json` is validated against
+ * the BAD_SEGMENT regex (T-51-02).
+ *
+ * @param {string} cwd - project root to read config from
+ * @returns {string|null} absolute planning path, or null for fallback
+ */
+function resolveVaultPlanning(cwd) {
+  if (_vaultPlanningCache.has(cwd)) return _vaultPlanningCache.get(cwd);
+
+  const cdsConfigPath = path.join(cwd, '.cds', 'config.json');
+  if (!fs.existsSync(cdsConfigPath)) {
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  let cdsConfig;
+  try {
+    cdsConfig = JSON.parse(fs.readFileSync(cdsConfigPath, 'utf-8'));
+  } catch {
+    process.stderr.write(`[cds] Warning: failed to parse ${cdsConfigPath} — falling back to .planning/\n`);
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  const planning = cdsConfig.planning;
+  if (!planning) {
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  // Security T-51-01: reject relative paths and traversal sequences.
+  if (!path.isAbsolute(planning) && !planning.startsWith('vault://')) {
+    process.stderr.write(`[cds] Warning: .cds/config.json planning field must be vault:// or absolute path — got "${planning}"; falling back to .planning/\n`);
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  // Absolute path — return directly without vault discovery.
+  if (path.isAbsolute(planning)) {
+    _vaultPlanningCache.set(cwd, planning);
+    return planning;
+  }
+
+  // vault:// — discover vault and resolve project name.
+  const home = os.homedir();
+  const vaultCandidates = [
+    path.join(home, 'vault'),
+    path.join(home, 'Vault'),
+    path.join(home, '.vault'),
+    path.join(home, 'obsidian-vault'),
+    path.join(home, 'Documents', 'vault'),
+  ];
+
+  let vaultPath = null;
+  for (const candidate of vaultCandidates) {
+    if (fs.existsSync(path.join(candidate, 'meta')) && fs.existsSync(path.join(candidate, 'projects'))) {
+      vaultPath = candidate;
+      break;
+    }
+  }
+  if (!vaultPath) {
+    for (const candidate of vaultCandidates) {
+      if (fs.existsSync(path.join(candidate, 'CLAUDE.md.template'))) {
+        vaultPath = candidate;
+        break;
+      }
+    }
+  }
+
+  if (!vaultPath) {
+    process.stderr.write('[cds] Warning: vault not found — falling back to .planning/\n');
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  const mapPath = path.join(vaultPath, 'project-map.json');
+  let projectName;
+  try {
+    const map = JSON.parse(fs.readFileSync(mapPath, 'utf-8'));
+    projectName = map.projects && map.projects[cwd];
+  } catch {
+    process.stderr.write(`[cds] Warning: failed to read ${mapPath} — falling back to .planning/\n`);
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  if (!projectName) {
+    process.stderr.write(`[cds] Warning: project "${cwd}" not found in project-map.json — falling back to .planning/\n`);
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  // Security T-51-02: validate project name against BAD_SEGMENT regex.
+  const BAD_SEGMENT = /[/\\]|\.\./;
+  if (BAD_SEGMENT.test(projectName)) {
+    process.stderr.write(`[cds] Warning: project name from project-map.json contains invalid path characters: "${projectName}" — falling back to .planning/\n`);
+    _vaultPlanningCache.set(cwd, null);
+    return null;
+  }
+
+  // Derive sub-path from vault:// prefix (e.g. "vault://planning" → "planning")
+  const subPath = planning.slice('vault://'.length);
+  const resolved = path.join(vaultPath, 'projects', projectName, subPath);
+  _vaultPlanningCache.set(cwd, resolved);
+  return resolved;
+}
+
 function planningDir(cwd, ws, project) {
   if (project === undefined) project = process.env.GSD_PROJECT || null;
   if (ws === undefined) ws = process.env.GSD_WORKSTREAM || null;
@@ -694,15 +823,17 @@ function planningDir(cwd, ws, project) {
     throw new Error(`GSD_WORKSTREAM contains invalid path characters: ${ws}`);
   }
 
-  let base = path.join(cwd, '.planning');
+  const vaultBase = resolveVaultPlanning(cwd);
+  let base = vaultBase || path.join(cwd, '.planning');
   if (project) base = path.join(base, project);
   if (ws) base = path.join(base, 'workstreams', ws);
   return base;
 }
 
-/** Always returns the root .planning/ path, ignoring workstreams and projects. For shared resources. */
+/** Always returns the root planning path, ignoring workstreams and projects. For shared resources. */
 function planningRoot(cwd) {
-  return path.join(cwd, '.planning');
+  const vaultBase = resolveVaultPlanning(cwd);
+  return vaultBase || path.join(cwd, '.planning');
 }
 
 /**
@@ -1621,6 +1752,7 @@ module.exports = {
   GSD_TEMP_DIR,
   MODEL_ALIAS_MAP,
   CONFIG_DEFAULTS,
+  resolveVaultPlanning,
   planningDir,
   planningRoot,
   planningPaths,

@@ -252,7 +252,10 @@ async function main() {
   // However, in monorepo worktrees where the subdirectory itself owns .planning/,
   // skip worktree resolution — the CWD is already the correct project root.
   const { resolveWorktreeRoot } = require('./lib/core.cjs');
-  if (!fs.existsSync(path.join(cwd, '.planning'))) {
+  // Skip worktree resolution when .planning/ exists locally OR when .cds/config.json
+  // is present (vault-based planning — .planning/ intentionally absent from project git).
+  const cdsConfigExists = fs.existsSync(path.join(cwd, '.cds', 'config.json'));
+  if (!fs.existsSync(path.join(cwd, '.planning')) && !cdsConfigExists) {
     const worktreeRoot = resolveWorktreeRoot(cwd);
     if (worktreeRoot !== cwd) {
       cwd = worktreeRoot;
