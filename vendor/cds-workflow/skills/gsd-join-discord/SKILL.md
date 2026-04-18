@@ -1,19 +1,15 @@
 ---
 name: gsd-join-discord
-description: "Join the GSD Discord community"
+description: "[DEPRECATED] Use /cds-join-discord instead"
+allowed-tools:
+  - Skill
 ---
 
-
 <objective>
-Display the Discord invite link for the GSD community server.
+This command is deprecated. Use /cds-join-discord instead.
 </objective>
 
-<output>
-# Join the GSD Discord
-
-Connect with other GSD users, get help, share what you're building, and stay updated.
-
-**Invite link:** https://discord.gg/mYgfVNfA2r
-
-Click the link or paste it into your browser to join.
-</output>
+<process>
+1. Display: "⚠ /gsd-join-discord is deprecated. Use /cds-join-discord instead."
+2. Invoke: Skill(skill="cds-join-discord", args="$ARGUMENTS")
+</process>

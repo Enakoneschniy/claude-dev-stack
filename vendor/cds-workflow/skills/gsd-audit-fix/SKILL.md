@@ -1,33 +1,15 @@
 ---
 name: gsd-audit-fix
-description: "Autonomous audit-to-fix pipeline — find issues, classify, fix, test, commit"
-argument-hint: "--source <audit-uat> [--severity <medium|high|all>] [--max N] [--dry-run]"
+description: "[DEPRECATED] Use /cds-audit-fix instead"
 allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Grep
-  - Glob
-  - Agent
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Run an audit, classify findings as auto-fixable vs manual-only, then autonomously fix
-auto-fixable issues with test verification and atomic commits.
-
-Flags:
-- `--max N` — maximum findings to fix (default: 5)
-- `--severity high|medium|all` — minimum severity to process (default: medium)
-- `--dry-run` — classify findings without fixing (shows classification table)
-- `--source <audit>` — which audit to run (default: audit-uat)
+This command is deprecated. Use /cds-audit-fix instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/audit-fix.md
-</execution_context>
-
 <process>
-Execute the audit-fix workflow from @$HOME/.claude/cds-workflow/workflows/audit-fix.md end-to-end.
+1. Display: "⚠ /gsd-audit-fix is deprecated. Use /cds-audit-fix instead."
+2. Invoke: Skill(skill="cds-audit-fix", args="$ARGUMENTS")
 </process>

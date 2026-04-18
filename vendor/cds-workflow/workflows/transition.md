@@ -2,15 +2,15 @@
 
 **This is an INTERNAL workflow — NOT a user-facing command.**
 
-There is no `/gsd-transition` command. This workflow is invoked automatically by
+There is no `/cds-transition` command. This workflow is invoked automatically by
 `execute-phase` during auto-advance, or inline by the orchestrator after phase
-verification. Users should never be told to run `/gsd-transition`.
+verification. Users should never be told to run `/cds-transition`.
 
 **Valid user commands for phase progression:**
-- `/gsd-discuss-phase {N}` — discuss a phase before planning
-- `/gsd-plan-phase {N}` — plan a phase
-- `/gsd-execute-phase {N}` — execute a phase
-- `/gsd-progress` — see roadmap progress
+- `/cds-discuss-phase {N}` — discuss a phase before planning
+- `/cds-plan-phase {N}` — plan a phase
+- `/cds-execute-phase {N}` — execute a phase
+- `/cds-progress` — see roadmap progress
 
 </internal_workflow>
 
@@ -93,7 +93,7 @@ Append to the completion confirmation message (regardless of mode):
 Outstanding verification items in this phase:
 {list filenames}
 
-These will carry forward as debt. Review: `/gsd-audit-uat`
+These will carry forward as debt. Review: `/cds-audit-uat`
 ```
 
 This does NOT block transition — it ensures the user sees the debt before confirming.
@@ -509,7 +509,7 @@ Use TeamCreate to create a milestone execution team. One member per pending phas
 
 For each pending phase, create a task via TaskCreate:
 - `subject`: "Execute Phase {number}: {name}"
-- `description`: "Run /gsd-execute-phase {number}. Plans: {plan_count}. Depends on: {depends_on or 'nothing'}."
+- `description`: "Run /cds-execute-phase {number}. Plans: {plan_count}. Depends on: {depends_on or 'nothing'}."
 
 After creating all tasks, wire dependencies via TaskUpdate:
 - For each phase whose `depends_on` includes another pending phase number, add `blockedBy` pointing to that phase's task ID.
@@ -526,7 +526,7 @@ For each pending phase, spawn a member via Agent tool:
 - `name`: "phase-{number}-{slug}" (e.g., "phase-16-git-conventions")
 - `isolation`: "worktree"
 - `team_name`: "milestone-execution"
-- `prompt`: "You are executing Phase {number}: {name}. Check your task status — if blocked, wait for dependencies to complete. When unblocked, run: /gsd-execute-phase {number}. Report completion via SendMessage to the team lead when done."
+- `prompt`: "You are executing Phase {number}: {name}. Check your task status — if blocked, wait for dependencies to complete. When unblocked, run: /cds-execute-phase {number}. Report completion via SendMessage to the team lead when done."
 
 Members with unblocked tasks start immediately. Members with blocked tasks idle until their blockers are marked complete.
 
@@ -572,7 +572,7 @@ Next: Phase [X+1] — [Name]
 ⚡ Auto-continuing: Plan Phase [X+1] in detail
 ```
 
-Exit skill and invoke SlashCommand("/gsd-plan-phase [X+1] --auto ${GSD_WS}")
+Exit skill and invoke SlashCommand("/cds-plan-phase [X+1] --auto ${GSD_WS}")
 
 **If CONTEXT.md does NOT exist:**
 
@@ -584,7 +584,7 @@ Next: Phase [X+1] — [Name]
 ⚡ Auto-continuing: Discuss Phase [X+1] first
 ```
 
-Exit skill and invoke SlashCommand("/gsd-discuss-phase [X+1] --auto ${GSD_WS}")
+Exit skill and invoke SlashCommand("/cds-discuss-phase [X+1] --auto ${GSD_WS}")
 
 </if>
 
@@ -603,13 +603,13 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase [X+1] --auto ${GSD_WS}")
 
 `/clear` then:
 
-`/gsd-discuss-phase [X+1] ${GSD_WS}` — gather context and clarify approach
+`/cds-discuss-phase [X+1] ${GSD_WS}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/gsd-plan-phase [X+1] ${GSD_WS}` — skip discussion, plan directly
-- `/gsd-research-phase [X+1] ${GSD_WS}` — investigate unknowns
+- `/cds-plan-phase [X+1] ${GSD_WS}` — skip discussion, plan directly
+- `/cds-research-phase [X+1] ${GSD_WS}` — investigate unknowns
 
 ---
 ```
@@ -628,13 +628,13 @@ Exit skill and invoke SlashCommand("/gsd-discuss-phase [X+1] --auto ${GSD_WS}")
 
 `/clear` then:
 
-`/gsd-plan-phase [X+1] ${GSD_WS}`
+`/cds-plan-phase [X+1] ${GSD_WS}`
 
 ---
 
 **Also available:**
-- `/gsd-discuss-phase [X+1] ${GSD_WS}` — revisit context
-- `/gsd-research-phase [X+1] ${GSD_WS}` — investigate unknowns
+- `/cds-discuss-phase [X+1] ${GSD_WS}` — revisit context
+- `/cds-research-phase [X+1] ${GSD_WS}` — investigate unknowns
 
 ---
 ```
@@ -680,18 +680,18 @@ This workstream's phases are complete. Other workstreams are still active:
 
 Archive this workstream:
 
-`/gsd-workstreams complete {current_ws_name} ${GSD_WS}`
+`/cds-workstreams complete {current_ws_name} ${GSD_WS}`
 
 See overall milestone progress:
 
-`/gsd-workstreams progress ${GSD_WS}`
+`/cds-workstreams progress ${GSD_WS}`
 
 <sub>Milestone completion will be available once all workstreams finish.</sub>
 
 ---
 ```
 
-Do NOT suggest `/gsd-complete-milestone` or `/gsd-new-milestone`.
+Do NOT suggest `/cds-complete-milestone` or `/cds-new-milestone`.
 Do NOT auto-invoke any further slash commands.
 
 **Stop here.** The user must explicitly decide what to do next.
@@ -719,7 +719,7 @@ Phase {X} marked complete.
 ⚡ Auto-continuing: Complete milestone and archive
 ```
 
-Exit skill and invoke SlashCommand("/gsd-complete-milestone {version} ${GSD_WS}")
+Exit skill and invoke SlashCommand("/cds-complete-milestone {version} ${GSD_WS}")
 
 </if>
 
@@ -738,7 +738,7 @@ Exit skill and invoke SlashCommand("/gsd-complete-milestone {version} ${GSD_WS}"
 
 `/clear` then:
 
-`/gsd-complete-milestone {version} ${GSD_WS}`
+`/cds-complete-milestone {version} ${GSD_WS}`
 
 ---
 

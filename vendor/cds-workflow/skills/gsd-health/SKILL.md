@@ -1,23 +1,15 @@
 ---
 name: gsd-health
-description: "Diagnose planning directory health and optionally repair issues"
-argument-hint: "[--repair]"
+description: "[DEPRECATED] Use /cds-health instead"
 allowed-tools:
-  - Read
-  - Bash
-  - Write
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Validate `.planning/` directory integrity and report actionable issues. Checks for missing files, invalid configurations, inconsistent state, and orphaned plans.
+This command is deprecated. Use /cds-health instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/health.md
-</execution_context>
-
 <process>
-Execute the health workflow from @$HOME/.claude/cds-workflow/workflows/health.md end-to-end.
-Parse --repair flag from arguments and pass to workflow.
+1. Display: "⚠ /gsd-health is deprecated. Use /cds-health instead."
+2. Invoke: Skill(skill="cds-health", args="$ARGUMENTS")
 </process>

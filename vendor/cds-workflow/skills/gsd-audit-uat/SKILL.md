@@ -1,25 +1,15 @@
 ---
 name: gsd-audit-uat
-description: "Cross-phase audit of all outstanding UAT and verification items"
+description: "[DEPRECATED] Use /cds-audit-uat instead"
 allowed-tools:
-  - Read
-  - Glob
-  - Grep
-  - Bash
+  - Skill
 ---
 
 <objective>
-Scan all phases for pending, skipped, blocked, and human_needed UAT items. Cross-reference against codebase to detect stale documentation. Produce prioritized human test plan.
+This command is deprecated. Use /cds-audit-uat instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/audit-uat.md
-</execution_context>
-
-<context>
-Core planning files are loaded in-workflow via CLI.
-
-**Scope:**
-Glob: .planning/phases/*/*-UAT.md
-Glob: .planning/phases/*/*-VERIFICATION.md
-</context>
+<process>
+1. Display: "⚠ /gsd-audit-uat is deprecated. Use /cds-audit-uat instead."
+2. Invoke: Skill(skill="cds-audit-uat", args="$ARGUMENTS")
+</process>

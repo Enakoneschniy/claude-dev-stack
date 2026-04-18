@@ -1,20 +1,15 @@
 ---
 name: gsd-session-report
-description: "Generate a session report with token usage estimates, work summary, and outcomes"
+description: "[DEPRECATED] Use /cds-session-report instead"
 allowed-tools:
-  - Read
-  - Bash
-  - Write
+  - Skill
 ---
 
 <objective>
-Generate a structured SESSION_REPORT.md document capturing session outcomes, work performed, and estimated resource usage. Provides a shareable artifact for post-session review.
+This command is deprecated. Use /cds-session-report instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/session-report.md
-</execution_context>
-
 <process>
-Execute the session-report workflow from @$HOME/.claude/cds-workflow/workflows/session-report.md end-to-end.
+1. Display: "⚠ /gsd-session-report is deprecated. Use /cds-session-report instead."
+2. Invoke: Skill(skill="cds-session-report", args="$ARGUMENTS")
 </process>

@@ -1,53 +1,15 @@
 ---
 name: gsd-plan-phase
-description: "Create detailed phase plan (PLAN.md) with verification loop"
-argument-hint: "[phase] [--auto] [--research] [--skip-research] [--gaps] [--skip-verify] [--prd <file>] [--reviews] [--text] [--tdd]"
-agent: gsd-planner
+description: "[DEPRECATED] Use /cds-plan-phase instead"
 allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Glob
-  - Grep
-  - Task
-  - AskUserQuestion
-  - WebFetch
-  - mcp__context7__*
+  - Skill
 ---
 
 <objective>
-Create executable phase prompts (PLAN.md files) for a roadmap phase with integrated research and verification.
-
-**Default flow:** Research (if needed) → Plan → Verify → Done
-
-**Orchestrator role:** Parse arguments, validate phase, research domain (unless skipped), spawn gsd-planner, verify with gsd-plan-checker, iterate until pass or max iterations, present results.
+This command is deprecated. Use /cds-plan-phase instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/plan-phase.md
-@$HOME/.claude/cds-workflow/references/ui-brand.md
-</execution_context>
-
-<runtime_note>
-**Copilot (VS Code):** Use `vscode_askquestions` wherever this workflow calls `AskUserQuestion`. They are equivalent — `vscode_askquestions` is the VS Code Copilot implementation of the same interactive question API. Do not skip questioning steps because `AskUserQuestion` appears unavailable; use `vscode_askquestions` instead.
-</runtime_note>
-
-<context>
-Phase number: $ARGUMENTS (optional — auto-detects next unplanned phase if omitted)
-
-**Flags:**
-- `--research` — Force re-research even if RESEARCH.md exists
-- `--skip-research` — Skip research, go straight to planning
-- `--gaps` — Gap closure mode (reads VERIFICATION.md, skips research)
-- `--skip-verify` — Skip verification loop
-- `--prd <file>` — Use a PRD/acceptance criteria file instead of discuss-phase. Parses requirements into CONTEXT.md automatically. Skips discuss-phase entirely.
-- `--reviews` — Replan incorporating cross-AI review feedback from REVIEWS.md (produced by `/gsd-review`)
-- `--text` — Use plain-text numbered lists instead of TUI menus (required for `/rc` remote sessions)
-
-Normalize phase input in step 2 before any directory lookups.
-</context>
-
 <process>
-Execute the plan-phase workflow from @$HOME/.claude/cds-workflow/workflows/plan-phase.md end-to-end.
-Preserve all workflow gates (validation, research, planning, verification loop, routing).
+1. Display: "⚠ /gsd-plan-phase is deprecated. Use /cds-plan-phase instead."
+2. Invoke: Skill(skill="cds-plan-phase", args="$ARGUMENTS")
 </process>

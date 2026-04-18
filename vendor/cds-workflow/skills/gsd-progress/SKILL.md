@@ -1,25 +1,15 @@
 ---
 name: gsd-progress
-description: "Check project progress, show context, and route to next action (execute or plan)"
+description: "[DEPRECATED] Use /cds-progress instead"
 allowed-tools:
-  - Read
-  - Bash
-  - Grep
-  - Glob
-  - SlashCommand
+  - Skill
 ---
 
 <objective>
-Check project progress, summarize recent work and what's ahead, then intelligently route to the next action - either executing an existing plan or creating the next one.
-
-Provides situational awareness before continuing work.
+This command is deprecated. Use /cds-progress instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/progress.md
-</execution_context>
-
 <process>
-Execute the progress workflow from @$HOME/.claude/cds-workflow/workflows/progress.md end-to-end.
-Preserve all routing logic (Routes A through F) and edge case handling.
+1. Display: "⚠ /gsd-progress is deprecated. Use /cds-progress instead."
+2. Invoke: Skill(skill="cds-progress", args="$ARGUMENTS")
 </process>

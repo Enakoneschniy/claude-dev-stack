@@ -1,31 +1,15 @@
 ---
 name: gsd-do
-description: "Route freeform text to the right GSD command automatically"
-argument-hint: "<description of what you want to do>"
+description: "[DEPRECATED] Use /cds-do instead"
 allowed-tools:
-  - Read
-  - Bash
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Analyze freeform natural language input and dispatch to the most appropriate GSD command.
-
-Acts as a smart dispatcher — never does the work itself. Matches intent to the best GSD command using routing rules, confirms the match, then hands off.
-
-Use when you know what you want but don't know which `/gsd-*` command to run.
+This command is deprecated. Use /cds-do instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/do.md
-@$HOME/.claude/cds-workflow/references/ui-brand.md
-</execution_context>
-
-<context>
-$ARGUMENTS
-</context>
-
 <process>
-Execute the do workflow from @$HOME/.claude/cds-workflow/workflows/do.md end-to-end.
-Route user intent to the best GSD command and invoke it.
+1. Display: "⚠ /gsd-do is deprecated. Use /cds-do instead."
+2. Invoke: Skill(skill="cds-do", args="$ARGUMENTS")
 </process>

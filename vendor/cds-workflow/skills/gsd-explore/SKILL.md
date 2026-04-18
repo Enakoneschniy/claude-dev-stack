@@ -1,28 +1,15 @@
 ---
 name: gsd-explore
-description: "Socratic ideation and idea routing — think through ideas before committing to plans"
+description: "[DEPRECATED] Use /cds-explore instead"
 allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Grep
-  - Glob
-  - Task
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Open-ended Socratic ideation session. Guides the developer through exploring an idea via
-probing questions, optionally spawns research, then routes outputs to the appropriate GSD
-artifacts (notes, todos, seeds, research questions, requirements, or new phases).
-
-Accepts an optional topic argument: `/gsd-explore authentication strategy`
+This command is deprecated. Use /cds-explore instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/explore.md
-</execution_context>
-
 <process>
-Execute the explore workflow from @$HOME/.claude/cds-workflow/workflows/explore.md end-to-end.
+1. Display: "⚠ /gsd-explore is deprecated. Use /cds-explore instead."
+2. Invoke: Skill(skill="cds-explore", args="$ARGUMENTS")
 </process>

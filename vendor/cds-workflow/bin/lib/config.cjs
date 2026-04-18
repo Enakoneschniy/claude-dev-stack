@@ -317,7 +317,19 @@ function cmdConfigEnsureSection(cwd, raw) {
  * the happy path. But note that `error()` will still `exit(1)` out of the process.
  */
 function setConfigValue(cwd, keyPath, parsedValue) {
-  const configPath = path.join(planningDir(cwd), 'config.json');
+  // Prefer .cds/config.json when it exists with non-planning fields (Phase 53)
+  const cdsConfigPath = path.join(cwd, '.cds', 'config.json');
+  const planningConfigPath = path.join(planningDir(cwd), 'config.json');
+  let configPath = planningConfigPath;
+  try {
+    if (fs.existsSync(cdsConfigPath)) {
+      const cdsContent = JSON.parse(fs.readFileSync(cdsConfigPath, 'utf-8'));
+      const nonPlanningKeys = Object.keys(cdsContent).filter(k => k !== 'planning');
+      if (nonPlanningKeys.length > 0 || keyPath !== 'planning') {
+        configPath = cdsConfigPath;
+      }
+    }
+  } catch { /* fall through to planning config */ }
 
   return withPlanningLock(cwd, () => {
     // Load existing config or start with empty object

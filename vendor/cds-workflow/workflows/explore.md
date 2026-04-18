@@ -107,7 +107,7 @@ For each selected output, write the file:
 - **Seeds:** Create `.planning/seeds/{slug}.md` with frontmatter (title, trigger_condition, planted_date)
 - **Research questions:** Append to `.planning/research/questions.md`
 - **Requirements:** Append to `.planning/REQUIREMENTS.md` with next available REQ ID
-- **Phases:** Use existing `/gsd-add-phase` command via SlashCommand
+- **Phases:** Use existing `/cds-add-phase` command via SlashCommand
 
 Commit if `commit_docs` is enabled:
 ```bash
@@ -123,7 +123,7 @@ node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs: capture explor
 **Outputs:** {count} artifact(s) created
 {list of created files}
 
-Continue exploring with `/gsd-explore` or start working with `/gsd-next`.
+Continue exploring with `/cds-explore` or start working with `/cds-next`.
 ```
 
 </process>

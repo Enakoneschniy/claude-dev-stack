@@ -27,18 +27,18 @@ If `project_exists` is false (no `.planning/` directory):
 ```
 No planning structure found.
 
-Run /gsd-new-project to start a new project.
+Run /cds-new-project to start a new project.
 ```
 
 Exit.
 
-If missing STATE.md: suggest `/gsd-new-project`.
+If missing STATE.md: suggest `/cds-new-project`.
 
 **If ROADMAP.md missing but PROJECT.md exists:**
 
 This means a milestone was completed and archived. Go to **Route F** (between milestones).
 
-If missing both ROADMAP.md and PROJECT.md: suggest `/gsd-new-project`.
+If missing both ROADMAP.md and PROJECT.md: suggest `/cds-new-project`.
 </step>
 
 <step name="load">
@@ -123,10 +123,10 @@ CONTEXT: [✓ if has_context | - if not]
 - [e.g. jq -r '.blockers[].text' from state-snapshot]
 
 ## Pending Todos
-- [count] pending — /gsd-check-todos to review
+- [count] pending — /cds-check-todos to review
 
 ## Active Debug Sessions
-- [count] active — /gsd-debug to continue
+- [count] active — /cds-debug to continue
 (Only show this section if count > 0)
 
 ## What's Next
@@ -185,8 +185,8 @@ Track: `outstanding_debt` — `summary.total_items` from the audit.
 | {phase} | {filename} | {pending_count} pending, {skipped_count} skipped, {blocked_count} blocked |
 | {phase} | {filename} | human_needed — {count} items |
 
-Review: `/gsd-audit-uat ${GSD_WS}` — full cross-phase audit
-Resume testing: `/gsd-verify-work {phase} ${GSD_WS}` — retest specific phase
+Review: `/cds-audit-uat ${GSD_WS}` — full cross-phase audit
+Resume testing: `/cds-verify-work {phase} ${GSD_WS}` — retest specific phase
 ```
 
 This is a WARNING, not a blocker — routing proceeds normally. The debt is visible so the user can make an informed choice.
@@ -217,7 +217,7 @@ Read its `<objective>` section.
 
 `/clear` then:
 
-`/gsd-execute-phase {phase} ${GSD_WS}`
+`/cds-execute-phase {phase} ${GSD_WS}`
 
 ---
 ```
@@ -247,7 +247,7 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/gsd-plan-phase {phase-number} ${GSD_WS}`
+`/cds-plan-phase {phase-number} ${GSD_WS}`
 
 ---
 ```
@@ -263,14 +263,14 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/gsd-discuss-phase {phase}` — gather context and clarify approach
+`/cds-discuss-phase {phase}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/gsd-ui-phase {phase}` — generate UI design contract (recommended for frontend phases)
-- `/gsd-plan-phase {phase}` — skip discussion, plan directly
-- `/gsd-list-phase-assumptions {phase}` — see Claude's assumptions
+- `/cds-ui-phase {phase}` — generate UI design contract (recommended for frontend phases)
+- `/cds-plan-phase {phase}` — skip discussion, plan directly
+- `/cds-list-phase-assumptions {phase}` — see Claude's assumptions
 
 ---
 ```
@@ -286,13 +286,13 @@ PHASE_HAS_UI=$(echo "$PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true" ||
 
 `/clear` then:
 
-`/gsd-discuss-phase {phase} ${GSD_WS}` — gather context and clarify approach
+`/cds-discuss-phase {phase} ${GSD_WS}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/gsd-plan-phase {phase} ${GSD_WS}` — skip discussion, plan directly
-- `/gsd-list-phase-assumptions {phase} ${GSD_WS}` — see Claude's assumptions
+- `/cds-plan-phase {phase} ${GSD_WS}` — skip discussion, plan directly
+- `/cds-list-phase-assumptions {phase} ${GSD_WS}` — see Claude's assumptions
 
 ---
 ```
@@ -312,13 +312,13 @@ UAT.md exists with gaps (diagnosed issues). User needs to plan fixes.
 
 `/clear` then:
 
-`/gsd-plan-phase {phase} --gaps ${GSD_WS}`
+`/cds-plan-phase {phase} --gaps ${GSD_WS}`
 
 ---
 
 **Also available:**
-- `/gsd-execute-phase {phase} ${GSD_WS}` — execute phase plans
-- `/gsd-verify-work {phase} ${GSD_WS}` — run more UAT testing
+- `/cds-execute-phase {phase} ${GSD_WS}` — execute phase plans
+- `/cds-verify-work {phase} ${GSD_WS}` — run more UAT testing
 
 ---
 ```
@@ -338,13 +338,13 @@ UAT.md exists with `status: partial` — testing session ended before all items 
 
 `/clear` then:
 
-`/gsd-verify-work {phase} ${GSD_WS}` — resume testing from where you left off
+`/cds-verify-work {phase} ${GSD_WS}` — resume testing from where you left off
 
 ---
 
 **Also available:**
-- `/gsd-audit-uat ${GSD_WS}` — full cross-phase UAT audit
-- `/gsd-execute-phase {phase} ${GSD_WS}` — execute phase plans
+- `/cds-audit-uat ${GSD_WS}` — full cross-phase UAT audit
+- `/cds-execute-phase {phase} ${GSD_WS}` — execute phase plans
 
 ---
 ```
@@ -394,14 +394,14 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 
 `/clear` then:
 
-`/gsd-discuss-phase {Z+1}` — gather context and clarify approach
+`/cds-discuss-phase {Z+1}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/gsd-ui-phase {Z+1}` — generate UI design contract (recommended for frontend phases)
-- `/gsd-plan-phase {Z+1}` — skip discussion, plan directly
-- `/gsd-verify-work {Z}` — user acceptance test before continuing
+- `/cds-ui-phase {Z+1}` — generate UI design contract (recommended for frontend phases)
+- `/cds-plan-phase {Z+1}` — skip discussion, plan directly
+- `/cds-verify-work {Z}` — user acceptance test before continuing
 
 ---
 ```
@@ -419,13 +419,13 @@ NEXT_HAS_UI=$(echo "$NEXT_PHASE_SECTION" | grep -qi "UI hint.*yes" && echo "true
 
 `/clear` then:
 
-`/gsd-discuss-phase {Z+1} ${GSD_WS}` — gather context and clarify approach
+`/cds-discuss-phase {Z+1} ${GSD_WS}` — gather context and clarify approach
 
 ---
 
 **Also available:**
-- `/gsd-plan-phase {Z+1} ${GSD_WS}` — skip discussion, plan directly
-- `/gsd-verify-work {Z} ${GSD_WS}` — user acceptance test before continuing
+- `/cds-plan-phase {Z+1} ${GSD_WS}` — skip discussion, plan directly
+- `/cds-verify-work {Z} ${GSD_WS}` — user acceptance test before continuing
 
 ---
 ```
@@ -447,12 +447,12 @@ All {N} phases finished!
 
 `/clear` then:
 
-`/gsd-complete-milestone ${GSD_WS}`
+`/cds-complete-milestone ${GSD_WS}`
 
 ---
 
 **Also available:**
-- `/gsd-verify-work ${GSD_WS}` — user acceptance test before completing milestone
+- `/cds-verify-work ${GSD_WS}` — user acceptance test before completing milestone
 
 ---
 ```
@@ -478,7 +478,7 @@ Ready to plan the next milestone.
 
 `/clear` then:
 
-`/gsd-new-milestone ${GSD_WS}`
+`/cds-new-milestone ${GSD_WS}`
 
 ---
 ```
@@ -488,10 +488,10 @@ Ready to plan the next milestone.
 <step name="edge_cases">
 **Handle edge cases:**
 
-- Phase complete but next phase not planned → offer `/gsd-plan-phase [next] ${GSD_WS}`
+- Phase complete but next phase not planned → offer `/cds-plan-phase [next] ${GSD_WS}`
 - All work complete → offer milestone completion
 - Blockers present → highlight before offering to continue
-- Handoff file exists → mention it, offer `/gsd-resume-work ${GSD_WS}`
+- Handoff file exists → mention it, offer `/cds-resume-work ${GSD_WS}`
   </step>
 
 </process>
@@ -501,7 +501,7 @@ Ready to plan the next milestone.
 - [ ] Rich context provided (recent work, decisions, issues)
 - [ ] Current position clear with visual progress
 - [ ] What's next clearly explained
-- [ ] Smart routing: /gsd-execute-phase if plans exist, /gsd-plan-phase if not
+- [ ] Smart routing: /cds-execute-phase if plans exist, /cds-plan-phase if not
 - [ ] User confirms before any action
 - [ ] Seamless handoff to appropriate gsd command
       </success_criteria>

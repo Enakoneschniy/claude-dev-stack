@@ -1,44 +1,15 @@
 ---
 name: gsd-add-phase
-description: "Add phase to end of current milestone in roadmap"
-argument-hint: "<description>"
+description: "[DEPRECATED] Use /cds-add-phase instead"
 allowed-tools:
-  - Read
-  - Write
-  - Bash
+  - Skill
 ---
 
-
 <objective>
-Add a new integer phase to the end of the current milestone in the roadmap.
-
-Routes to the add-phase workflow which handles:
-- Phase number calculation (next sequential integer)
-- Directory creation with slug generation
-- Roadmap structure updates
-- STATE.md roadmap evolution tracking
+This command is deprecated. Use /cds-add-phase instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/add-phase.md
-</execution_context>
-
-<context>
-Arguments: $ARGUMENTS (phase description)
-
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted tool calls.
-</context>
-
 <process>
-**Follow the add-phase workflow** from `@$HOME/.claude/cds-workflow/workflows/add-phase.md`.
-
-The workflow handles all logic including:
-1. Argument parsing and validation
-2. Roadmap existence checking
-3. Current milestone identification
-4. Next phase number calculation (ignoring decimals)
-5. Slug generation from description
-6. Phase directory creation
-7. Roadmap entry insertion
-8. STATE.md updates
+1. Display: "⚠ /gsd-add-phase is deprecated. Use /cds-add-phase instead."
+2. Invoke: Skill(skill="cds-add-phase", args="$ARGUMENTS")
 </process>

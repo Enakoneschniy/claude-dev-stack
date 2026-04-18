@@ -1,22 +1,15 @@
 ---
 name: gsd-extract_learnings
-description: "Extract decisions, lessons, patterns, and surprises from completed phase artifacts"
-argument-hint: "<phase-number>"
+description: "[DEPRECATED] Use /cds-extract_learnings instead"
 allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - Grep
-  - Glob
-  - Agent
+  - Skill
 ---
 
 <objective>
-Extract structured learnings from completed phase artifacts (PLAN.md, SUMMARY.md, VERIFICATION.md, UAT.md, STATE.md) into a LEARNINGS.md file that captures decisions, lessons learned, patterns discovered, and surprises encountered.
+This command is deprecated. Use /cds-extract_learnings instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/extract_learnings.md
-</execution_context>
-
-Execute the extract-learnings workflow from @$HOME/.claude/cds-workflow/workflows/extract_learnings.md end-to-end.
+<process>
+1. Display: "⚠ /gsd-extract_learnings is deprecated. Use /cds-extract_learnings instead."
+2. Invoke: Skill(skill="cds-extract_learnings", args="$ARGUMENTS")
+</process>

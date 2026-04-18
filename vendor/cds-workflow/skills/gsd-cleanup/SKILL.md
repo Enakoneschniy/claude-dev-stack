@@ -1,24 +1,15 @@
 ---
 name: gsd-cleanup
-description: "Archive accumulated phase directories from completed milestones"
+description: "[DEPRECATED] Use /cds-cleanup instead"
 allowed-tools:
-  - Read
-  - Write
-  - Bash
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Archive phase directories from completed milestones into `.planning/milestones/v{X.Y}-phases/`.
-
-Use when `.planning/phases/` has accumulated directories from past milestones.
+This command is deprecated. Use /cds-cleanup instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/cleanup.md
-</execution_context>
-
 <process>
-Follow the cleanup workflow at @$HOME/.claude/cds-workflow/workflows/cleanup.md.
-Identify completed milestones, show a dry-run summary, and archive on confirmation.
+1. Display: "⚠ /gsd-cleanup is deprecated. Use /cds-cleanup instead."
+2. Invoke: Skill(skill="cds-cleanup", args="$ARGUMENTS")
 </process>

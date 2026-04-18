@@ -1,35 +1,15 @@
 ---
 name: gsd-note
-description: "Zero-friction idea capture. Append, list, or promote notes to todos."
-argument-hint: "<text> | list | promote <N> [--global]"
+description: "[DEPRECATED] Use /cds-note instead"
 allowed-tools:
-  - Read
-  - Write
-  - Glob
-  - Grep
+  - Skill
 ---
 
 <objective>
-Zero-friction idea capture — one Write call, one confirmation line.
-
-Three subcommands:
-- **append** (default): Save a timestamped note file. No questions, no formatting.
-- **list**: Show all notes from project and global scopes.
-- **promote**: Convert a note into a structured todo.
-
-Runs inline — no Task, no AskUserQuestion, no Bash.
+This command is deprecated. Use /cds-note instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/note.md
-@$HOME/.claude/cds-workflow/references/ui-brand.md
-</execution_context>
-
-<context>
-$ARGUMENTS
-</context>
-
 <process>
-Execute the note workflow from @$HOME/.claude/cds-workflow/workflows/note.md end-to-end.
-Capture the note, list notes, or promote to todo — depending on arguments.
+1. Display: "⚠ /gsd-note is deprecated. Use /cds-note instead."
+2. Invoke: Skill(skill="cds-note", args="$ARGUMENTS")
 </process>

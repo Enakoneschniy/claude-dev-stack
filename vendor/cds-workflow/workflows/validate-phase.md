@@ -28,7 +28,7 @@ AUDITOR_MODEL=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" resolve-mode
 NYQUIST_CFG=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.nyquist_validation --raw)
 ```
 
-If `NYQUIST_CFG` is `false`: exit with "Nyquist validation is disabled. Enable via /gsd-settings."
+If `NYQUIST_CFG` is `false`: exit with "Nyquist validation is disabled. Enable via /cds-settings."
 
 Display banner: `GSD > VALIDATE PHASE {N}: {name}`
 
@@ -41,7 +41,7 @@ SUMMARY_FILES=$(ls "${PHASE_DIR}"/*-SUMMARY.md 2>/dev/null)
 
 - **State A** (`VALIDATION_FILE` non-empty): Audit existing
 - **State B** (`VALIDATION_FILE` empty, `SUMMARY_FILES` non-empty): Reconstruct from artifacts
-- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /gsd-execute-phase {N} ${GSD_WS} first."
+- **State C** (`SUMMARY_FILES` empty): Exit — "Phase {N} not executed. Run /cds-execute-phase {N} ${GSD_WS} first."
 
 ## 2. Discovery
 
@@ -94,7 +94,7 @@ Call AskUserQuestion with gap table and options:
 
 ```
 Task(
-  prompt="Read $HOME/.claude/agents/gsd-nyquist-auditor.md for instructions.\n\n" +
+  prompt="Read $HOME/.claude/agents/cds-nyquist-auditor.md for instructions.\n\n" +
     "<files_to_read>{PLAN, SUMMARY, impl files, VALIDATION.md}</files_to_read>" +
     "<gaps>{gap list}</gaps>" +
     "<test_infrastructure>{framework, config, commands}</test_infrastructure>" +
@@ -146,14 +146,14 @@ node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs(phase-${PHASE})
 ```
 GSD > PHASE {N} IS NYQUIST-COMPLIANT
 All requirements have automated verification.
-▶ Next: /gsd-audit-milestone ${GSD_WS}
+▶ Next: /cds-audit-milestone ${GSD_WS}
 ```
 
 **Partial:**
 ```
 GSD > PHASE {N} VALIDATED (PARTIAL)
 {M} automated, {K} manual-only.
-▶ Retry: /gsd-validate-phase {N} ${GSD_WS}
+▶ Retry: /cds-validate-phase {N} ${GSD_WS}
 ```
 
 Display `/clear` reminder.

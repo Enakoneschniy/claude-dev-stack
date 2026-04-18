@@ -45,7 +45,7 @@ No external AI CLIs found. Install at least one:
 - qwen: https://github.com/nicepkg/qwen-code (Alibaba Qwen models)
 - cursor: https://cursor.com (Cursor IDE agent mode)
 
-Then run /gsd-review again.
+Then run /cds-review again.
 ```
 Exit.
 
@@ -144,7 +144,7 @@ Focus on:
 Output your review in markdown format.
 ```
 
-Write to a temp file: `/tmp/gsd-review-prompt-{phase}.md`
+Write to a temp file: `/tmp/cds-review-prompt-{phase}.md`
 </step>
 
 <step name="invoke_reviewers">
@@ -162,27 +162,27 @@ For each selected CLI, invoke in sequence (not parallel — avoid rate limits):
 **Gemini:**
 ```bash
 if [ -n "$GEMINI_MODEL" ] && [ "$GEMINI_MODEL" != "null" ]; then
-  gemini -m "$GEMINI_MODEL" -p "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-gemini-{phase}.md
+  gemini -m "$GEMINI_MODEL" -p "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-gemini-{phase}.md
 else
-  gemini -p "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-gemini-{phase}.md
+  gemini -p "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-gemini-{phase}.md
 fi
 ```
 
 **Claude (separate session):**
 ```bash
 if [ -n "$CLAUDE_MODEL" ] && [ "$CLAUDE_MODEL" != "null" ]; then
-  claude --model "$CLAUDE_MODEL" -p "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-claude-{phase}.md
+  claude --model "$CLAUDE_MODEL" -p "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-claude-{phase}.md
 else
-  claude -p "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-claude-{phase}.md
+  claude -p "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-claude-{phase}.md
 fi
 ```
 
 **Codex:**
 ```bash
 if [ -n "$CODEX_MODEL" ] && [ "$CODEX_MODEL" != "null" ]; then
-  codex exec --model "$CODEX_MODEL" --skip-git-repo-check "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-codex-{phase}.md
+  codex exec --model "$CODEX_MODEL" --skip-git-repo-check "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-codex-{phase}.md
 else
-  codex exec --skip-git-repo-check "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-codex-{phase}.md
+  codex exec --skip-git-repo-check "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-codex-{phase}.md
 fi
 ```
 
@@ -191,34 +191,34 @@ fi
 Note: CodeRabbit reviews the current git diff/working tree — it does not accept a prompt or model flag. It may take up to 5 minutes. Use `timeout: 360000` on the Bash tool call.
 
 ```bash
-coderabbit review --prompt-only 2>/dev/null > /tmp/gsd-review-coderabbit-{phase}.md
+coderabbit review --prompt-only 2>/dev/null > /tmp/cds-review-coderabbit-{phase}.md
 ```
 
 **OpenCode (via GitHub Copilot):**
 ```bash
 if [ -n "$OPENCODE_MODEL" ] && [ "$OPENCODE_MODEL" != "null" ]; then
-  cat /tmp/gsd-review-prompt-{phase}.md | opencode run --model "$OPENCODE_MODEL" - 2>/dev/null > /tmp/gsd-review-opencode-{phase}.md
+  cat /tmp/cds-review-prompt-{phase}.md | opencode run --model "$OPENCODE_MODEL" - 2>/dev/null > /tmp/cds-review-opencode-{phase}.md
 else
-  cat /tmp/gsd-review-prompt-{phase}.md | opencode run - 2>/dev/null > /tmp/gsd-review-opencode-{phase}.md
+  cat /tmp/cds-review-prompt-{phase}.md | opencode run - 2>/dev/null > /tmp/cds-review-opencode-{phase}.md
 fi
-if [ ! -s /tmp/gsd-review-opencode-{phase}.md ]; then
-  echo "OpenCode review failed or returned empty output." > /tmp/gsd-review-opencode-{phase}.md
+if [ ! -s /tmp/cds-review-opencode-{phase}.md ]; then
+  echo "OpenCode review failed or returned empty output." > /tmp/cds-review-opencode-{phase}.md
 fi
 ```
 
 **Qwen Code:**
 ```bash
-qwen "$(cat /tmp/gsd-review-prompt-{phase}.md)" 2>/dev/null > /tmp/gsd-review-qwen-{phase}.md
-if [ ! -s /tmp/gsd-review-qwen-{phase}.md ]; then
-  echo "Qwen review failed or returned empty output." > /tmp/gsd-review-qwen-{phase}.md
+qwen "$(cat /tmp/cds-review-prompt-{phase}.md)" 2>/dev/null > /tmp/cds-review-qwen-{phase}.md
+if [ ! -s /tmp/cds-review-qwen-{phase}.md ]; then
+  echo "Qwen review failed or returned empty output." > /tmp/cds-review-qwen-{phase}.md
 fi
 ```
 
 **Cursor:**
 ```bash
-cat /tmp/gsd-review-prompt-{phase}.md | cursor agent -p --mode ask --trust 2>/dev/null > /tmp/gsd-review-cursor-{phase}.md
-if [ ! -s /tmp/gsd-review-cursor-{phase}.md ]; then
-  echo "Cursor review failed or returned empty output." > /tmp/gsd-review-cursor-{phase}.md
+cat /tmp/cds-review-prompt-{phase}.md | cursor agent -p --mode ask --trust 2>/dev/null > /tmp/cds-review-cursor-{phase}.md
+if [ ! -s /tmp/cds-review-cursor-{phase}.md ]; then
+  echo "Cursor review failed or returned empty output." > /tmp/cds-review-cursor-{phase}.md
 fi
 ```
 
@@ -326,7 +326,7 @@ Consensus concerns:
 Full review: {padded_phase}-REVIEWS.md
 
 To incorporate feedback into planning:
-  /gsd-plan-phase {N} --reviews
+  /cds-plan-phase {N} --reviews
 ```
 
 Clean up temp files.
@@ -339,5 +339,5 @@ Clean up temp files.
 - [ ] REVIEWS.md written with structured feedback
 - [ ] Consensus summary synthesized from multiple reviewers
 - [ ] Temp files cleaned up
-- [ ] User knows how to use feedback (/gsd-plan-phase --reviews)
+- [ ] User knows how to use feedback (/cds-plan-phase --reviews)
 </success_criteria>

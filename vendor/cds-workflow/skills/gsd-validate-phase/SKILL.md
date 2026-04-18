@@ -1,36 +1,15 @@
 ---
 name: gsd-validate-phase
-description: "Retroactively audit and fill Nyquist validation gaps for a completed phase"
-argument-hint: "[phase number]"
+description: "[DEPRECATED] Use /cds-validate-phase instead"
 allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Task
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Audit Nyquist validation coverage for a completed phase. Three states:
-- (A) VALIDATION.md exists — audit and fill gaps
-- (B) No VALIDATION.md, SUMMARY.md exists — reconstruct from artifacts
-- (C) Phase not executed — exit with guidance
-
-Output: updated VALIDATION.md + generated test files.
+This command is deprecated. Use /cds-validate-phase instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/validate-phase.md
-</execution_context>
-
-<context>
-Phase: $ARGUMENTS — optional, defaults to last completed phase.
-</context>
-
 <process>
-Execute @$HOME/.claude/cds-workflow/workflows/validate-phase.md.
-Preserve all workflow gates.
+1. Display: "⚠ /gsd-validate-phase is deprecated. Use /cds-validate-phase instead."
+2. Invoke: Skill(skill="cds-validate-phase", args="$ARGUMENTS")
 </process>

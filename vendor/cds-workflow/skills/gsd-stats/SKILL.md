@@ -1,19 +1,15 @@
 ---
 name: gsd-stats
-description: "Display project statistics — phases, plans, requirements, git metrics, and timeline"
+description: "[DEPRECATED] Use /cds-stats instead"
 allowed-tools:
-  - Read
-  - Bash
+  - Skill
 ---
 
 <objective>
-Display comprehensive project statistics including phase progress, plan execution metrics, requirements completion, git history stats, and project timeline.
+This command is deprecated. Use /cds-stats instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/stats.md
-</execution_context>
-
 <process>
-Execute the stats workflow from @$HOME/.claude/cds-workflow/workflows/stats.md end-to-end.
+1. Display: "⚠ /gsd-stats is deprecated. Use /cds-stats instead."
+2. Invoke: Skill(skill="cds-stats", args="$ARGUMENTS")
 </process>

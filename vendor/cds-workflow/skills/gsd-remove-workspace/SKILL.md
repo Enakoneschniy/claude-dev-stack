@@ -1,27 +1,15 @@
 ---
 name: gsd-remove-workspace
-description: "Remove a GSD workspace and clean up worktrees"
-argument-hint: "<workspace-name>"
+description: "[DEPRECATED] Use /cds-remove-workspace instead"
 allowed-tools:
-  - Bash
-  - Read
-  - AskUserQuestion
+  - Skill
 ---
 
-<context>
-**Arguments:**
-- `<workspace-name>` (required) — Name of the workspace to remove
-</context>
-
 <objective>
-Remove a workspace directory after confirmation. For worktree strategy, runs `git worktree remove` for each member repo first. Refuses if any repo has uncommitted changes.
+This command is deprecated. Use /cds-remove-workspace instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/remove-workspace.md
-@$HOME/.claude/cds-workflow/references/ui-brand.md
-</execution_context>
-
 <process>
-Execute the remove-workspace workflow from @$HOME/.claude/cds-workflow/workflows/remove-workspace.md end-to-end.
+1. Display: "⚠ /gsd-remove-workspace is deprecated. Use /cds-remove-workspace instead."
+2. Invoke: Skill(skill="cds-remove-workspace", args="$ARGUMENTS")
 </process>

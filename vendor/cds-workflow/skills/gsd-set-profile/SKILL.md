@@ -1,12 +1,15 @@
 ---
 name: gsd-set-profile
-description: "Switch model profile for GSD agents (quality/balanced/budget/inherit)"
-argument-hint: "<profile (quality|balanced|budget|inherit)>"
+description: "[DEPRECATED] Use /cds-set-profile instead"
 allowed-tools:
-  - Bash
+  - Skill
 ---
 
+<objective>
+This command is deprecated. Use /cds-set-profile instead.
+</objective>
 
-Show the following output to the user verbatim, with no extra commentary:
-
-!`node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-set-model-profile $ARGUMENTS --raw`
+<process>
+1. Display: "⚠ /gsd-set-profile is deprecated. Use /cds-set-profile instead."
+2. Invoke: Skill(skill="cds-set-profile", args="$ARGUMENTS")
+</process>

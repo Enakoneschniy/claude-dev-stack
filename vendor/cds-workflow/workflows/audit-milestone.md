@@ -158,7 +158,7 @@ Classify per phase:
 
 Add to audit YAML: `nyquist: { compliant_phases, partial_phases, missing_phases, overall }`
 
-Discovery only — never auto-calls `/gsd-validate-phase`.
+Discovery only — never auto-calls `/cds-validate-phase`.
 
 ## 6. Aggregate into v{version}-MILESTONE-AUDIT.md
 
@@ -231,7 +231,7 @@ All requirements covered. Cross-phase integration verified. E2E flows complete.
 
 /clear then:
 
-/gsd-complete-milestone {version}
+/cds-complete-milestone {version}
 
 ───────────────────────────────────────────────────────────────
 
@@ -264,9 +264,9 @@ All requirements covered. Cross-phase integration verified. E2E flows complete.
 
 | Phase | VALIDATION.md | Compliant | Action |
 |-------|---------------|-----------|--------|
-| {phase} | exists/missing | true/false/partial | `/gsd-validate-phase {N}` |
+| {phase} | exists/missing | true/false/partial | `/cds-validate-phase {N}` |
 
-Phases needing validation: run `/gsd-validate-phase {N}` for each flagged phase.
+Phases needing validation: run `/cds-validate-phase {N}` for each flagged phase.
 
 ───────────────────────────────────────────────────────────────
 
@@ -276,13 +276,13 @@ Phases needing validation: run `/gsd-validate-phase {N}` for each flagged phase.
 
 /clear then:
 
-/gsd-plan-milestone-gaps
+/cds-plan-milestone-gaps
 
 ───────────────────────────────────────────────────────────────
 
 **Also available:**
 - cat .planning/v{version}-MILESTONE-AUDIT.md — see full report
-- /gsd-complete-milestone {version} — proceed anyway (accept tech debt)
+- /cds-complete-milestone {version} — proceed anyway (accept tech debt)
 
 ───────────────────────────────────────────────────────────────
 
@@ -312,13 +312,13 @@ All requirements met. No critical blockers. Accumulated tech debt needs review.
 
 **A. Complete milestone** — accept debt, track in backlog
 
-/gsd-complete-milestone {version}
+/cds-complete-milestone {version}
 
 **B. Plan cleanup phase** — address debt before completing
 
 /clear then:
 
-/gsd-plan-milestone-gaps
+/cds-plan-milestone-gaps
 
 ───────────────────────────────────────────────────────────────
 </offer_next>

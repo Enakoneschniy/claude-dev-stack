@@ -1,33 +1,15 @@
 ---
 name: gsd-insert-phase
-description: "Insert urgent work as decimal phase (e.g., 72.1) between existing phases"
-argument-hint: "<after> <description>"
+description: "[DEPRECATED] Use /cds-insert-phase instead"
 allowed-tools:
-  - Read
-  - Write
-  - Bash
+  - Skill
 ---
 
-
 <objective>
-Insert a decimal phase for urgent work discovered mid-milestone that must be completed between existing integer phases.
-
-Uses decimal numbering (72.1, 72.2, etc.) to preserve the logical sequence of planned phases while accommodating urgent insertions.
-
-Purpose: Handle urgent work discovered during execution without renumbering entire roadmap.
+This command is deprecated. Use /cds-insert-phase instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/insert-phase.md
-</execution_context>
-
-<context>
-Arguments: $ARGUMENTS (format: <after-phase-number> <description>)
-
-Roadmap and state are resolved in-workflow via `init phase-op` and targeted tool calls.
-</context>
-
 <process>
-Execute the insert-phase workflow from @$HOME/.claude/cds-workflow/workflows/insert-phase.md end-to-end.
-Preserve all validation gates (argument parsing, phase verification, decimal calculation, roadmap updates).
+1. Display: "⚠ /gsd-insert-phase is deprecated. Use /cds-insert-phase instead."
+2. Invoke: Skill(skill="cds-insert-phase", args="$ARGUMENTS")
 </process>

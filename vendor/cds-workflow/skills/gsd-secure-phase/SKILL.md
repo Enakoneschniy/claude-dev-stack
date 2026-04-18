@@ -1,36 +1,15 @@
 ---
 name: gsd-secure-phase
-description: "Retroactively verify threat mitigations for a completed phase"
-argument-hint: "[phase number]"
+description: "[DEPRECATED] Use /cds-secure-phase instead"
 allowed-tools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
-  - Task
-  - AskUserQuestion
+  - Skill
 ---
 
 <objective>
-Verify threat mitigations for a completed phase. Three states:
-- (A) SECURITY.md exists — audit and verify mitigations
-- (B) No SECURITY.md, PLAN.md with threat model exists — run from artifacts
-- (C) Phase not executed — exit with guidance
-
-Output: updated SECURITY.md.
+This command is deprecated. Use /cds-secure-phase instead.
 </objective>
 
-<execution_context>
-@$HOME/.claude/cds-workflow/workflows/secure-phase.md
-</execution_context>
-
-<context>
-Phase: $ARGUMENTS — optional, defaults to last completed phase.
-</context>
-
 <process>
-Execute @$HOME/.claude/cds-workflow/workflows/secure-phase.md.
-Preserve all workflow gates.
+1. Display: "⚠ /gsd-secure-phase is deprecated. Use /cds-secure-phase instead."
+2. Invoke: Skill(skill="cds-secure-phase", args="$ARGUMENTS")
 </process>
