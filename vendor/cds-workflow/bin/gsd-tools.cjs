@@ -342,6 +342,10 @@ async function main() {
     cwd = findProjectRoot(cwd);
   }
 
+  // Auto-migrate .planning/ to vault if conditions met (Phase 51, D-07)
+  const { migratePlanningToVault } = require('./lib/core.cjs');
+  migratePlanningToVault(cwd);
+
   // When --pick is active, intercept stdout to extract the requested field.
   if (pickField) {
     const origWriteSync = fs.writeSync;

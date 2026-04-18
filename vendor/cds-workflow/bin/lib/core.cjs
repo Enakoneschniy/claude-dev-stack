@@ -810,6 +810,67 @@ function resolveVaultPlanning(cwd) {
   return resolved;
 }
 
+/**
+ * Auto-migrate .planning/ to vault location when:
+ *  1. A local .planning/ directory exists
+ *  2. .cds/config.json points to vault://planning
+ *  3. The vault target does NOT already have content (migration not yet done)
+ *
+ * Performs a physical move (copy + verify + remove original). Prints an
+ * informational notice to stderr. Returns true if migration ran, false otherwise.
+ *
+ * Security: copy is verified by checking STATE.md exists in target before
+ * removing the original (T-51-04).
+ *
+ * @param {string} cwd - project root
+ * @returns {boolean} true if migration was performed, false if skipped
+ */
+function migratePlanningToVault(cwd) {
+  const localPlanning = path.join(cwd, '.planning');
+
+  // Condition 1: local .planning/ must exist
+  if (!fs.existsSync(localPlanning) || !fs.statSync(localPlanning).isDirectory()) return false;
+
+  // Condition 2: .cds/config.json must exist with vault://planning
+  const vaultTarget = resolveVaultPlanning(cwd);
+  if (!vaultTarget) return false;
+
+  // Condition 3: vault target must NOT already have content (migration already done)
+  if (fs.existsSync(vaultTarget) && fs.readdirSync(vaultTarget).length > 0) return false;
+
+  // Print migration notice — informational only, no user confirmation required
+  // (per Claude's Discretion in 51-CONTEXT.md: auto-approve with notice)
+  process.stderr.write(
+    `\n  [CDS] Planning relocation detected.\n` +
+    `  Moving: ${localPlanning}\n` +
+    `  To:     ${vaultTarget}\n` +
+    `  Project git will no longer receive planning commits.\n\n`
+  );
+
+  // Create target directory
+  fs.mkdirSync(vaultTarget, { recursive: true });
+
+  // Copy all contents (physical move step 1 — per D-04)
+  fs.cpSync(localPlanning, vaultTarget, { recursive: true });
+
+  // Verify copy succeeded — check that STATE.md exists in target (T-51-04 sanity check)
+  const checkFile = path.join(vaultTarget, 'STATE.md');
+  if (!fs.existsSync(checkFile)) {
+    process.stderr.write(`  [CDS] WARNING: Migration may be incomplete — STATE.md not found in target.\n`);
+    process.stderr.write(`  [CDS] Keeping original .planning/ as safety fallback.\n\n`);
+    return false;
+  }
+
+  // Remove original (completing the "move" per D-04)
+  fs.rmSync(localPlanning, { recursive: true, force: true });
+
+  // Clear the vault planning cache so subsequent calls resolve to new location
+  _vaultPlanningCache.clear();
+
+  process.stderr.write(`  [CDS] Migration complete. Planning artifacts now in vault.\n\n`);
+  return true;
+}
+
 function planningDir(cwd, ws, project) {
   if (project === undefined) project = process.env.GSD_PROJECT || null;
   if (ws === undefined) ws = process.env.GSD_WORKSTREAM || null;
@@ -1753,6 +1814,7 @@ module.exports = {
   MODEL_ALIAS_MAP,
   CONFIG_DEFAULTS,
   resolveVaultPlanning,
+  migratePlanningToVault,
   planningDir,
   planningRoot,
   planningPaths,
