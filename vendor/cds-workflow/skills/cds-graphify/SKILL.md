@@ -40,9 +40,9 @@ GSD > GRAPHIFY
 
 Knowledge graph is disabled. To activate:
 
-  node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs config-set graphify.enabled true
+  node $HOME/.claude/cds-workflow/bin/cds-tools.cjs config-set graphify.enabled true
 
-Then run /gsd-graphify build to create the initial graph.
+Then run /cds-graphify build to create the initial graph.
 ```
 
 ---
@@ -64,7 +64,7 @@ Parse `$ARGUMENTS` to determine the operation mode:
 ```
 GSD > GRAPHIFY
 
-Usage: /gsd-graphify <mode>
+Usage: /cds-graphify <mode>
 
 Modes:
   build           Build or rebuild the knowledge graph
@@ -78,13 +78,13 @@ Modes:
 Run:
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs graphify query <term>
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs graphify query <term>
 ```
 
 Parse the JSON output and display results:
 - If the output contains `"disabled": true`, display the disabled message from Step 1 and **STOP**
 - If the output contains `"error"` field, display the error message and **STOP**
-- If no nodes found, display: `No graph matches for '<term>'. Try /gsd-graphify build to create or rebuild the graph.`
+- If no nodes found, display: `No graph matches for '<term>'. Try /cds-graphify build to create or rebuild the graph.`
 - Otherwise, display matched nodes grouped by type, with edge relationships and confidence tiers (EXTRACTED/INFERRED/AMBIGUOUS)
 
 **STOP** after displaying results. Do not spawn an agent.
@@ -94,7 +94,7 @@ Parse the JSON output and display results:
 Run:
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs graphify status
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs graphify status
 ```
 
 Parse the JSON output and display:
@@ -108,7 +108,7 @@ Parse the JSON output and display:
 Run:
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs graphify diff
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs graphify diff
 ```
 
 Parse the JSON output and display:
@@ -126,7 +126,7 @@ If no snapshot exists, suggest running `build` twice (first to create, second to
 Run pre-flight check first:
 
 ```
-PREFLIGHT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" graphify build)
+PREFLIGHT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" graphify build)
 ```
 
 If pre-flight returns `disabled: true` or `error`, display the message and **STOP**.
@@ -145,7 +145,7 @@ Task(
   prompt="You are the graphify-builder agent. Your job is to build or rebuild the project knowledge graph using the graphify CLI.
 
 Project root: ${CWD}
-gsd-tools path: $HOME/.claude/cds-workflow/bin/gsd-tools.cjs
+gsd-tools path: $HOME/.claude/cds-workflow/bin/cds-tools.cjs
 
 ## Instructions
 
@@ -173,13 +173,13 @@ gsd-tools path: $HOME/.claude/cds-workflow/bin/gsd-tools.cjs
 
 4. **Write diff snapshot:**
    ```
-   node \"$HOME/.claude/cds-workflow/bin/gsd-tools.cjs\" graphify build snapshot
+   node \"$HOME/.claude/cds-workflow/bin/cds-tools.cjs\" graphify build snapshot
    ```
    This creates .planning/graphs/.last-build-snapshot.json for future diff comparisons.
 
 5. **Report build summary:**
    ```
-   node \"$HOME/.claude/cds-workflow/bin/gsd-tools.cjs\" graphify status
+   node \"$HOME/.claude/cds-workflow/bin/cds-tools.cjs\" graphify status
    ```
    Display the node count, edge count, and hyperedge count from the status output.
 

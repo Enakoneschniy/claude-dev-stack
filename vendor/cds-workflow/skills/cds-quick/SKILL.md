@@ -72,7 +72,7 @@ For each directory found:
 - Check if PLAN.md exists
 - Check if SUMMARY.md exists; if so, read `status` from its frontmatter via:
   ```bash
-  node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" frontmatter get .planning/quick/{dir}/SUMMARY.md --field status 2>/dev/null
+  node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" frontmatter get .planning/quick/{dir}/SUMMARY.md --field status 2>/dev/null
   ```
 - Determine directory creation date: `stat -f "%SB" -t "%Y-%m-%d"` (macOS) or `stat -c "%w"` (Linux); fall back to the date prefix in the directory name (format: `YYYYMMDD-` prefix)
 - Derive display status:
@@ -119,7 +119,7 @@ Status: {status from SUMMARY.md frontmatter, or "no summary yet"}
 Description: {first non-empty line from PLAN.md after frontmatter}
 Last action: {last meaningful line of SUMMARY.md, or "none"}
 ─────────────────────────────────────
-Resume with: /gsd-quick resume {slug}
+Resume with: /cds-quick resume {slug}
 ```
 
 No agent spawn. STOP after printing.
@@ -145,7 +145,7 @@ When SUBCMD=resume and SLUG is set (already sanitized):
 
 5. Load context via:
    ```bash
-   node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init quick
+   node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init quick
    ```
 
 6. Proceed to execute the quick workflow with resume context, passing the slug and plan directory so the executor picks up where it left off.

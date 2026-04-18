@@ -53,18 +53,18 @@ ls .planning/debug/*.md 2>/dev/null | grep -v resolved | head -5
 ## 0. Initialize Context
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state load)
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state load)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
 Extract `commit_docs` from init JSON. Resolve debugger model:
 ```bash
-debugger_model=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" resolve-model gsd-debugger --raw)
+debugger_model=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" resolve-model gsd-debugger --raw)
 ```
 
 Read TDD mode from config:
 ```bash
-TDD_MODE=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get tdd_mode 2>/dev/null || echo "false")
+TDD_MODE=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get tdd_mode 2>/dev/null || echo "false")
 ```
 
 ## 1a. LIST subcommand
@@ -89,11 +89,11 @@ Active Debug Sessions
      hypothesis: Missing null check on req.body.user
      next: Verify fix passes regression test
 ─────────────────────────────────────────────
-Run `/gsd-debug continue <slug>` to resume a session.
-No sessions? `/gsd-debug <description>` to start.
+Run `/cds-debug continue <slug>` to resume a session.
+No sessions? `/cds-debug <description>` to start.
 ```
 
-If no files exist or the glob returns nothing: print "No active debug sessions. Run `/gsd-debug <issue description>` to start one."
+If no files exist or the glob returns nothing: print "No active debug sessions. Run `/cds-debug <issue description>` to start one."
 
 STOP after displaying list. Do NOT proceed to further steps.
 
@@ -118,7 +118,7 @@ No agent spawn. Just information display. STOP after printing.
 
 When SUBCMD=continue and SLUG is set:
 
-Check `.planning/debug/{SLUG}.md` exists. If not, print "No active debug session found with slug: {SLUG}. Check `/gsd-debug list` for active sessions." and stop.
+Check `.planning/debug/{SLUG}.md` exists. If not, print "No active debug session found with slug: {SLUG}. Check `/cds-debug list` for active sessions." and stop.
 
 Read file and print Current Focus block to console:
 
@@ -248,7 +248,7 @@ specialist_dispatch_enabled: true
 Display the compact summary returned by the session manager.
 
 If summary shows `DEBUG SESSION COMPLETE`: done.
-If summary shows `ABANDONED`: note session saved at `.planning/debug/{slug}.md` for later `/gsd-debug continue {slug}`.
+If summary shows `ABANDONED`: note session saved at `.planning/debug/{slug}.md` for later `/cds-debug continue {slug}`.
 
 </process>
 

@@ -13,7 +13,7 @@ allowed-tools:
 **Flags:**
 - `--name` (required) — Workspace name
 - `--repos` — Comma-separated repo paths or names. If omitted, interactive selection from child git repos in cwd
-- `--path` — Target directory. Defaults to `~/gsd-workspaces/<name>`
+- `--path` — Target directory. Defaults to `~/cds-workspaces/<name>`
 - `--strategy` — `worktree` (default, lightweight) or `clone` (fully independent)
 - `--branch` — Branch to checkout. Defaults to `workspace/<name>`
 - `--auto` — Skip interactive questions, use defaults
@@ -31,7 +31,7 @@ Create a physical workspace directory containing copies of specified git repos (
 - `<path>/.planning/` — independent planning directory
 - `<path>/<repo>/` — git worktree or clone for each specified repo
 
-**After this command:** `cd` into the workspace and run `/gsd-new-project` to initialize GSD.
+**After this command:** `cd` into the workspace and run `/cds-new-project` to initialize GSD.
 </objective>
 
 <execution_context>
