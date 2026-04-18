@@ -90,3 +90,6 @@ if [ -n "$MEMORY_OUT" ]; then
   echo ""
   echo "$MEMORY_OUT"
 fi
+
+# CDS update check: detached npm view (never blocks)
+node "$HOOKS_DIR/cds-check-update.mjs" 2>/dev/null &
