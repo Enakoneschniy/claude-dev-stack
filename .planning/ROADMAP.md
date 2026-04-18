@@ -224,8 +224,8 @@ Plans:
   4. All existing GSD commands still work identically after vendor.
 **Plans**: 2 plans
 Plans:
-- [ ] 50-01-PLAN.md — Vendor copy + path rewrite + LICENSE + NOTICES.md
-- [ ] 50-02-PLAN.md — Install/update/detect rewrite + patches dissolution + test updates
+- [x] 50-01-PLAN.md — Vendor copy + path rewrite + LICENSE + NOTICES.md
+- [x] 50-02-PLAN.md — Install/update/detect rewrite + patches dissolution + test updates
 
 ### Phase 51: Planning Relocation
 **Goal**: Move `.planning/` directory out of project git into vault, with a pointer file in the project repo.
@@ -289,7 +289,7 @@ Plans:
 | 46. SDK Dispatch + DEMO-01 Fix | v1.0 | 2/2 | Complete | 2026-04-17 |
 | 47. Plugin SDK | v1.0 | 2/2 | Complete | 2026-04-17 |
 | 48. Web Dashboard | v1.0 | 2/2 | Complete | 2026-04-17 |
-| 50. GSD Fork + Vendor | v1.0 | 0/2 | Planning complete | — |
+| 50. GSD Fork + Vendor | v1.0 | 2/2 | Complete   | 2026-04-18 |
 | 51. Planning Relocation | v1.0 | 0/? | Not started | — |
 | 52. CDS CLI Commands | v1.0 | 0/? | Not started | — |
 | 53. Config System | v1.0 | 0/? | Not started | — |
