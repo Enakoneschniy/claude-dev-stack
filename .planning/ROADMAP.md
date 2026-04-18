@@ -236,7 +236,10 @@ Plans:
   2. `cds.config.json` in project repo points to planning location: `{ "planning": "vault://planning" }`.
   3. Project git history no longer receives planning commits (STATE.md, ROADMAP.md changes go to vault).
   4. Existing `.planning/` content migrated to vault automatically on first run.
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 51-01-PLAN.md — Vault-aware path resolution + .cds/config.json + .gitignore
+- [ ] 51-02-PLAN.md — Auto-migration of .planning/ to vault + human verification
 
 ### Phase 52: CDS CLI Commands
 **Goal**: CDS CLI commands (`/cds-*`) replace all `/gsd-*` commands with a mapping layer and deprecation notices.
@@ -290,7 +293,7 @@ Plans:
 | 47. Plugin SDK | v1.0 | 2/2 | Complete | 2026-04-17 |
 | 48. Web Dashboard | v1.0 | 2/2 | Complete | 2026-04-17 |
 | 50. GSD Fork + Vendor | v1.0 | 2/2 | Complete    | 2026-04-18 |
-| 51. Planning Relocation | v1.0 | 0/? | Not started | — |
+| 51. Planning Relocation | v1.0 | 0/2 | Planned | — |
 | 52. CDS CLI Commands | v1.0 | 0/? | Not started | — |
 | 53. Config System | v1.0 | 0/? | Not started | — |
 | 54. Update + Statusline | v1.0 | 0/? | Not started | — |
