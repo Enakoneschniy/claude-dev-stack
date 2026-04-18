@@ -19,10 +19,10 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 ## 1. Initialize
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init plan-phase "$PHASE")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init plan-phase "$PHASE")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS_UI=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" agent-skills gsd-ui-researcher 2>/dev/null)
-AGENT_SKILLS_UI_CHECKER=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" agent-skills gsd-ui-checker 2>/dev/null)
+AGENT_SKILLS_UI=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" agent-skills gsd-ui-researcher 2>/dev/null)
+AGENT_SKILLS_UI_CHECKER=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" agent-skills gsd-ui-checker 2>/dev/null)
 ```
 
 Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded_phase`, `has_context`, `has_research`, `commit_docs`.
@@ -32,30 +32,30 @@ Parse JSON for: `phase_dir`, `phase_number`, `phase_name`, `phase_slug`, `padded
 Resolve UI agent models:
 
 ```bash
-UI_RESEARCHER_MODEL=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" resolve-model gsd-ui-researcher --raw)
-UI_CHECKER_MODEL=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" resolve-model gsd-ui-checker --raw)
+UI_RESEARCHER_MODEL=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" resolve-model gsd-ui-researcher --raw)
+UI_CHECKER_MODEL=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" resolve-model gsd-ui-checker --raw)
 ```
 
 Check config:
 
 ```bash
-UI_ENABLED=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.ui_phase 2>/dev/null || echo "true")
+UI_ENABLED=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get workflow.ui_phase 2>/dev/null || echo "true")
 ```
 
 **If `UI_ENABLED` is `false`:**
 ```
-UI phase is disabled in config. Enable via /gsd-settings.
+UI phase is disabled in config. Enable via /cds-settings.
 ```
 Exit workflow.
 
-**If `planning_exists` is false:** Error — run `/gsd-new-project` first.
+**If `planning_exists` is false:** Error — run `/cds-new-project` first.
 
 ## 2. Parse and Validate Phase
 
 Extract phase number from $ARGUMENTS. If not provided, detect next unplanned phase.
 
 ```bash
-PHASE_INFO=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" roadmap get-phase "${PHASE}")
+PHASE_INFO=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" roadmap get-phase "${PHASE}")
 ```
 
 **If `found` is false:** Error with available phases.
@@ -65,7 +65,7 @@ PHASE_INFO=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" roadmap get-pha
 **If `has_context` is false:**
 ```
 No CONTEXT.md found for Phase {N}.
-Recommended: run /gsd-discuss-phase {N} first to capture design preferences.
+Recommended: run /cds-discuss-phase {N} first to capture design preferences.
 Continuing without user decisions — UI researcher will ask all questions.
 ```
 Continue (non-blocking).
@@ -111,7 +111,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read $HOME/.claude/agents/gsd-ui-researcher.md for instructions.
+Read $HOME/.claude/agents/cds-ui-researcher.md for instructions.
 
 <objective>
 Create UI design contract for Phase {phase_number}: {phase_name}
@@ -122,7 +122,7 @@ Answer: "What visual and interaction contracts does this phase need?"
 - {state_path} (Project State)
 - {roadmap_path} (Roadmap)
 - {requirements_path} (Requirements)
-- {context_path} (USER DECISIONS from /gsd-discuss-phase)
+- {context_path} (USER DECISIONS from /cds-discuss-phase)
 - {research_path} (Technical Research — stack decisions)
 </files_to_read>
 
@@ -173,7 +173,7 @@ Display:
 Build prompt:
 
 ```markdown
-Read $HOME/.claude/agents/gsd-ui-checker.md for instructions.
+Read $HOME/.claude/agents/cds-ui-checker.md for instructions.
 
 <objective>
 Validate UI design contract for Phase {phase_number}: {phase_name}
@@ -240,7 +240,7 @@ Max revision iterations reached. Remaining issues:
 
 Options:
 1. Force approve — proceed with current UI-SPEC (FLAGs become accepted)
-2. Edit manually — open UI-SPEC.md in editor, re-run /gsd-ui-phase
+2. Edit manually — open UI-SPEC.md in editor, re-run /cds-ui-phase
 3. Abandon — exit without approving
 ```
 
@@ -266,14 +266,14 @@ Dimensions: 6/6 passed
 {If CONTEXT.md exists for this phase:}
 **Plan Phase {N}** — planner will use UI-SPEC.md as design context
 
-`/clear` then: `/gsd-plan-phase {N}`
+`/clear` then: `/cds-plan-phase {N}`
 
 {If CONTEXT.md does NOT exist:}
 **Discuss Phase {N}** — gather implementation context before planning
 
-`/clear` then: `/gsd-discuss-phase {N}`
+`/clear` then: `/cds-discuss-phase {N}`
 
-(or `/gsd-plan-phase {N}` to skip discussion)
+(or `/cds-plan-phase {N}` to skip discussion)
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -281,13 +281,13 @@ Dimensions: 6/6 passed
 ## 11. Commit (if configured)
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs(${padded_phase}): UI design contract" --files "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```
 
 ## 12. Update State
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state record-session \
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state record-session \
   --stopped-at "Phase ${PHASE} UI-SPEC approved" \
   --resume-file "${PHASE_DIR}/${PADDED_PHASE}-UI-SPEC.md"
 ```

@@ -16,7 +16,7 @@ Analyze completed phase artifacts (PLAN.md, SUMMARY.md, VERIFICATION.md, UAT.md,
 Parse arguments and load project state:
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -179,7 +179,7 @@ The body follows this structure:
 Update STATE.md to reflect the learning extraction:
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
 ```
 </step>
 
@@ -201,8 +201,8 @@ Missing artifacts: {list or "none"}
 
 Next steps:
 - Review extracted learnings for accuracy
-- /gsd-progress — see overall project state
-- /gsd-execute-phase {next} — continue to next phase
+- /cds-progress — see overall project state
+- /cds-execute-phase {next} — continue to next phase
 
 ---------------------------------------------------------------
 ```

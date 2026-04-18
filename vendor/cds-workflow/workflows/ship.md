@@ -12,7 +12,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 Parse arguments and load project state:
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -20,14 +20,14 @@ Parse from init JSON: `phase_found`, `phase_dir`, `phase_number`, `phase_name`, 
 
 Also load config for branching strategy:
 ```bash
-CONFIG=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state load)
+CONFIG=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state load)
 ```
 
 Extract: `branching_strategy`, `branch_name`.
 
 Detect base branch for PRs and merges:
 ```bash
-BASE_BRANCH=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get git.base_branch 2>/dev/null || echo "")
+BASE_BRANCH=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get git.base_branch 2>/dev/null || echo "")
 if [ -z "$BASE_BRANCH" ] || [ "$BASE_BRANCH" = "null" ]; then
   BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|^refs/remotes/origin/||')
   BASE_BRANCH="${BASE_BRANCH:-main}"
@@ -165,7 +165,7 @@ Report: "PR #{number} created: {url}"
 Before prompting the user, check if an external review command is configured:
 
 ```bash
-REVIEW_CMD=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.code_review_command --default "" 2>/dev/null)
+REVIEW_CMD=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get workflow.code_review_command --default "" 2>/dev/null)
 ```
 
 If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
@@ -178,14 +178,14 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
 
 2. **Load phase context from STATE.md:**
    ```bash
-   STATE_STATUS=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state load 2>/dev/null | head -20)
+   STATE_STATUS=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state load 2>/dev/null | head -20)
    ```
 
 3. **Build review prompt and pipe to command via stdin:**
    Construct a review prompt containing the diff, diff stats, and phase context, then pipe it to the configured command:
    ```bash
    REVIEW_PROMPT="You are reviewing a pull request.\n\nDiff stats:\n${DIFF_STATS}\n\nPhase context:\n${STATE_STATUS}\n\nFull diff:\n${DIFF}\n\nRespond with JSON: { \"verdict\": \"APPROVED\" or \"REVISE\", \"confidence\": 0-100, \"summary\": \"...\", \"issues\": [{\"severity\": \"...\", \"file\": \"...\", \"line_range\": \"...\", \"description\": \"...\", \"suggestion\": \"...\"}] }"
-   REVIEW_OUTPUT=$(echo "${REVIEW_PROMPT}" | timeout 120 ${REVIEW_CMD} 2>/tmp/gsd-review-stderr.log)
+   REVIEW_OUTPUT=$(echo "${REVIEW_PROMPT}" | timeout 120 ${REVIEW_CMD} 2>/tmp/cds-review-stderr.log)
    REVIEW_EXIT=$?
    ```
 
@@ -193,7 +193,7 @@ If `REVIEW_CMD` is non-empty and not `"null"`, run the external review:
    If `REVIEW_EXIT` is non-zero or the command times out:
    ```bash
    if [ $REVIEW_EXIT -ne 0 ]; then
-     REVIEW_STDERR=$(cat /tmp/gsd-review-stderr.log 2>/dev/null)
+     REVIEW_STDERR=$(cat /tmp/cds-review-stderr.log 2>/dev/null)
      echo "WARNING: External review command failed (exit ${REVIEW_EXIT}). stderr: ${REVIEW_STDERR}"
      echo "Continuing with manual review flow..."
    fi
@@ -251,13 +251,13 @@ Report the PR URL and suggest: "Review the diff at {url}/files"
 Update STATE.md to reflect the shipping action:
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" state update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state update "Last Activity" "$(date +%Y-%m-%d)"
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" state update "Status" "Phase ${PHASE_NUMBER} shipped — PR #${PR_NUMBER}"
 ```
 
 If `commit_docs` is true:
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs(${padded_phase}): ship phase ${PHASE_NUMBER} — PR #${PR_NUMBER}" --files .planning/STATE.md
 ```
 </step>
 
@@ -276,8 +276,8 @@ Requirements: {N} REQ-IDs addressed
 Next steps:
 - Review/approve PR
 - Merge when CI passes
-- /gsd-complete-milestone (if last phase in milestone)
-- /gsd-progress (to see what's next)
+- /cds-complete-milestone (if last phase in milestone)
+- /cds-progress (to see what's next)
 
 ───────────────────────────────────────────────────────────────
 ```
@@ -288,9 +288,9 @@ Next steps:
 <offer_next>
 After shipping:
 
-- /gsd-complete-milestone — if all phases in milestone are done
-- /gsd-progress — see overall project state
-- /gsd-execute-phase {next} — continue to next phase
+- /cds-complete-milestone — if all phases in milestone are done
+- /cds-progress — see overall project state
+- /cds-execute-phase {next} — continue to next phase
 </offer_next>
 
 <success_criteria>

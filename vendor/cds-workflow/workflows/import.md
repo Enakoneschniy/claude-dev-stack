@@ -32,7 +32,7 @@ Parse `$ARGUMENTS` to determine the execution mode:
 - If neither flag is found: display usage and exit:
 
 ```
-Usage: /gsd-import --from <path>
+Usage: /cds-import --from <path>
 
   --from <path>   Import an external plan file into GSD format
 ```
@@ -248,7 +248,7 @@ Update `.planning/STATE.md` if appropriate (e.g., increment total plan count).
 
 Commit the imported plan and updated files:
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs({phase}): import plan from {basename FILEPATH}" --files .planning/phases/{phase}/{plan}-PLAN.md .planning/ROADMAP.md
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs({phase}): import plan from {basename FILEPATH}" --files .planning/phases/{phase}/{plan}-PLAN.md .planning/ROADMAP.md
 ```
 
 Display completion:

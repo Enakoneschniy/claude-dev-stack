@@ -17,7 +17,7 @@ Parse arguments and load project state:
 
 ```bash
 PHASE_ARG="${1}"
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -35,7 +35,7 @@ fi
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
 ```
-Error: Phase ${PHASE_ARG} not found. Run /gsd-status to see available phases.
+Error: Phase ${PHASE_ARG} not found. Run /cds-status to see available phases.
 ```
 
 This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
@@ -74,7 +74,7 @@ fi
 Check if code review is enabled via config:
 
 ```bash
-CODE_REVIEW_ENABLED=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.code_review 2>/dev/null || echo "true")
+CODE_REVIEW_ENABLED=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get workflow.code_review 2>/dev/null || echo "true")
 ```
 
 If CODE_REVIEW_ENABLED is "false":
@@ -90,14 +90,14 @@ Default is true — only skip on explicit false. This check runs AFTER phase val
 Determine review depth with priority order:
 
 1. DEPTH_OVERRIDE from --depth flag (highest priority)
-2. Config value: `node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.code_review_depth 2>/dev/null`
+2. Config value: `node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get workflow.code_review_depth 2>/dev/null`
 3. Default: "standard"
 
 ```bash
 if [ -n "$DEPTH_OVERRIDE" ]; then
   REVIEW_DEPTH="$DEPTH_OVERRIDE"
 else
-  CONFIG_DEPTH=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.code_review_depth 2>/dev/null || echo "")
+  CONFIG_DEPTH=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get workflow.code_review_depth 2>/dev/null || echo "")
   REVIEW_DEPTH="${CONFIG_DEPTH:-standard}"
 fi
 ```
@@ -227,7 +227,7 @@ if [ ${#REVIEW_FILES[@]} -eq 0 ]; then
   else
     # Fail closed — no reliable diff base found. Do not use arbitrary HEAD~N.
     echo "Warning: No phase commits found for '${PADDED_PHASE}'. Cannot determine reliable diff scope."
-    echo "Use --files flag to specify files explicitly: /gsd-code-review ${PHASE_ARG} --files=file1,file2,..."
+    echo "Use --files flag to specify files explicitly: /cds-code-review ${PHASE_ARG} --files=file1,file2,..."
   fi
 fi
 ```
@@ -372,7 +372,7 @@ If the Task() call fails (agent error, timeout, or exception):
 ```
 Error: Code review agent failed: ${error_message}
 
-No REVIEW.md created. You can retry with /gsd-code-review ${PHASE_ARG} or check agent logs.
+No REVIEW.md created. You can retry with /cds-code-review ${PHASE_ARG} or check agent logs.
 ```
 
 Do NOT proceed to commit_review step. Do NOT create a partial or empty REVIEW.md. Exit workflow.
@@ -395,7 +395,7 @@ if [ -f "${REVIEW_PATH}" ]; then
     echo "REVIEW.md created at ${REVIEW_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit \
+      node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit \
         "docs(${PADDED_PHASE}): add code review report" \
         --files "${REVIEW_PATH}"
     fi
@@ -405,7 +405,7 @@ if [ -f "${REVIEW_PATH}" ]; then
   fi
 else
   echo "Warning: Agent completed but REVIEW.md not found at ${REVIEW_PATH}. This may indicate an agent issue."
-  echo "No REVIEW.md to commit. Please retry with /gsd-code-review ${PHASE_ARG}"
+  echo "No REVIEW.md to commit. Please retry with /cds-code-review ${PHASE_ARG}"
 fi
 ```
 </step>
@@ -469,7 +469,7 @@ If total findings > 0:
 Full report: ${REVIEW_PATH}
 
 Next steps:
-  /gsd-code-review-fix ${PHASE_NUMBER}  — Auto-fix issues
+  /cds-code-review-fix ${PHASE_NUMBER}  — Auto-fix issues
   cat ${REVIEW_PATH}                     — View full report
 ```
 

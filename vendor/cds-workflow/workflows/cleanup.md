@@ -124,7 +124,7 @@ Repeat for all milestones in the cleanup set.
 Commit the changes:
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "chore: archive phase directories from completed milestones" --files .planning/milestones/ .planning/phases/
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "chore: archive phase directories from completed milestones" --files .planning/milestones/ .planning/phases/
 ```
 
 </step>

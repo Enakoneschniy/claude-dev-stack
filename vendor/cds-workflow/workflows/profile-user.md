@@ -9,7 +9,7 @@ Read all files referenced by the invoking prompt's execution_context before star
 
 Key references:
 - @$HOME/.claude/cds-workflow/references/ui-brand.md (display patterns)
-- @$HOME/.claude/cds-workflow/agents/gsd-user-profiler.md (profiler agent definition)
+- @$HOME/.claude/cds-workflow/agents/cds-user-profiler.md (profiler agent definition)
 - @$HOME/.claude/cds-workflow/references/user-profiling.md (profiling reference doc)
 </required_reading>
 
@@ -120,7 +120,7 @@ Use AskUserQuestion:
 - options:
   - "Let's go" -- Proceed to step 3 (session analysis)
   - "Use questionnaire instead" -- Jump to step 4b (questionnaire path)
-  - "Not now" -- Display "No worries. Run /gsd-profile-user when ready." and exit
+  - "Not now" -- Display "No worries. Run /cds-profile-user when ready." and exit
 
 ---
 
@@ -130,7 +130,7 @@ Display: "◆ Scanning sessions..."
 
 Run session scan:
 ```bash
-SCAN_RESULT=$(node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs scan-sessions --json 2>/dev/null)
+SCAN_RESULT=$(node $HOME/.claude/cds-workflow/bin/cds-tools.cjs scan-sessions --json 2>/dev/null)
 ```
 
 Parse the JSON output to get session count and project count.
@@ -150,7 +150,7 @@ Display: "◆ Sampling messages..."
 
 Run profile sampling:
 ```bash
-SAMPLE_RESULT=$(node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs profile-sample --json 2>/dev/null)
+SAMPLE_RESULT=$(node $HOME/.claude/cds-workflow/bin/cds-tools.cjs profile-sample --json 2>/dev/null)
 ```
 
 Parse the JSON output to get the temp directory path and message count.
@@ -201,7 +201,7 @@ Display: "Using questionnaire to build your profile."
 
 **Get questions:**
 ```bash
-QUESTIONS=$(node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs profile-questionnaire --json 2>/dev/null)
+QUESTIONS=$(node $HOME/.claude/cds-workflow/bin/cds-tools.cjs profile-questionnaire --json 2>/dev/null)
 ```
 
 Parse the questions JSON. It contains 8 questions, one per dimension.
@@ -217,21 +217,21 @@ Collect all answers into an answers JSON object mapping dimension keys to select
 
 **Save answers to temp file:**
 ```bash
-ANSWERS_PATH=$(mktemp /tmp/gsd-profile-answers-XXXXXX.json)
+ANSWERS_PATH=$(mktemp /tmp/cds-profile-answers-XXXXXX.json)
 ```
 
 Write the answers JSON to `$ANSWERS_PATH`.
 
 **Convert answers to analysis:**
 ```bash
-ANALYSIS_RESULT=$(node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs profile-questionnaire --answers "$ANSWERS_PATH" --json 2>/dev/null)
+ANALYSIS_RESULT=$(node $HOME/.claude/cds-workflow/bin/cds-tools.cjs profile-questionnaire --answers "$ANSWERS_PATH" --json 2>/dev/null)
 ```
 
 Parse the analysis JSON from the result.
 
 Save analysis JSON to a temp file:
 ```bash
-ANALYSIS_PATH=$(mktemp /tmp/gsd-profile-analysis-XXXXXX.json)
+ANALYSIS_PATH=$(mktemp /tmp/cds-profile-analysis-XXXXXX.json)
 ```
 
 Write the analysis JSON to `$ANALYSIS_PATH`.
@@ -271,7 +271,7 @@ Write updated analysis JSON back to `$ANALYSIS_PATH`.
 Display: "◆ Writing profile..."
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs write-profile --input "$ANALYSIS_PATH" --json 2>/dev/null
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs write-profile --input "$ANALYSIS_PATH" --json 2>/dev/null
 ```
 
 Display: "✓ Profile written to $HOME/.claude/cds-workflow/USER-PROFILE.md"
@@ -335,7 +335,7 @@ Use AskUserQuestion with multiSelect:
 - header: "Artifacts"
 - question: "Which artifacts should I generate?"
 - options (ALL pre-selected by default):
-  - "/gsd-dev-preferences command file" -- "Load your preferences in any session"
+  - "/cds-dev-preferences command file" -- "Load your preferences in any session"
   - "CLAUDE.md profile section" -- "Add profile to this project's CLAUDE.md"
   - "Global CLAUDE.md" -- "Add profile to $HOME/.claude/CLAUDE.md for all projects"
 
@@ -347,18 +347,18 @@ Use AskUserQuestion with multiSelect:
 
 Generate selected artifacts sequentially (file I/O is fast, no benefit from parallel agents):
 
-**For /gsd-dev-preferences (if selected):**
+**For /cds-dev-preferences (if selected):**
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs generate-dev-preferences --analysis "$ANALYSIS_PATH" --json 2>/dev/null
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs generate-dev-preferences --analysis "$ANALYSIS_PATH" --json 2>/dev/null
 ```
 
-Display: "✓ Generated /gsd-dev-preferences at $HOME/.claude/commands/gsd/dev-preferences.md"
+Display: "✓ Generated /cds-dev-preferences at $HOME/.claude/commands/gsd/dev-preferences.md"
 
 **For CLAUDE.md profile section (if selected):**
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs generate-claude-profile --analysis "$ANALYSIS_PATH" --json 2>/dev/null
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs generate-claude-profile --analysis "$ANALYSIS_PATH" --json 2>/dev/null
 ```
 
 Display: "✓ Added profile section to CLAUDE.md"
@@ -366,7 +366,7 @@ Display: "✓ Added profile section to CLAUDE.md"
 **For Global CLAUDE.md (if selected):**
 
 ```bash
-node $HOME/.claude/cds-workflow/bin/gsd-tools.cjs generate-claude-profile --analysis "$ANALYSIS_PATH" --global --json 2>/dev/null
+node $HOME/.claude/cds-workflow/bin/cds-tools.cjs generate-claude-profile --analysis "$ANALYSIS_PATH" --global --json 2>/dev/null
 ```
 
 Display: "✓ Added profile section to $HOME/.claude/CLAUDE.md"
@@ -412,7 +412,7 @@ Your profile:    $HOME/.claude/cds-workflow/USER-PROFILE.md
 Then list paths for each generated artifact:
 ```
 Artifacts:
-  ✓ /gsd-dev-preferences   $HOME/.claude/commands/gsd/dev-preferences.md
+  ✓ /cds-dev-preferences   $HOME/.claude/commands/gsd/dev-preferences.md
   ✓ CLAUDE.md section       ./CLAUDE.md
   ✓ Global CLAUDE.md        $HOME/.claude/CLAUDE.md
 ```

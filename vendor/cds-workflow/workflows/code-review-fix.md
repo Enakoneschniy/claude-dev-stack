@@ -18,7 +18,7 @@ Parse arguments and load project state:
 
 ```bash
 PHASE_ARG="${1}"
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" init phase-op "${PHASE_ARG}")
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" init phase-op "${PHASE_ARG}")
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
 ```
 
@@ -36,7 +36,7 @@ fi
 **Phase validation (before config gate):**
 If `phase_found` is false, report error and exit:
 ```
-Error: Phase ${PHASE_ARG} not found. Run /gsd-status to see available phases.
+Error: Phase ${PHASE_ARG} not found. Run /cds-status to see available phases.
 ```
 
 This runs BEFORE config gate check so user errors are surfaced immediately regardless of config state.
@@ -74,7 +74,7 @@ FIX_REPORT_PATH="${PHASE_DIR}/${PADDED_PHASE}-REVIEW-FIX.md"
 Check if code review is enabled via config:
 
 ```bash
-CODE_REVIEW_ENABLED=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" config-get workflow.code_review 2>/dev/null || echo "true")
+CODE_REVIEW_ENABLED=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" config-get workflow.code_review 2>/dev/null || echo "true")
 ```
 
 If CODE_REVIEW_ENABLED is "false":
@@ -93,7 +93,7 @@ Verify that REVIEW.md exists:
 
 ```bash
 if [ ! -f "${REVIEW_PATH}" ]; then
-  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /gsd-code-review ${PHASE_ARG} first."
+  echo "Error: No REVIEW.md found for Phase ${PHASE_ARG}. Run /cds-code-review ${PHASE_ARG} first."
   exit 1
 fi
 ```
@@ -221,7 +221,7 @@ Check if FIX_REPORT_PATH exists:
 Either way:
 ```
 Some fix commits may already exist in git history — check git log for fix(${PADDED_PHASE}) commits.
-You can retry with /gsd-code-review-fix ${PHASE_ARG}.
+You can retry with /cds-code-review-fix ${PHASE_ARG}.
 ```
 
 Exit workflow (skip auto loop).
@@ -359,7 +359,7 @@ if [ -f "${FIX_REPORT_PATH}" ]; then
     echo "REVIEW-FIX.md created at ${FIX_REPORT_PATH}"
     
     if [ "$COMMIT_DOCS" = "true" ]; then
-      node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit \
+      node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit \
         "docs(${PADDED_PHASE}): add code review fix report" \
         --files "${FIX_REPORT_PATH}"
     fi
@@ -394,7 +394,7 @@ if [ ! -f "${FIX_REPORT_PATH}" ]; then
   echo "The fixer agent may have failed before completing."
   echo "Check git log for any fix(${PADDED_PHASE}) commits."
   echo ""
-  echo "Retry: /gsd-code-review-fix ${PHASE_ARG}"
+  echo "Retry: /cds-code-review-fix ${PHASE_ARG}"
   echo ""
   echo "═══════════════════════════════════════════════════════════════"
   exit 1
@@ -451,7 +451,7 @@ if [ "$FIX_STATUS" = "all_fixed" ]; then
   echo "Full report: ${FIX_REPORT_PATH}"
   echo ""
   echo "Next step:"
-  echo "  /gsd-verify-work  — Verify phase completion"
+  echo "  /cds-verify-work  — Verify phase completion"
   echo ""
 fi
 ```
@@ -465,8 +465,8 @@ if [ "$FIX_STATUS" = "partial" ] || [ "$FIX_STATUS" = "none_fixed" ]; then
   echo ""
   echo "Next steps:"
   echo "  cat ${FIX_REPORT_PATH}                     — View fix report"
-  echo "  /gsd-code-review ${PHASE_NUMBER}           — Re-review code"
-  echo "  /gsd-verify-work                           — Verify phase completion"
+  echo "  /cds-code-review ${PHASE_NUMBER}           — Re-review code"
+  echo "  /cds-verify-work                           — Verify phase completion"
   echo ""
 fi
 ```

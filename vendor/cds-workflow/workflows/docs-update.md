@@ -14,9 +14,9 @@ Valid GSD subagent types (use exact names — do not fall back to 'general-purpo
 Load docs-update context:
 
 ```bash
-INIT=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" docs-init)
+INIT=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" docs-init)
 if [[ "$INIT" == @file:* ]]; then INIT=$(cat "${INIT#@file:}"); fi
-AGENT_SKILLS=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" agent-skills gsd-doc-writer 2>/dev/null)
+AGENT_SKILLS=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" agent-skills gsd-doc-writer 2>/dev/null)
 ```
 
 Extract from init JSON:
@@ -761,7 +761,7 @@ When the `Task` tool is unavailable, generate docs sequentially in the current c
 
 **IMPORTANT:** Do NOT use `browser_subagent`, `Explore`, or any browser-based tool. Use only file system tools (Read, Bash, Write, Grep, Glob, or equivalent tools available in your runtime).
 
-Read `agents/gsd-doc-writer.md` instructions once before beginning. Follow the create_mode or update_mode instructions from that agent for each doc, using the same doc_assignment fields as the parallel path.
+Read `agents/cds-doc-writer.md` instructions once before beginning. Follow the create_mode or update_mode instructions from that agent for each doc, using the same doc_assignment fields as the parallel path.
 
 **Wave 1 (sequential — complete all three before starting Wave 2):**
 
@@ -988,8 +988,8 @@ Failed claims:
 
 Display note:
 ```
-To fix failures automatically: /gsd-docs-update (runs generation + fix loop)
-To regenerate all docs from scratch: /gsd-docs-update --force
+To fix failures automatically: /cds-docs-update (runs generation + fix loop)
+To regenerate all docs from scratch: /cds-docs-update --force
 ```
 
 Clean up temp files: remove `.planning/tmp/verify-*.json` files.
@@ -1024,7 +1024,7 @@ This would expose credentials if committed.
 Action required:
 1. Review the flagged lines above
 2. Remove any real secrets from the doc files
-3. Re-run /gsd-docs-update to regenerate clean docs
+3. Re-run /cds-docs-update to regenerate clean docs
 ```
 
 Then confirm with AskUserQuestion:
@@ -1054,7 +1054,7 @@ Only run this step if `commit_docs` is `true` from the init JSON. If `commit_doc
 Assemble the list of files that were actually generated (do not include files that failed or were skipped):
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs: generate project documentation" \
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs: generate project documentation" \
   --files README.md docs/ARCHITECTURE.md docs/CONFIGURATION.md docs/GETTING-STARTED.md docs/DEVELOPMENT.md docs/TESTING.md
 # Append any conditional docs that were generated:
 # --files ... docs/API.md docs/DEPLOYMENT.md CONTRIBUTING.md
@@ -1126,7 +1126,7 @@ All generated files committed.
 Remind the user they can fact-check generated docs:
 
 ```
-Run `/gsd-docs-update --verify-only` to fact-check generated docs against the codebase.
+Run `/cds-docs-update --verify-only` to fact-check generated docs against the codebase.
 ```
 
 End workflow.

@@ -1,5 +1,5 @@
 <purpose>
-Create all phases necessary to close gaps identified by `/gsd-audit-milestone`. Reads MILESTONE-AUDIT.md, groups gaps into logical phases, creates phase entries in ROADMAP.md, and offers to plan each phase. One command creates all fix phases — no manual `/gsd-add-phase` per gap.
+Create all phases necessary to close gaps identified by `/cds-audit-milestone`. Reads MILESTONE-AUDIT.md, groups gaps into logical phases, creates phase entries in ROADMAP.md, and offers to plan each phase. One command creates all fix phases — no manual `/cds-add-phase` per gap.
 </purpose>
 
 <required_reading>
@@ -22,7 +22,7 @@ Parse YAML frontmatter to extract structured gaps:
 
 If no audit file exists or has no gaps, error:
 ```
-No audit gaps found. Run `/gsd-audit-milestone` first.
+No audit gaps found. Run `/cds-audit-milestone` first.
 ```
 
 ## 2. Prioritize Gaps
@@ -65,7 +65,7 @@ Gap: Flow "View dashboard" broken at data fetch
 Find highest existing phase:
 ```bash
 # Get sorted phase list, extract last one
-HIGHEST=$(node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" phases list --pick directories[-1])
+HIGHEST=$(node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" phases list --pick directories[-1])
 ```
 
 New phases continue from there:
@@ -146,7 +146,7 @@ mkdir -p ".planning/phases/{NN}-{name}"
 ## 9. Commit Roadmap and Requirements Update
 
 ```bash
-node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs(roadmap): add gap closure phases {N}-{M}" --files .planning/ROADMAP.md .planning/REQUIREMENTS.md
+node "$HOME/.claude/cds-workflow/bin/cds-tools.cjs" commit "docs(roadmap): add gap closure phases {N}-{M}" --files .planning/ROADMAP.md .planning/REQUIREMENTS.md
 ```
 
 ## 10. Offer Next Steps
@@ -165,20 +165,20 @@ node "$HOME/.claude/cds-workflow/bin/gsd-tools.cjs" commit "docs(roadmap): add g
 
 `/clear` then:
 
-`/gsd-plan-phase {N}`
+`/cds-plan-phase {N}`
 
 ---
 
 **Also available:**
-- `/gsd-execute-phase {N}` — if plans already exist
+- `/cds-execute-phase {N}` — if plans already exist
 - `cat .planning/ROADMAP.md` — see updated roadmap
 
 ---
 
 **After all gap phases complete:**
 
-`/gsd-audit-milestone` — re-audit to verify gaps closed
-`/gsd-complete-milestone {version}` — archive when audit passes
+`/cds-audit-milestone` — re-audit to verify gaps closed
+`/cds-complete-milestone {version}` — archive when audit passes
 ```
 
 </process>
@@ -269,5 +269,5 @@ becomes:
 - [ ] Coverage count updated in REQUIREMENTS.md
 - [ ] Phase directories created
 - [ ] Changes committed (includes REQUIREMENTS.md)
-- [ ] User knows to run `/gsd-plan-phase` next
+- [ ] User knows to run `/cds-plan-phase` next
 </success_criteria>
