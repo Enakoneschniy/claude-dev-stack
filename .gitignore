@@ -13,3 +13,6 @@ pnpm-debug.log*
 
 # GSD bounce artifacts (should already be globally gitignored, confirm locally)
 *.pre-bounce.md
+
+# Planning artifacts relocated to vault (Phase 51)
+.planning/
