@@ -49,6 +49,18 @@ const VALID_CONFIG_KEYS = new Set([
   'graphify.enabled',
   'graphify.build_timeout',
   'claude_md_path',
+  // CDS-specific keys (Phase 53)
+  'vault.backend',          // 'fs' | 's3'
+  'vault.s3_bucket',        // S3 bucket name
+  'vault.s3_region',        // AWS region
+  'vault.s3_prefix',        // Key prefix in bucket
+  'plugins',                // Array of enabled plugin names
+  'branching.strategy',     // Alias for git.branching_strategy
+  'models.profile',         // Alias for model_profile
+  'models.planner',         // Model override for planner agent
+  'models.executor',        // Model override for executor agent
+  'models.researcher',      // Model override for researcher agent
+  'models.checker',         // Model override for checker agent
 ]);
 
 /**
